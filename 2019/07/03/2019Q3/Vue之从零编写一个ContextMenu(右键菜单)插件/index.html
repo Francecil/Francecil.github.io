@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言ContextMenu 即右键菜单，当前的需求是：右键点击某些组件时，根据所点击组件的信息，展示不同的菜单。 本插件已开源，具体代码和使用可参考： vue-contextmenu 本文采用的是 vue 技术栈，部分处理对于 react 是可以借鉴的 其中需要注意的点有：  菜单完全显示，即右键点击位于页面下&#x2F;右侧时，菜单应该向上&#x2F;左显示 具体菜单由上层控制，该组件仅提供slot 该菜单dom上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue之从零编写一个ContextMenu(右键菜单)插件">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2019&#x2F;07&#x2F;03&#x2F;2019Q3&#x2F;Vue%E4%B9%8B%E4%BB%8E%E9%9B%B6%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AAContextMenu(%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95)%E6%8F%92%E4%BB%B6&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言ContextMenu 即右键菜单，当前的需求是：右键点击某些组件时，根据所点击组件的信息，展示不同的菜单。 本插件已开源，具体代码和使用可参考： vue-contextmenu 本文采用的是 vue 技术栈，部分处理对于 react 是可以借鉴的 其中需要注意的点有：  菜单完全显示，即右键点击位于页面下&#x2F;右侧时，菜单应该向上&#x2F;左显示 具体菜单由上层控制，该组件仅提供slot 该菜单dom上">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-07-02T19:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.161Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="Vue">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2019/07/03/2019Q3/Vue%E4%B9%8B%E4%BB%8E%E9%9B%B6%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AAContextMenu(%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95)%E6%8F%92%E4%BB%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Vue之从零编写一个ContextMenu(右键菜单)插件 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2019/07/03/2019Q3/Vue%E4%B9%8B%E4%BB%8E%E9%9B%B6%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AAContextMenu(%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95)%E6%8F%92%E4%BB%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue之从零编写一个ContextMenu(右键菜单)插件
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-07-03 03:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T03:00:00+08:00">2019-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>ContextMenu 即右键菜单，当前的需求是：右键点击某些组件时，根据所点击组件的信息，展示不同的菜单。</p>
+<p>本插件已开源，具体代码和使用可参考： <a href="https://github.com/Francecil/vue-contextmenu" target="_blank" rel="noopener">vue-contextmenu</a></p>
+<p>本文采用的是 vue 技术栈，部分处理对于 react 是可以借鉴的</p>
+<p>其中需要注意的点有：</p>
+<ol>
+<li>菜单完全显示，即右键点击位于页面下/右侧时，菜单应该向上/左显示</li>
+<li>具体菜单由上层控制，该组件仅提供slot</li>
+<li>该菜单dom上唯一，不需要时应该销毁</li>
+<li>点击页面其他位置，菜单消失</li>
+</ol>
+<p>先不考虑插件形式，按日常组件开发</p>
+<a id="more"></a>
+
+
+<h2 id="项目结构"><a href="#项目结构" class="headerlink" title="项目结构"></a>项目结构</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">|-components</span><br><span class="line">|---ContextMenu.vue    <span class="comment">//菜单组件</span></span><br><span class="line">|-views</span><br><span class="line">|---Home.vue            <span class="comment">//页面组件</span></span><br><span class="line">|---Dashbox.vue        <span class="comment">//图表组件，绝对定位于App中，有多个，右键展示自定义菜单</span></span><br></pre></td></tr></table></figure>
+<p>其余的 vue-router 什么的，不再赘诉</p>
+<p>右键菜单的内容由使用者定义（通过slot），所以我们可以很快的编写 ContextMenu 的代码</p>
+<blockquote>
+<p>同时解决了 <strong>注意点2</strong></p>
+</blockquote>
+<p>ContextMenu.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"context-menu"</span> <span class="attr">v-show</span>=<span class="string">"show"</span> <span class="attr">:style</span>=<span class="string">"style"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">slot</span>&gt;</span><span class="tag">&lt;/<span class="name">slot</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="actionscript">  name: <span class="string">"context-menu"</span>,</span></span><br><span class="line">  props: &#123;</span><br><span class="line"><span class="javascript">    show: <span class="built_in">Boolean</span></span></span><br><span class="line">  &#125;,</span><br><span class="line">  computed: &#123;</span><br><span class="line">    style() &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="actionscript">        left: <span class="string">"0px"</span>,</span></span><br><span class="line"><span class="actionscript">        top: <span class="string">"0px"</span></span></span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">lang</span>=<span class="string">"scss"</span> <span class="attr">scoped</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-class">.context-menu</span> &#123;</span></span><br><span class="line">  z-index: 1000;</span><br><span class="line">  display: block;</span><br><span class="line">  position: absolute;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>先不考虑显示的位置，通过 show prop 的值来显示/隐藏该菜单，当前实现 菜单将会显示在左上角</p>
+<p>Dashbox.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">:style</span>=<span class="string">"dashbox.style"</span> <span class="attr">class</span>=<span class="string">"dashbox"</span> @<span class="attr">contextmenu</span>=<span class="string">"showContextMenu"</span>&gt;</span></span><br><span class="line">    &#123;&#123; dashbox.content &#125;&#125;</span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line">  props: &#123;</span><br><span class="line"><span class="javascript">    dashbox: <span class="built_in">Object</span></span></span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    showContextMenu(e) &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">this</span>.$emit(<span class="string">"show-contextmenu"</span>, e);</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-class">.dashbox</span> &#123;</span></span><br><span class="line">  position: absolute;</span><br><span class="line">  background-color: aliceblue;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>绝对定位在页面中，右键时会向上层传递事件</p>
+<p>Home.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"home"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">Dashbox</span></span></span><br><span class="line"><span class="tag">      <span class="attr">v-for</span>=<span class="string">"dashbox in dashboxs"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">:key</span>=<span class="string">"dashbox.id"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">:dashbox</span>=<span class="string">"dashbox"</span></span></span><br><span class="line"><span class="tag">      @<span class="attr">show-contextmenu</span>=<span class="string">"showContextMenu"</span></span></span><br><span class="line"><span class="tag">    /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ContextMenu</span> <span class="attr">:show</span>=<span class="string">"contextMenuVisible"</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>复制<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>粘贴<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>剪切<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ContextMenu</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">import</span> ContextMenu <span class="keyword">from</span> <span class="string">"@/components/ContextMenu.vue"</span>;</span></span><br><span class="line"><span class="javascript"><span class="keyword">import</span> Dashbox <span class="keyword">from</span> <span class="string">"./Dashbox.vue"</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="actionscript">  name: <span class="string">"home"</span>,</span></span><br><span class="line">  components: &#123;</span><br><span class="line">    ContextMenu,</span><br><span class="line">    Dashbox</span><br><span class="line">  &#125;,</span><br><span class="line">  data() &#123;</span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="actionscript">      contextMenuVisible: <span class="literal">false</span>,</span></span><br><span class="line">      dashboxs: [</span><br><span class="line">        &#123;</span><br><span class="line">          id: 1,</span><br><span class="line"><span class="actionscript">          style: <span class="string">"left:200px;top:200px;width:100px;height:100px"</span>,</span></span><br><span class="line"><span class="actionscript">          content: <span class="string">"test1"</span></span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">          id: 2,</span><br><span class="line"><span class="actionscript">          style: <span class="string">"left:400px;top:400px;width:100px;height:100px"</span>,</span></span><br><span class="line"><span class="actionscript">          content: <span class="string">"test2"</span></span></span><br><span class="line">        &#125;</span><br><span class="line">      ]</span><br><span class="line">    &#125;;</span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    showContextMenu(e) &#123;</span><br><span class="line">      e.preventDefault();</span><br><span class="line"><span class="actionscript">      <span class="keyword">this</span>.contextMenuVisible = <span class="literal">true</span>;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>此时可以看到页面中有2个矩形框，右键的时候，左上角能出现菜单</p>
+<p>当然，此时并没有办法将该菜单隐藏</p>
+<p>下面，我们将一步步进行优化</p>
+<h2 id="菜单处于右键点击位置"><a href="#菜单处于右键点击位置" class="headerlink" title="菜单处于右键点击位置"></a>菜单处于右键点击位置</h2><p>上面我们在 showContextMenu 方法中获取到点击事件e，</p>
+<p>其中 <code>e.clientX/Y</code> 是基于浏览器窗口viewport的位置，参考点随着浏览器的滚动而变化（即一直是视窗左上角）</p>
+<p>那么，将 clientX/Y 直接传入 ContextMenu 组件修改其样式是否就可以了？</p>
+<p>思考一下…</p>
+<hr>
+<p>.</p>
+<p>.</p>
+<p>.</p>
+<p>.</p>
+<p>答案是不可以的，原因在于 ContextMenu 的祖先节点的定位可能不是 static,</p>
+<p>当祖先节点定位非 static 时，absolute 定位的 ContextMenu 的参考点就是以祖先节点为参考点了。</p>
+<p>举个例子：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"header"</span> <span class="attr">style</span>=<span class="string">"height:200px"</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"home"</span> <span class="attr">style</span>=<span class="string">"position: relative;"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"context-menu"</span> <span class="attr">style</span>=<span class="string">"left: 200px;top: 200px;position: absolute;"</span>&gt;</span></span><br><span class="line">      我是右键菜单</span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>而实际上，当右键的 clientX/Y 值为 200，200时，传入 context-menu的style后，其菜单应该显示在点击处下方 200px, 即相对 viewport 的 left,top 分别为 200，400</p>
+<blockquote>
+<p>了解 element-ui等组件库的应该知道，在涉及 poper 显示的时候，官方默认<code>popper-append-to-body</code>，目的就是将弹窗组件插入body，脱离文档流，不与定义处的父组件产生关系，并且方便使用 event.clientX/Y</p>
+</blockquote>
+<p>所以，将其直接插入 body 是最省事的，</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mounted () &#123;</span><br><span class="line">  <span class="built_in">document</span>.body.appendChild(<span class="keyword">this</span>.$el)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ContextMenu 增加 offset 属性并修改样式</p>
+<p>Home.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"home"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">Dashbox</span></span></span><br><span class="line"><span class="tag">      <span class="attr">v-for</span>=<span class="string">"dashbox in dashboxs"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">:key</span>=<span class="string">"dashbox.id"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">:dashbox</span>=<span class="string">"dashbox"</span></span></span><br><span class="line"><span class="tag">      @<span class="attr">show-contextmenu</span>=<span class="string">"showContextMenu"</span></span></span><br><span class="line"><span class="tag">    /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ContextMenu</span> <span class="attr">:show</span>=<span class="string">"contextMenuVisible"</span> <span class="attr">:offset</span>=<span class="string">"contextMenuOffset"</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>复制<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>粘贴<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>剪切<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ContextMenu</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">import</span> ContextMenu <span class="keyword">from</span> <span class="string">"@/components/ContextMenu.vue"</span>;</span></span><br><span class="line"><span class="javascript"><span class="keyword">import</span> Dashbox <span class="keyword">from</span> <span class="string">"./Dashbox.vue"</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="actionscript">  name: <span class="string">"home"</span>,</span></span><br><span class="line">  components: &#123;</span><br><span class="line">    ContextMenu,</span><br><span class="line">    Dashbox</span><br><span class="line">  &#125;,</span><br><span class="line">  data() &#123;</span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="actionscript">      contextMenuVisible: <span class="literal">false</span>,</span></span><br><span class="line">      contextMenuOffset: &#123;</span><br><span class="line">        left: 0,</span><br><span class="line">        top: 0</span><br><span class="line">      &#125;,</span><br><span class="line">      dashboxs: [</span><br><span class="line">        &#123;</span><br><span class="line">          id: 1,</span><br><span class="line"><span class="actionscript">          style: <span class="string">"left:200px;top:200px;width:100px;height:100px"</span>,</span></span><br><span class="line"><span class="actionscript">          content: <span class="string">"test1"</span></span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">          id: 2,</span><br><span class="line"><span class="actionscript">          style: <span class="string">"left:400px;top:400px;width:100px;height:100px"</span>,</span></span><br><span class="line"><span class="actionscript">          content: <span class="string">"test2"</span></span></span><br><span class="line">        &#125;</span><br><span class="line">      ]</span><br><span class="line">    &#125;;</span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    showContextMenu(e) &#123;</span><br><span class="line">      e.preventDefault();</span><br><span class="line"><span class="actionscript">      <span class="keyword">this</span>.contextMenuVisible = <span class="literal">true</span>;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">this</span>.contextMenuOffset = &#123;</span></span><br><span class="line">        left: e.clientX,</span><br><span class="line">        top: e.clientY</span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>ContextMenu.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"context-menu"</span> <span class="attr">v-show</span>=<span class="string">"show"</span> <span class="attr">:style</span>=<span class="string">"style"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">slot</span>&gt;</span><span class="tag">&lt;/<span class="name">slot</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="actionscript">  name: <span class="string">"context-menu"</span>,</span></span><br><span class="line">  props: &#123;</span><br><span class="line">    offset: &#123;</span><br><span class="line"><span class="javascript">      type: <span class="built_in">Object</span>,</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">default</span>: <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> &#123;</span></span><br><span class="line">          left: 0,</span><br><span class="line">          top: 0</span><br><span class="line">        &#125;;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"><span class="javascript">    show: <span class="built_in">Boolean</span></span></span><br><span class="line">  &#125;,</span><br><span class="line">  computed: &#123;</span><br><span class="line">    style() &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="javascript">        left: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.left&#125;</span>px`</span>,</span></span><br><span class="line"><span class="javascript">        top: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.top&#125;</span>px`</span></span></span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  mounted() &#123;</span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.body.appendChild(<span class="keyword">this</span>.$el);</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">lang</span>=<span class="string">"scss"</span> <span class="attr">scoped</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-class">.context-menu</span> &#123;</span></span><br><span class="line">  z-index: 1000;</span><br><span class="line">  display: block;</span><br><span class="line">  position: absolute;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>到这里，我们就可以实现 <strong>菜单处于右键点击位置</strong> 的效果了，每次右键点击，context-menu 会显示在对应位置</p>
+<h2 id="该菜单dom上唯一，不需要时应该销毁"><a href="#该菜单dom上唯一，不需要时应该销毁" class="headerlink" title="该菜单dom上唯一，不需要时应该销毁"></a>该菜单dom上唯一，不需要时应该销毁</h2><p>这个也很简单</p>
+<p>在组件销毁时，把自己从 body 中移除</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">beforeDestroy () &#123;</span><br><span class="line">  <span class="keyword">let</span> popperElm = <span class="keyword">this</span>.$el</span><br><span class="line">  <span class="keyword">if</span> (popperElm &amp;&amp; popperElm.parentNode === <span class="built_in">document</span>.body) &#123;</span><br><span class="line">    <span class="built_in">document</span>.body.removeChild(popperElm);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="点击页面其他位置，菜单消失"><a href="#点击页面其他位置，菜单消失" class="headerlink" title="点击页面其他位置，菜单消失"></a>点击页面其他位置，菜单消失</h2><p>这里我们选择监听 mousedown，若事件没有停止传递，则 document 上可以监听到</p>
+<blockquote>
+<p>当然 这里我们需要保证 事件不会被 stopPropagation</p>
+</blockquote>
+<p>ContextMenu.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">    <span class="attr">class</span>=<span class="string">"context-menu"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">v-show</span>=<span class="string">"show"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">:style</span>=<span class="string">"style"</span></span></span><br><span class="line"><span class="tag">    @<span class="attr">mousedown.stop</span></span></span><br><span class="line"><span class="tag">    @<span class="attr">contextmenu.prevent</span></span></span><br><span class="line"><span class="tag">  &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">slot</span>&gt;</span><span class="tag">&lt;/<span class="name">slot</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="actionscript">  name: <span class="string">"context-menu"</span>,</span></span><br><span class="line">  props: &#123;</span><br><span class="line">    offset: &#123;</span><br><span class="line"><span class="javascript">      type: <span class="built_in">Object</span>,</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">default</span>: <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> &#123;</span></span><br><span class="line">          left: 0,</span><br><span class="line">          top: 0</span><br><span class="line">        &#125;;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"><span class="javascript">    show: <span class="built_in">Boolean</span></span></span><br><span class="line">  &#125;,</span><br><span class="line">  computed: &#123;</span><br><span class="line">    style() &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="javascript">        left: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.left&#125;</span>px`</span>,</span></span><br><span class="line"><span class="javascript">        top: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.top&#125;</span>px`</span></span></span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  beforeDestroy() &#123;</span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> popperElm = <span class="keyword">this</span>.$el;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">if</span> (popperElm &amp;&amp; popperElm.parentNode === <span class="built_in">document</span>.body) &#123;</span></span><br><span class="line"><span class="javascript">      <span class="built_in">document</span>.body.removeChild(popperElm);</span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.removeEventListener(<span class="string">"mousedown"</span>, <span class="keyword">this</span>.clickDocumentHandler);</span></span><br><span class="line">  &#125;,</span><br><span class="line">  mounted() &#123;</span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.body.appendChild(<span class="keyword">this</span>.$el);</span></span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.addEventListener(<span class="string">"mousedown"</span>, <span class="keyword">this</span>.clickDocumentHandler);</span></span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    clickDocumentHandler() &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">if</span> (<span class="keyword">this</span>.show) &#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">this</span>.$emit(<span class="string">"update:show"</span>, <span class="literal">false</span>);</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">lang</span>=<span class="string">"scss"</span> <span class="attr">scoped</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-class">.context-menu</span> &#123;</span></span><br><span class="line">  z-index: 1000;</span><br><span class="line">  display: block;</span><br><span class="line">  position: absolute;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>Home.vue 增加 <code>@update:show</code> 事件处理</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">ContextMenu</span></span></span><br><span class="line"><span class="tag">  <span class="attr">:show</span>=<span class="string">"contextMenuVisible"</span></span></span><br><span class="line"><span class="tag">  <span class="attr">:offset</span>=<span class="string">"contextMenuOffset"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">update:show</span>=<span class="string">"show =&gt; (contextMenuVisible = show)"</span></span></span><br><span class="line"><span class="tag">&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span>&gt;</span>复制<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span>&gt;</span>粘贴<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span>&gt;</span>剪切<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ContextMenu</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="菜单完全显示"><a href="#菜单完全显示" class="headerlink" title="菜单完全显示"></a>菜单完全显示</h2><p>根据点击位置，判断菜单向上显示或向下显示，即右键点击位于页面下/右侧时，菜单应该向上/左显示</p>
+<p>页面高度：<code>let docHeight = document.documentElement.clientHeight</code></p>
+<p>菜单高度：<code>let menuHeight = this.$el.getBoundingClientRect().height</code></p>
+<p>当 <code>e.clientY + menuHeight &gt;= docHeight</code> 时，菜单向下显示就会被遮挡了，需要向上显示</p>
+<p>同理，</p>
+<p>页面宽度：<code>let docWidth = document.documentElement.clientWidth</code></p>
+<p>菜单高度：<code>let menuWidth = this.$el.getBoundingClientRect().width</code></p>
+<p>当 <code>e.clientX + menuWidth &gt;= docWidth</code> 时，菜单需要向左显示</p>
+<p>由于菜单由外部定义，宽高不可控，所以每次都需要通过 <code>getBoundingClientRect</code> 获取实际宽高</p>
+<p>这里需要注意获取 getBoundingClientRect 的时机。</p>
+<p>一开始尝试：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">computed: &#123;</span><br><span class="line">    style() &#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="keyword">this</span>.$el)</span><br><span class="line">      <span class="keyword">return</span> &#123;</span><br><span class="line">        left: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.left&#125;</span>px`</span>,</span><br><span class="line">        top: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.top&#125;</span>px`</span></span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>发现此时组件处于 <code>display:none</code> 状态，获取到的宽高都为0</p>
+<p>有2种解决方案，一种是将 v-show 也就是 <code>display 样式</code> 改为 <code>visibility</code></p>
+<p>但担心此法不够通用（其实是想试试 $nextTick，</p>
+<p>另一种就是在下一个渲染周期结束后才执行，即 <code>v-show=&quot;true&quot;</code> 后计算宽高</p>
+<p>故我们需要监听 show prop 的值，当其为 true 时，在 <code>$nextTick</code> 回调中设置菜单坐标样式，此时 style 不用 computed,具体看代码。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">    <span class="attr">class</span>=<span class="string">"context-menu"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">v-show</span>=<span class="string">"show"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">:style</span>=<span class="string">"style"</span></span></span><br><span class="line"><span class="tag">    @<span class="attr">mousedown.stop</span></span></span><br><span class="line"><span class="tag">    @<span class="attr">contextmenu.prevent</span></span></span><br><span class="line"><span class="tag">  &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">slot</span>&gt;</span><span class="tag">&lt;/<span class="name">slot</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="actionscript">  name: <span class="string">"context-menu"</span>,</span></span><br><span class="line">  data() &#123;</span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> &#123;</span></span><br><span class="line">      style: &#123;&#125;</span><br><span class="line">    &#125;;</span><br><span class="line">  &#125;,</span><br><span class="line">  props: &#123;</span><br><span class="line">    offset: &#123;</span><br><span class="line"><span class="javascript">      type: <span class="built_in">Object</span>,</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">default</span>: <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> &#123;</span></span><br><span class="line">          left: 0,</span><br><span class="line">          top: 0</span><br><span class="line">        &#125;;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"><span class="javascript">    show: <span class="built_in">Boolean</span></span></span><br><span class="line">  &#125;,</span><br><span class="line">  watch: &#123;</span><br><span class="line">    show(show) &#123;</span><br><span class="line">      if (show) &#123;</span><br><span class="line"><span class="actionscript">        <span class="keyword">this</span>.$nextTick(<span class="keyword">this</span>.setPosition);</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  beforeDestroy() &#123;</span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> popperElm = <span class="keyword">this</span>.$el;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">if</span> (popperElm &amp;&amp; popperElm.parentNode === <span class="built_in">document</span>.body) &#123;</span></span><br><span class="line"><span class="javascript">      <span class="built_in">document</span>.body.removeChild(popperElm);</span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.removeEventListener(<span class="string">"mousedown"</span>, <span class="keyword">this</span>.clickDocumentHandler);</span></span><br><span class="line">  &#125;,</span><br><span class="line">  mounted() &#123;</span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.body.appendChild(<span class="keyword">this</span>.$el);</span></span><br><span class="line"><span class="javascript">    <span class="built_in">document</span>.addEventListener(<span class="string">"mousedown"</span>, <span class="keyword">this</span>.clickDocumentHandler);</span></span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    clickDocumentHandler() &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">if</span> (<span class="keyword">this</span>.show) &#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">this</span>.$emit(<span class="string">"update:show"</span>, <span class="literal">false</span>);</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    setPosition() &#123;</span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> docHeight = <span class="built_in">document</span>.documentElement.clientHeight;</span></span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> docWidth = <span class="built_in">document</span>.documentElement.clientWidth;</span></span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> menuHeight = <span class="keyword">this</span>.$el.getBoundingClientRect().height;</span></span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> menuWidth = <span class="keyword">this</span>.$el.getBoundingClientRect().width;</span></span><br><span class="line"><span class="actionscript">      <span class="comment">// 增加点击处与菜单间间隔，较为美观</span></span></span><br><span class="line"><span class="actionscript">      <span class="keyword">const</span> gap = <span class="number">10</span>;</span></span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> topover =</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">this</span>.offset.top + menuHeight + gap &gt;= docHeight</span></span><br><span class="line">          ? menuHeight + gap</span><br><span class="line">          : -gap;</span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> leftover =</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">this</span>.offset.left + menuWidth + gap &gt;= docWidth ? menuWidth + gap : -gap;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">this</span>.style = &#123;</span></span><br><span class="line"><span class="javascript">        left: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.left - leftover&#125;</span>px`</span>,</span></span><br><span class="line"><span class="javascript">        top: <span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.offset.top - topover&#125;</span>px`</span></span></span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">lang</span>=<span class="string">"scss"</span> <span class="attr">scoped</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-class">.context-menu</span> &#123;</span></span><br><span class="line">  z-index: 1000;</span><br><span class="line">  display: block;</span><br><span class="line">  position: absolute;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>当然，如果要做到（页面滚动/page resize）等菜单位置跟着变化，可以参考 element popper 的实现</p>
+<ol>
+<li><a href="https://github.com/ElemeFE/element/blob/dev/src/utils/popper.js" target="_blank" rel="noopener">https://github.com/ElemeFE/element/blob/dev/src/utils/popper.js</a></li>
+<li><a href="https://github.com/ElemeFE/element/blob/dev/src/utils/vue-popper.js" target="_blank" rel="noopener">https://github.com/ElemeFE/element/blob/dev/src/utils/vue-popper.js</a></li>
+</ol>
+<p>右键菜单应该是没有这样的需求</p>
+<h2 id="增加显示-隐藏的过度动画"><a href="#增加显示-隐藏的过度动画" class="headerlink" title="增加显示/隐藏的过度动画"></a>增加显示/隐藏的过度动画</h2><p>这个也比较简单，采用 vue 自带的 transition</p>
+<p>ContextMenu 中包一层 <code>&lt;transition name=&quot;context-menu&quot;&gt;</code></p>
+<p>style 样式 改为</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;style lang="scss" scoped&gt;</span><br><span class="line"><span class="selector-class">.context-menu</span> &#123;</span><br><span class="line">  <span class="attribute">z-index</span>: <span class="number">1000</span>;</span><br><span class="line">  <span class="attribute">display</span>: block;</span><br><span class="line">  <span class="attribute">position</span>: absolute;</span><br><span class="line">  &amp;-enter,</span><br><span class="line">  &amp;<span class="selector-tag">-leave-to</span> &#123;</span><br><span class="line">    <span class="attribute">opacity</span>: <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  &amp;<span class="selector-tag">-enter-active</span>,</span><br><span class="line">  &amp;<span class="selector-tag">-leave-active</span> &#123;</span><br><span class="line">    <span class="attribute">transition</span>: opacity <span class="number">0.5s</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">&lt;/style&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="插件注册"><a href="#插件注册" class="headerlink" title="插件注册"></a>插件注册</h2><p>参考了 <a href="https://github.com/ElemeFE/element/blob/master/src/index.js" target="_blank" rel="noopener">element-ui</a> 的代码和 <a href="https://github.com/ElemeFE/element#quick-start" target="_blank" rel="noopener">README</a></p>
+<p>以及 <a href="https://cn.vuejs.org/v2/guide/plugins.html" target="_blank" rel="noopener">vue 官方文档-插件</a> </p>
+<p>我们先创建一个 contextmenu.js</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> ContextMenu <span class="keyword">from</span> <span class="string">"@/components/ContextMenu.vue"</span>;</span><br><span class="line"><span class="keyword">const</span> plugin = &#123;&#125;;</span><br><span class="line">plugin.install = <span class="function"><span class="keyword">function</span>(<span class="params">Vue</span>) </span>&#123;</span><br><span class="line">  Vue.component(ContextMenu.name, ContextMenu);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Auto install</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> <span class="built_in">window</span> !== <span class="string">"undefined"</span> &amp;&amp; <span class="built_in">window</span>.Vue) &#123;</span><br><span class="line">  <span class="built_in">window</span>.Vue.use(plugin);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> plugin;</span><br><span class="line"><span class="keyword">export</span> &#123; ContextMenu &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>接下来使用的话有3种方式</p>
+<p>main.js</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> ContextMenu <span class="keyword">from</span> <span class="string">"./contextmenu"</span>;</span><br><span class="line"><span class="comment">// 将会调用install方法</span></span><br><span class="line">Vue.use(ContextMenu);</span><br><span class="line"><span class="comment">// or </span></span><br><span class="line"><span class="keyword">import</span> &#123; ContextMenu &#125; <span class="keyword">from</span> <span class="string">"./contextmenu"</span>;</span><br><span class="line">Vue.component(ContextMenu.name, ContextMenu);</span><br></pre></td></tr></table></figure>
+
+<p>或者在vue文件中使用(同法2，局部注册)</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123; ContextMenu &#125; <span class="keyword">from</span> <span class="string">"@/contextmenu"</span>;</span><br><span class="line">components: &#123;</span><br><span class="line">  <span class="string">"context-menu"</span>: ContextMenu,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>需要注意的是，<code>ContextMenu.vue</code> 中 name 为 <code>context-name</code>, 故 Home.vue 中应该相应的改为 <code>&lt;context-name/&gt;</code> </p>
+<h2 id="滚动定位偏移问题"><a href="#滚动定位偏移问题" class="headerlink" title="滚动定位偏移问题"></a>滚动定位偏移问题</h2><p>body 和 Dashbox 父容器 都可滚动的情况下，会出现菜单不在点击位置的问题，</p>
+<p>测试页面：修改 Home.vue</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"home"</span>&gt;</span></span><br><span class="line">+   <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"content"</span>&gt;</span></span><br><span class="line">      ...</span><br><span class="line">+   <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line">//增加样式</span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">lang</span>=<span class="string">"scss"</span> <span class="attr">scoped</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-class">.home</span> &#123;</span></span><br><span class="line">  margin: 10px;</span><br><span class="line">  overflow: scroll;</span><br><span class="line">  height: 1500px;</span><br><span class="line">  width: 100%;</span><br><span class="line"><span class="css">  <span class="selector-tag">background</span>: <span class="selector-id">#eee</span>;</span></span><br><span class="line"><span class="css">  <span class="selector-class">.content</span> &#123;</span></span><br><span class="line">    position: relative;</span><br><span class="line">    height: 2000px;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>此时先滚动 home，然后右键dashbox 就会发现错位了，因为此时的 event.clientY 比 绝对定位的 top 少了一个 scrollY 值</p>
+<p>有两种方法：</p>
+<ol>
+<li>将 ContextMenu 的 position 由 absolute 改为 fixed</li>
+<li>传入的坐标采用 pageX/Y</li>
+</ol>
+<p><em>题外话</em></p>
+<p>上文提到，ContextMenu 是插入 body 的，那有没有什么场景是不插入body的，另外 element-ui 中 <code>popper-append-to-body=false</code> 的场景是什么，这里会出现么，应该怎么解决？</p>
+<p>当 Dashbox 组件的父节点容器是限制高度且可以 scroll 的时候，若要求右键菜单（弹框等）不能超出容器，则不应该插入body,当前，我们右键菜单没有这样的要求</p>
+<p>参考 antd-select 例子 <a href="https://codesandbox.io/s/4j168r7jw0" target="_blank" rel="noopener">https://codesandbox.io/s/4j168r7jw0</a></p>
+<h2 id="生成-vue-cli-插件"><a href="#生成-vue-cli-插件" class="headerlink" title="生成 vue-cli 插件"></a>生成 vue-cli 插件</h2><p>有用过 <code>vue-cli 3</code> 和 <code>element-ui</code> 的，应该熟悉 <a href="https://github.com/ElementUI/vue-cli-plugin-element" target="_blank" rel="noopener">vue-cli-plugin-element</a></p>
+<p>在我们的项目中，使用 <code>vue add element</code> 命令后，会自动去下载 <code>vue-cli-plugin-element</code> 并在 plugins 文件夹中新增 element.js 最后在 main.js 中使用，省去了上面那些手动引入的过程。</p>
+<p>这里我们也尝试编写一个 <a href="https://github.com/francecil/vue-cli-plugin-contextmenu" target="_blank" rel="noopener">vue-cli-plugin-contextmenu</a></p>
+<p>项目结构</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">.</span><br><span class="line">├── README.md</span><br><span class="line">├── generator.js  # generator (可选,这里采用 generator&#x2F;index.js 的形式)</span><br><span class="line">├── prompts.js    # prompt 文件 (可选,本项目不使用)</span><br><span class="line">├── index.js      # service 插件</span><br><span class="line">└── package.json</span><br></pre></td></tr></table></figure>
+
+<p>代码的话主要是参考 <a href="https://github.com/ElementUI/vue-cli-plugin-element" target="_blank" rel="noopener">vue-cli-plugin-element</a> ，其中最主要的是 generator 的代码，如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">module</span>.exports = <span class="function">(<span class="params">api, opts, rootOptions</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> utils = <span class="built_in">require</span>(<span class="string">'./utils'</span>)(api)</span><br><span class="line"></span><br><span class="line">  api.extendPackage(&#123;</span><br><span class="line">    dependencies: &#123;</span><br><span class="line">      <span class="string">'@gahing/vcontextmenu'</span>: <span class="string">'^1.0.0'</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line">  api.injectImports(utils.getMain(), <span class="string">`import './plugins/contextmenu.js'`</span>)</span><br><span class="line"></span><br><span class="line">  api.render(&#123;</span><br><span class="line">    <span class="string">'./src/plugins/contextmenu.js'</span>: <span class="string">'./templates/src/plugins/contextmenu.js'</span>,</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当我们写完后，需要进行本地测试下</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建测试项目(全选默认设置)</span></span><br><span class="line">vue create <span class="built_in">test</span>-app</span><br><span class="line"><span class="built_in">cd</span> <span class="built_in">test</span>-app</span><br><span class="line"><span class="comment"># cd到项目文件夹并安装我们新创建的插件</span></span><br><span class="line">npm i file://E:/WebProjects/vue-cli-plugin-contextmenu -S</span><br><span class="line"><span class="comment"># 调用该插件</span></span><br><span class="line">vue invoke vue-cli-plugin-contextmenu</span><br></pre></td></tr></table></figure>
+<p>查看test-app项目的main.js,将会看到新增这行代码：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="string">'./plugins/contextmenu.js'</span></span><br></pre></td></tr></table></figure>
+
+<p>plugins/contextmenu.js 中内容为</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Vue <span class="keyword">from</span> <span class="string">'vue'</span></span><br><span class="line"><span class="keyword">import</span> ContextMenu <span class="keyword">from</span> <span class="string">'@gahing/vcontextmenu'</span></span><br><span class="line"><span class="keyword">import</span> <span class="string">'@gahing/vcontextmenu/lib/vcontextmenu.css'</span></span><br><span class="line">Vue.use(ContextMenu)</span><br></pre></td></tr></table></figure>
+
+<p>至此，vue-cli-plugin-contextmenu 就开发完成，将其发布到 npm 上</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><p><a href="https://cli.vuejs.org/zh/dev-guide/plugin-dev.html#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5" target="_blank" rel="noopener">插件开发指南</a></p>
+</li>
+<li><p><a href="https://github.com/ElementUI/vue-cli-plugin-element" target="_blank" rel="noopener">vue-cli-plugin-element</a></p>
+</li>
+<li><p><a href="https://juejin.im/post/5cb59c4bf265da03a743e979" target="_blank" rel="noopener">「Vue进阶」5分钟撸一个Vue CLI 插件</a></p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/07/02/2019Q3/%E5%A4%A7%E5%B1%8F%E5%8F%AF%E8%A7%86%E5%8C%96%E4%B9%8B%E7%BB%84%E4%BB%B6%E5%B1%82%E7%BA%A7%E8%AE%BE%E7%BD%AE/" rel="prev" title="大屏可视化之组件层级设置">
+      <i class="fa fa-chevron-left"></i> 大屏可视化之组件层级设置
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/07/04/2019Q3/V8%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E4%B9%8BArray.prototype.sort/" rel="next" title="V8源码解析之Array.prototype.sort">
+      V8源码解析之Array.prototype.sort <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#项目结构"><span class="nav-number">2.</span> <span class="nav-text">项目结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#菜单处于右键点击位置"><span class="nav-number">3.</span> <span class="nav-text">菜单处于右键点击位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#该菜单dom上唯一，不需要时应该销毁"><span class="nav-number">4.</span> <span class="nav-text">该菜单dom上唯一，不需要时应该销毁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#点击页面其他位置，菜单消失"><span class="nav-number">5.</span> <span class="nav-text">点击页面其他位置，菜单消失</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#菜单完全显示"><span class="nav-number">6.</span> <span class="nav-text">菜单完全显示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#增加显示-隐藏的过度动画"><span class="nav-number">7.</span> <span class="nav-text">增加显示&#x2F;隐藏的过度动画</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插件注册"><span class="nav-number">8.</span> <span class="nav-text">插件注册</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#滚动定位偏移问题"><span class="nav-number">9.</span> <span class="nav-text">滚动定位偏移问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生成-vue-cli-插件"><span class="nav-number">10.</span> <span class="nav-text">生成 vue-cli 插件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">11.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

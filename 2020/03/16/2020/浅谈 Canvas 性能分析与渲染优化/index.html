@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言接上文 面试官问：什么是 canvas 污染 本文仅讨论 Canvas 2D">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈 Canvas 性能分析与渲染优化">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;03&#x2F;16&#x2F;2020&#x2F;%E6%B5%85%E8%B0%88%20Canvas%20%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%B8%8E%E6%B8%B2%E6%9F%93%E4%BC%98%E5%8C%96&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言接上文 面试官问：什么是 canvas 污染 本文仅讨论 Canvas 2D">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-16T02:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.167Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="Canvas">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2020/03/16/2020/%E6%B5%85%E8%B0%88%20Canvas%20%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%B8%8E%E6%B8%B2%E6%9F%93%E4%BC%98%E5%8C%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>浅谈 Canvas 性能分析与渲染优化 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/03/16/2020/%E6%B5%85%E8%B0%88%20Canvas%20%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%B8%8E%E6%B8%B2%E6%9F%93%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浅谈 Canvas 性能分析与渲染优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-16 10:00:00" itemprop="dateCreated datePublished" datetime="2020-03-16T10:00:00+08:00">2020-03-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>接上文 <a href="https://juejin.im/post/5e64f811e51d4526e807fefa" target="_blank" rel="noopener">面试官问：什么是 canvas 污染</a></p>
+<p>本文仅讨论 Canvas 2D</p>
+<a id="more"></a>
+
+<p>网上这类的文章已经很多了，本文仅仅是一个记录与总结。</p>
+<p>推荐文末的拓展阅读</p>
+<h1 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h1><p><a href="https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element" target="_blank" rel="noopener">Canvas 规范</a></p>
+<p>渲染也是在 UI Render 中进行</p>
+<p>context 是一个状态栈</p>
+<p>状态包括</p>
+<ul>
+<li>当前应用的变形</li>
+<li>strokeStyle, fillStyle, globalAlpha, lineWidth, lineCap, lineJoin, miterLimit, shadowOffsetX, shadowOffsetY, shadowBlur, shadowColor, globalCompositeOperation 的值</li>
+<li>当前的裁切路径（clipping path）</li>
+</ul>
+<h1 id="优化策略"><a href="#优化策略" class="headerlink" title="优化策略"></a>优化策略</h1><h2 id="分层绘制"><a href="#分层绘制" class="headerlink" title="分层绘制"></a>分层绘制</h2><p>单一清除策略，适合同层物体矩形框不重叠的情况</p>
+<p>如果同层2个物体重叠，上一策略在清除时会清掉另一物体的部分像素。</p>
+<p>此时应该判断两者是否重叠，若重叠两者合并得到一个脏矩形，清空脏矩形，并重绘两个物体</p>
+<p>更具体的细节可以查看 <a href="https://www.ibm.com/developerworks/cn/web/wa-canvashtml5layering/index.html" target="_blank" rel="noopener">利用分层优化 HTML5 画布渲染</a></p>
+<h2 id="通过计算避免无效绘制"><a href="#通过计算避免无效绘制" class="headerlink" title="通过计算避免无效绘制"></a>通过计算避免无效绘制</h2><p>通过计算判断所绘制元素可见与否，是否需要绘制</p>
+<p>计算性能与渲染性能的平衡</p>
+<h2 id="离屏绘制"><a href="#离屏绘制" class="headerlink" title="离屏绘制"></a>离屏绘制</h2><p>将常用图像绘制在另一个 canvas 中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 在离屏 canvas 上绘制</span></span><br><span class="line"><span class="keyword">var</span> canvasOffscreen = <span class="built_in">document</span>.createElement(<span class="string">'canvas'</span>);</span><br><span class="line">canvasOffscreen.width = dw;</span><br><span class="line">canvasOffscreen.height = dh;</span><br><span class="line">canvasOffscreen.getContext(<span class="string">'2d'</span>).drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在绘制每一帧的时候，绘制这个图形</span></span><br><span class="line">context.drawImage(canvasOffscreen, x, y);</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>摘自 《Canvas 最佳实践（性能篇）》</p>
+</blockquote>
+<h2 id="合理使用-API"><a href="#合理使用-API" class="headerlink" title="合理使用 API"></a>合理使用 API</h2><p>减少耗时 api 的使用</p>
+<p>减少改变 context 的状态</p>
+<p>避免非法赋值</p>
+<h2 id="可交互画布"><a href="#可交互画布" class="headerlink" title="可交互画布"></a>可交互画布</h2><h3 id="判断点的位置"><a href="#判断点的位置" class="headerlink" title="判断点的位置"></a>判断点的位置</h3><p><code>ctx.isPointInPath</code></p>
+<p>使用 isPointinPath 方法检查某点是否在当前路径 path (Path2D) 内</p>
+<p>但很多情况下我们没有保存这个 path ，此时自己采用射线法计算判断</p>
+<h3 id="获取点击区域"><a href="#获取点击区域" class="headerlink" title="获取点击区域"></a>获取点击区域</h3><p>addHitRegion</p>
+<p>有兼容性问题， Safari 等不支持</p>
+<h3 id="避免使用-canvas-实现文本编辑控件"><a href="#避免使用-canvas-实现文本编辑控件" class="headerlink" title="避免使用 canvas 实现文本编辑控件"></a>避免使用 canvas 实现文本编辑控件</h3><p>这个不用说了， canvas 难以实现</p>
+<p>参照 <a href="https://html.spec.whatwg.org/multipage/canvas.html#best-practices" target="_blank" rel="noopener">Best practices</a></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ol>
+<li>将渲染开销转嫁到计算开销</li>
+<li>利用分层渲染复杂场景</li>
+<li>固定内容采用离屏渲染</li>
+<li>合理使用 API 并管理状态</li>
+</ol>
+<h1 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h1><ul>
+<li><a href="https://www.ibm.com/developerworks/cn/web/wa-canvashtml5layering/index.html" target="_blank" rel="noopener">利用分层优化 HTML5 画布渲染</a></li>
+<li><a href="https://fed.taobao.org/blog/taofed/do71ct/canvas-performance/" target="_blank" rel="noopener">Canvas 最佳实践（性能篇）</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas" target="_blank" rel="noopener">canvas的优化</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Canvas/" rel="tag"># Canvas</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/11/WebGL/WebGL%20%E7%9F%A9%E9%98%B5%E5%A4%84%E7%90%86/" rel="prev" title="WebGL 矩阵处理">
+      <i class="fa fa-chevron-left"></i> WebGL 矩阵处理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/16/2020/%E6%B7%B1%E5%85%A5%20Immutable%20%E5%8E%9F%E7%90%86/" rel="next" title="深入 Immutable 原理">
+      深入 Immutable 原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#性能分析"><span class="nav-number">2.</span> <span class="nav-text">性能分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#优化策略"><span class="nav-number">3.</span> <span class="nav-text">优化策略</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层绘制"><span class="nav-number">3.1.</span> <span class="nav-text">分层绘制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过计算避免无效绘制"><span class="nav-number">3.2.</span> <span class="nav-text">通过计算避免无效绘制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#离屏绘制"><span class="nav-number">3.3.</span> <span class="nav-text">离屏绘制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合理使用-API"><span class="nav-number">3.4.</span> <span class="nav-text">合理使用 API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可交互画布"><span class="nav-number">3.5.</span> <span class="nav-text">可交互画布</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#判断点的位置"><span class="nav-number">3.5.1.</span> <span class="nav-text">判断点的位置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#获取点击区域"><span class="nav-number">3.5.2.</span> <span class="nav-text">获取点击区域</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#避免使用-canvas-实现文本编辑控件"><span class="nav-number">3.5.3.</span> <span class="nav-text">避免使用 canvas 实现文本编辑控件</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#拓展阅读"><span class="nav-number">5.</span> <span class="nav-text">拓展阅读</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="需求背景最近在研究 iqiyi 的登录流程，发现他们的第三方登录体验挺好的。 在目标页面（以下目标页面均指用户当前浏览的页面）点击登录，弹出登录弹框，选择第三方登录，比如 qq，微信，点击则新开页面。 在新页面中登录完毕，页面会自动关闭，且刚刚那个页面不刷新且自动进行状态变更">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实现第三方登录无刷新更新页面">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;04&#x2F;12&#x2F;2020&#x2F;%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E7%99%BB%E5%BD%95%E6%97%A0%E5%88%B7%E6%96%B0%E6%9B%B4%E6%96%B0%E9%A1%B5%E9%9D%A2&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="需求背景最近在研究 iqiyi 的登录流程，发现他们的第三方登录体验挺好的。 在目标页面（以下目标页面均指用户当前浏览的页面）点击登录，弹出登录弹框，选择第三方登录，比如 qq，微信，点击则新开页面。 在新页面中登录完毕，页面会自动关闭，且刚刚那个页面不刷新且自动进行状态变更">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-04-11T16:12:40.000Z">
+<meta property="article:modified_time" content="2020-04-12T00:57:22.530Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="随笔">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2020/04/12/2020/%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E7%99%BB%E5%BD%95%E6%97%A0%E5%88%B7%E6%96%B0%E6%9B%B4%E6%96%B0%E9%A1%B5%E9%9D%A2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>实现第三方登录无刷新更新页面 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/04/12/2020/%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E7%99%BB%E5%BD%95%E6%97%A0%E5%88%B7%E6%96%B0%E6%9B%B4%E6%96%B0%E9%A1%B5%E9%9D%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          实现第三方登录无刷新更新页面
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-04-12 00:12:40 / 修改时间：08:57:22" itemprop="dateCreated datePublished" datetime="2020-04-12T00:12:40+08:00">2020-04-12</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="需求背景"><a href="#需求背景" class="headerlink" title="需求背景"></a>需求背景</h2><p>最近在研究 iqiyi 的登录流程，发现他们的第三方登录体验挺好的。</p>
+<p>在目标页面（以下目标页面均指用户当前浏览的页面）点击登录，弹出登录弹框，选择第三方登录，比如 qq，微信，点击则新开页面。</p>
+<p>在新页面中登录完毕，页面会自动关闭，且刚刚那个页面不刷新且自动进行状态变更</p>
+<a id="more"></a>
+
+<h2 id="首先是页面自动关闭"><a href="#首先是页面自动关闭" class="headerlink" title="首先是页面自动关闭"></a>首先是页面自动关闭</h2><p>这个很简单，通过 <code>window.close()</code> 即可实现</p>
+<p>但是问题是，第三方登录页一般不会自己在代码中做这件事，毕竟一般登录后是重定向到某个页面（通过 ticket 写入 cookie ）而不是关闭当前页面</p>
+<p>那么如何关闭呢？其实也很简单，让目标页面执行登录页的关闭即可</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">newWin = <span class="built_in">window</span>.open(<span class="string">"//open.weixin.qq.com"</span>)</span><br><span class="line"><span class="comment">// 在某个时机</span></span><br><span class="line">newWin.close()</span><br></pre></td></tr></table></figure>
+
+<p>至于这个时机，就是登录成功之后。</p>
+<p>那么目标页面如何知道登录成功了？</p>
+<p>你可能会想说可以利用轮询啊，长连接啊，再或者 websocket 咯</p>
+<p>这个是可以实现，但是额外浪费了性能，其实在当前页面（登录完重定向的页面）通过 <code>window.opener</code> 操作目标页面</p>
+<blockquote>
+<p>至于这东西是啥，大家应该都知道，不懂的看 MDN</p>
+</blockquote>
+<p>所以这就要求，登录完我们最后重定向的页面除了写入 cookie 的作用，还有就是操作 <code>window.opener</code></p>
+<p>比如这是 iqiyi 第三方登录后重定向的页面 <code>https://passport.iqiyi.com/oauth/closepage.php?fromurl=&amp;from=29&amp;isNew=0</code></p>
+<p>其页面代码就是以下简单的几行</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span><span class="tag">&lt;<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="actionscript"><span class="comment">//成功调用</span></span></span><br><span class="line"><span class="javascript"><span class="built_in">document</span>.domain=<span class="string">"iqiyi.com"</span>;</span></span><br><span class="line"><span class="javascript"><span class="built_in">window</span>.opener.lib.__callbacks__._oAuthSuccess(<span class="string">'http://passport.iqiyi.com/pages/user/success.action'</span>);</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">body</span>&gt;</span><span class="tag">&lt;/<span class="name">body</span>&gt;</span><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这里需要将 domain 设为一致，才能操作相同 domain 的 window </p>
+<blockquote>
+<p>是的， <a href="http://www.iqiyi.com" target="_blank" rel="noopener">www.iqiyi.com</a> 的 domain 也被改为了 “iqiyi.com” 了，同样的， iqiyi 的其他子域名比如 <code>https://edu.iqiyi.com/</code> 等都改写了 domain，使得全站都能顺滑的实现无刷新登录</p>
+</blockquote>
+<p>最后看看代码中的 <code>window.opener.lib.__callbacks__._oAuthSuccess(xxx)</code> ,其实作用也很简单，一是关闭新开页面，二是获取用户信息并更新状态</p>
+<p>这样差不多就实现了我们的需求，另外还有一点没提到的是，写入 cookie 的时候，domain iqiyi 写的是二级域名 <code>.iqiyi.com</code> ，这样其他三级域名如 <code>edu.iqiyi.com</code> 才能共用 cookie</p>
+<p>PS：在测试过程中发现有 iqiyi 有两个bug(截止 20/04/12)，当然，普通用户使用一般不会出现。。</p>
+<ul>
+<li>若登录弹框关闭，第三方登录成功后不会自动关闭页面且不进行用户信息请求，这个是由于 _oAuthSuccess 其实是调用的登录窗口 iframe 中的方法</li>
+<li>手动调用 _oAuthSuccess 方法，头像变成登录后的默认头像，此时其实并没有登录</li>
+</ul>
+<h2 id="那以上方案有什么问题么？"><a href="#那以上方案有什么问题么？" class="headerlink" title="那以上方案有什么问题么？"></a>那以上方案有什么问题么？</h2><p>除了全站需要改造 <code>document.domain</code> 外，正常来说是没有问题，但是可能会遇到不能修改 domain 的场景，你要是问我有哪些场景，emmmm…反正我就是为了说我的新方案的，新方案就是 postMessage</p>
+<blockquote>
+<p>我现在能想到的一个，比如最后一个重定向的最后一个页面不是 <code>.iqiyi.com</code>域名，而是其他页面（可能是为了集团内多个产品复用吧），比如 <code>util.baidu.com</code></p>
+</blockquote>
+<p><a href="http://www.iqiyi.com" target="_blank" rel="noopener">www.iqiyi.com</a></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">newWin = <span class="built_in">window</span>.open(<span class="string">"//util.baidu.com"</span>)</span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">"message"</span>,(evt)=&gt;&#123;</span><br><span class="line">    <span class="comment">// 根据信息来源进行特殊处理，避免受其他 postMessage 影响</span></span><br><span class="line">    <span class="keyword">if</span>(evt.origin === <span class="string">"https://util.baidu.com"</span>)&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(evt.data)</span><br><span class="line">        newWin.close()</span><br><span class="line">        <span class="comment">// or</span></span><br><span class="line">        <span class="comment">// evt.source.close()</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>util.baidu.com</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.opener.postMessage(<span class="string">"test"</span>,<span class="string">"*"</span>) <span class="comment">//所有</span></span><br></pre></td></tr></table></figure>
+
+<p>可以在 <a href="http://www.iqiyi.com" target="_blank" rel="noopener">www.iqiyi.com</a> 中看到输出，且 util.baidu.com 自动关闭</p>
+<p>当然该方案也有不好的地方，就是 postMessage 使用不当会导致安全问题，主要有以下2点</p>
+<ol>
+<li><p>postMessage 第二个参数 targetOrigin 设置为 * 可能导致数据泄露<br>比如使用了某个不安全的第三方登录页面，其对目标网站进行了重定向，比如变成 <code>www.ihack.com</code> ，第三方登录后通过 postMessage 传递隐私信息，由于设置的是 * ，导致 <code>www.ihack.com</code> 可以收到隐私信息。当然你后面发现这个 ihack 网站不正常也没用，因为数据已经泄露了。<br>解决方案就是 targetOrigin 设置为特定的地址比如 <code>edu.iqiyi.como</code> ，这就需要我们将当前页面作为传递到重定向页面 <br>举例，像第三方登录页传递这样的参数 – <code>&amp;redirect_uri=https://passport.iqiyi.com?targetOrigin=edu.iqiyi.com</code> , 第三方登录后重定向到 passport 写入 cookie ，再次重定向到 <code>https://util.baidu.com?targetOrigin=edu.iqiyi.com</code> ，再当前页面读取 targetOrigin 参数并传递 postMessage 。整个就是这样的一个过程 <br>当然在本例中不需要传递隐私信息</p>
+</li>
+<li><p>接收 message 时请始终使用 origin 和 source 属性验证发件人的身份<br>比如点击打开了用户评论的 url（某个黑客网站），其对目标页面发起 postMessage ，而我们如果在收到 message 时不进行验证就执行危险操作时，可能就会导致安全问题<br>另外，如果回调执行安全性依赖于消息的话（比如执行 <code>eval(msg.data)</code>），即使检查通过，还需要对消息格式再一次检查，避免因信任网站收到跨站脚本攻击而导致本网站也遭到攻击<br>当然在本例中只是简单的关闭新开页面及发送请求，没有什么危险操作，检查下 origin 即可</p>
+</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>domain 适用于大部分情景，有全站改造 <code>document.domain</code> 的成本，且最后重定向页面需要是相同的 domain</p>
+<p>postMessage 适用于所有情景，对于安全问题需要额外处理</p>
+<p>两种方案各有千秋，看就具体的场景啦~</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Window/postMessage" target="_blank" rel="noopener">postMessage</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9A%8F%E7%AC%94/" rel="tag"># 随笔</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/31/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E8%83%BD%E5%90%A6%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%BC%93%E5%AD%98%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E7%9A%84%E6%96%B9%E6%B3%95/" rel="prev" title="面试官问：能否实现一个缓存计算结果的方法">
+      <i class="fa fa-chevron-left"></i> 面试官问：能否实现一个缓存计算结果的方法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#需求背景"><span class="nav-number">1.</span> <span class="nav-text">需求背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#首先是页面自动关闭"><span class="nav-number">2.</span> <span class="nav-text">首先是页面自动关闭</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#那以上方案有什么问题么？"><span class="nav-number">3.</span> <span class="nav-text">那以上方案有什么问题么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">5.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

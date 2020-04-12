@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言log4js 主要包括以下几项配置">
+<meta property="og:type" content="article">
+<meta property="og:title" content="log4js配置详解">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;04&#x2F;14&#x2F;2018Q2&#x2F;log4js%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言log4js 主要包括以下几项配置">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-04-13T17:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.154Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="nodejs">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2018/04/14/2018Q2/log4js%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>log4js配置详解 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/04/14/2018Q2/log4js%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          log4js配置详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-04-14 01:00:00" itemprop="dateCreated datePublished" datetime="2018-04-14T01:00:00+08:00">2018-04-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>log4js 主要包括以下几项配置</p>
+<a id="more"></a>
+
+<h2 id="Appender"><a href="#Appender" class="headerlink" title="Appender"></a>Appender</h2><p>负责日志记录的方式：文件、控制台输出、网络发送、邮件发送</p>
+<p>常用方式：console,file,dataFile</p>
+<p>REF: <a href="https://blog.csdn.net/hfty290/article/details/42844085" target="_blank" rel="noopener">https://blog.csdn.net/hfty290/article/details/42844085</a></p>
+<ol>
+<li>type:”console”</li>
+</ol>
+<p>将日志输出至控制台，这样可以方便开发人员在开发时接看到所有日志信息，在其他环境不建议设置</p>
+<ol start="2">
+<li>type:”file”</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;filename&quot;: &quot;log&#x2F;access.log&quot;,</span><br><span class="line">&quot;maxLogSize &quot;: 31457280,&#x2F;&#x2F;设置文件大小，当达到最大容量，重命名文件为access.log.1，日志写入新文件access.log</span><br><span class="line">&quot;backups&quot;:1,&#x2F;&#x2F;最多产生的文件备份数，超过会删除</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>type:”dateFile”</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&quot;filename&quot;: &quot;log&#x2F;app-info.log&quot;,</span><br><span class="line">&quot;pattern&quot;: &quot;.yyyy-MM-dd&quot;,&#x2F;&#x2F;e.g.:app-info.log.2018-04-18</span><br><span class="line">&quot;alwaysIncludePattern&quot;:false&#x2F;&#x2F;如果为true，则每个文件都会按pattern命名，否则最新的文件不会按照pattern命名</span><br><span class="line">&quot;compress&quot;:false,是否压缩，之前的文件会被压缩</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>type:”logLevelFilter”</li>
+</ol>
+<p>继续配置appender 会继承AppenderName的所有设置并在其上做level的过滤</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&quot;appender&quot;: &quot;AppenderName&quot;,</span><br><span class="line">&quot;level&quot;: &quot;error&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="layout"><a href="#layout" class="headerlink" title="layout"></a>layout</h3><p>定义日志记录格式：哪些字段，颜色等</p>
+<h3 id="level-maxLevel"><a href="#level-maxLevel" class="headerlink" title="level,maxLevel"></a>level,maxLevel</h3><p>当 <code>let log=log4js.getLogger(name)</code> 得到的 Category 后，有一个 appender 列表，<br>log 记录的方式，如 <code>log.warn/log.error</code> ,会在 appender 列表中继续过滤，取满足 <code>[level,maxLevel]</code> 的 level 的 appender</p>
+<p>若未设置，默认 all</p>
+<h2 id="Category"><a href="#Category" class="headerlink" title="Category"></a>Category</h2><p>配置日志的类别，可以配置一个Appender数组，表示当前类别日志会通过其Appender数组的每种方式被记录，<br>可以配置一个level属性，表示传入的日志的level需要在其配置的level及之上才会被记录</p>
+<p>Appender 和 Category 的关系：<code>Category &lt;--- 1：n ---&gt; Appender</code></p>
+<p>Category 可以配置一个default，当log4js.getLogger(name)的name不在Category配置中就走default,如果没有配置该default，<strong>name也不在Category配置中，会走所有Appender</strong></p>
+<p>Category中可以直接配置level 或者log4js.getLogger(name).setLevel(log4js.levels.INFO)这样配置</p>
+<h2 id="replaceConsole"><a href="#replaceConsole" class="headerlink" title="replaceConsole"></a>replaceConsole</h2><p>默认false,如果为true，则程序中用console.log输出到控制台的信息，也会输出到日志文件中，且格式按照log4js的格式输出，如果为false，则console.log只会输出在控制台。与type:console的appender正好相反，如果设置了type:console，则会将log4js.log日志输出至控制台。</p>
+<h2 id="level"><a href="#level" class="headerlink" title="level"></a>level</h2><p>从低到高：ALL,TRACE,DEBUG,INFO,WARN,ERROR,FATAL,OFF</p>
+<h2 id="DEMO"><a href="#DEMO" class="headerlink" title="DEMO"></a>DEMO</h2><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"appenders"</span>: &#123;</span><br><span class="line">    <span class="attr">"console"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"console"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"trace"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"file"</span>,</span><br><span class="line">      <span class="attr">"filename"</span>: <span class="string">"log/access.log"</span>,</span><br><span class="line">      <span class="attr">"maxLogSize "</span>: <span class="number">31457280</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"http"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"logLevelFilter"</span>,</span><br><span class="line">      <span class="attr">"appender"</span>: <span class="string">"trace"</span>,</span><br><span class="line">      <span class="attr">"level"</span>: <span class="string">"trace"</span>,</span><br><span class="line">      <span class="attr">"maxLevel"</span>: <span class="string">"trace"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"info"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"dateFile"</span>,</span><br><span class="line">      <span class="attr">"filename"</span>: <span class="string">"log/app-info.log"</span>,</span><br><span class="line">      <span class="attr">"pattern"</span>: <span class="string">".yyyy-MM-dd"</span>,</span><br><span class="line">      <span class="attr">"layout"</span>: &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"pattern"</span>,</span><br><span class="line">        <span class="attr">"pattern"</span>: <span class="string">"[%d&#123;ISO8601&#125;][%5p  %z  %c] %m"</span></span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="attr">"compress"</span>: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"maxInfo"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"logLevelFilter"</span>,</span><br><span class="line">      <span class="attr">"appender"</span>: <span class="string">"info"</span>,</span><br><span class="line">      <span class="attr">"level"</span>: <span class="string">"debug"</span>,</span><br><span class="line">      <span class="attr">"maxLevel"</span>: <span class="string">"info"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"error"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"dateFile"</span>,</span><br><span class="line">      <span class="attr">"filename"</span>: <span class="string">"log/app-error.log"</span>,</span><br><span class="line">      <span class="attr">"pattern"</span>: <span class="string">".yyyy-MM-dd"</span>,</span><br><span class="line">      <span class="attr">"layout"</span>: &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"pattern"</span>,</span><br><span class="line">        <span class="attr">"pattern"</span>: <span class="string">"[%d&#123;ISO8601&#125;][%5p  %z  %c] %m"</span></span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="attr">"compress"</span>: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"minError"</span>: &#123;</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"logLevelFilter"</span>,</span><br><span class="line">      <span class="attr">"appender"</span>: <span class="string">"error"</span>,</span><br><span class="line">      <span class="attr">"level"</span>: <span class="string">"error"</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">"replaceConsole"</span>: <span class="literal">true</span>,</span><br><span class="line">  <span class="attr">"pm2"</span>:<span class="literal">true</span>,</span><br><span class="line">  <span class="attr">"categories"</span>: &#123;</span><br><span class="line">    <span class="attr">"default"</span>: &#123;</span><br><span class="line">      <span class="attr">"appenders"</span>: [</span><br><span class="line">        <span class="string">"console"</span>,</span><br><span class="line">        <span class="string">"http"</span>,</span><br><span class="line">        <span class="string">"maxInfo"</span>,</span><br><span class="line">        <span class="string">"minError"</span></span><br><span class="line">      ],</span><br><span class="line">      <span class="attr">"level"</span>: <span class="string">"debug"</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/nodejs/" rel="tag"># nodejs</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/04/03/2018Q2/nodejs%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD/" rel="prev" title="nodejs文件下载">
+      <i class="fa fa-chevron-left"></i> nodejs文件下载
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/05/10/2018Q2/yahoo%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%9635%E5%86%9B%E8%A7%84/" rel="next" title="yahoo前端优化35军规">
+      yahoo前端优化35军规 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Appender"><span class="nav-number">2.</span> <span class="nav-text">Appender</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#layout"><span class="nav-number">2.1.</span> <span class="nav-text">layout</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#level-maxLevel"><span class="nav-number">2.2.</span> <span class="nav-text">level,maxLevel</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Category"><span class="nav-number">3.</span> <span class="nav-text">Category</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#replaceConsole"><span class="nav-number">4.</span> <span class="nav-text">replaceConsole</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#level"><span class="nav-number">5.</span> <span class="nav-text">level</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DEMO"><span class="nav-number">6.</span> <span class="nav-text">DEMO</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

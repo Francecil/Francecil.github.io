@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="背景有个个人项目，比如博客、开源项目，在学校宿舍电脑上写一半，回到家想继续写，怎么做到？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Code Server搭建指南">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2019&#x2F;12&#x2F;10&#x2F;2019Q4&#x2F;Code%20Server%E6%90%AD%E5%BB%BA%E6%8C%87%E5%8D%97&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="背景有个个人项目，比如博客、开源项目，在学校宿舍电脑上写一半，回到家想继续写，怎么做到？">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;github.com&#x2F;cdr&#x2F;code-server&#x2F;raw&#x2F;master&#x2F;doc&#x2F;assets&#x2F;ide.gif">
+<meta property="article:published_time" content="2019-12-09T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.163Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;github.com&#x2F;cdr&#x2F;code-server&#x2F;raw&#x2F;master&#x2F;doc&#x2F;assets&#x2F;ide.gif">
+
+<link rel="canonical" href="https://gahing.top/2019/12/10/2019Q4/Code%20Server%E6%90%AD%E5%BB%BA%E6%8C%87%E5%8D%97/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Code Server搭建指南 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2019/12/10/2019Q4/Code%20Server%E6%90%AD%E5%BB%BA%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Code Server搭建指南
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-10 00:00:00" itemprop="dateCreated datePublished" datetime="2019-12-10T00:00:00+08:00">2019-12-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9A%8F%E7%AC%94/" itemprop="url" rel="index">
+                    <span itemprop="name">随笔</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>有个个人项目，比如博客、开源项目，在学校宿舍电脑上写一半，回到家想继续写，怎么做到？</p>
+<a id="more"></a>
+
+<p>上古时代我们可能会采用文档拷贝传送的方式。弊端太多：</p>
+<ol>
+<li>部分改动需要传整个项目，太麻烦</li>
+<li>家里还得配置一样的开发环境</li>
+<li>手机等移动端无法开发</li>
+</ol>
+<p>后来有了 git ，我们只需要把项目传到公网仓库，通过 git 操作来同步项目，不过这也仅仅是解决了上面的问题1，其他问题仍存在：</p>
+<ol>
+<li>环境配置</li>
+<li>移动端无法开发</li>
+</ol>
+<p>甚至还引入新的问题：</p>
+<ol>
+<li>代码写一半，就提交远程仓库，此时该提交是有问题的，后面回退容易出问题</li>
+</ol>
+<p>把问题捋一捋，为了解决多地开发环境一致，我们需要把项目的开发放到服务器上，这样同时解决了项目同步的问题，因为不需要进行同步。</p>
+<p>为了实现多端开发，我们肯定是直接通过浏览器操作最方便，而不是每次都得先下载工具远程连接到服务器。</p>
+<p>因此，我们需要一个 web 版的 IDE ，最好把权限控制这块也做好了，防止安全问题。</p>
+<p>那么本文的主角 Code Server 就登场了</p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><a href="https://github.com/cdr/code-server" target="_blank" rel="noopener">code-server</a> 是运行在远程服务器上的 VS Code, 通过浏览器进行访问.</p>
+<p>拥有以下特点</p>
+<ul>
+<li>一致的环境：可以在各种平台上进行编码并且实时同步。</li>
+<li>Server-powered：利用服务器性能加速测试和编译；个人设备省电</li>
+</ul>
+<p><img src="https://github.com/cdr/code-server/raw/master/doc/assets/ide.gif" alt="code-server"></p>
+<h2 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h2><p>我们通过 docker 进行项目的启动</p>
+<ul>
+<li>① 安装 docker 并启动<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ yum install docker-io –y</span><br><span class="line">$ systemctl start docker</span><br></pre></td></tr></table></figure></li>
+<li>② 启动 code server</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -e PASSWORD=xxxx -p 8080:8080 codercom/code-server:v2</span><br></pre></td></tr></table></figure>
+
+<p>以上的命令，将拉取当前较为稳定的 code-server v2 版本镜像，并基于此构建并启动一个容器</p>
+<p><code>-d</code>： 使用守护态运行容器，这样终端中断就不会终止项目 <br><code>-e PASSWORD=xxxx</code>： 表示设置环境变量 PASSWORD 为 xxxx ，构建的时候会将该参数传进入。如果不传的话，系统会随机生成一个密码 <br><code>-p 8080:8080</code>： 默认配置。使用服务器的8080端口映射该容器的8080端口，也可以使用本机的80端口进行映射\</p>
+<ul>
+<li>③ 使用浏览器访问</li>
+</ul>
+<p>访问 <code>http://&lt;server_ip&gt;:8080</code> 进入我们的登录界面，输入密码 xxxx 后即可进入编辑器界面</p>
+<p>界面和 vscode 一致，可以进行愉快的编码了 ~</p>
+<h2 id="数据存储"><a href="#数据存储" class="headerlink" title="数据存储"></a>数据存储</h2><p>你可能会有这样的疑问：</p>
+<ol>
+<li>我们创建的文件都存在哪里</li>
+<li>容器删除后数据会不会不见了</li>
+</ol>
+<blockquote>
+<p>如果对 docker 比较了解的话可以跳过本章</p>
+</blockquote>
+<p>从 code-server 的 <a href="https://github.com/cdr/code-server/blob/master/Dockerfile#L56" target="_blank" rel="noopener">Dockerfile</a> 中可以看到，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VOLUME [ &quot;&#x2F;home&#x2F;coder&#x2F;project&quot; ]</span><br></pre></td></tr></table></figure>
+<p>也就是说，<code>/home/coder/project</code> 目录在运行时会自动挂载为匿名数据卷，往该目录中写入的信息不会进容器存储层。</p>
+<p>这里介绍下数据卷：</p>
+<p>数据卷简单的说就是在主机上分配了一个目录，容器对被挂载路径文件的访问其实就是对该目录文件的访问。其拥有以下特性：</p>
+<ul>
+<li><code>数据卷</code> 用于容器间的共享。（这里一般指的是命名数据卷，因为匿名卷名字是随机分配的，而其他容器并不清楚</li>
+<li>对 <code>数据卷</code> 的修改立马生效。（修改数据卷中的内容，容器访问到的也是修改后的</li>
+<li>对 <code>数据卷</code> 的更新，不会影响镜像。（镜像和数据卷之间没有关联</li>
+<li>手动删除 <code>数据卷</code> 后，如果该容器还在运行，那么容器所挂载的目录会变成一个空目录，且无法对其进行操作(删除目录，创建文件)</li>
+<li><code>数据卷</code> 默认一直存在，即使容器被删除。</li>
+</ul>
+<p>相关命令：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看所有数据卷</span></span><br><span class="line">docker volume ls</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看容器的信息</span></span><br><span class="line">docker inspect &lt;container-name&gt;</span><br><span class="line"><span class="comment"># 找到 Mounts 信息，如</span></span><br><span class="line"><span class="comment">#        "Mounts": [</span></span><br><span class="line"><span class="comment">#            &#123;</span></span><br><span class="line"><span class="comment">#                "Type": "volume",</span></span><br><span class="line"><span class="comment">#                "Name": "4dc8ad7ccc34b91b0beedf722072537cc545530f9b86de207305913614a82c0c",</span></span><br><span class="line"> <span class="comment">#               "Source": "/var/lib/docker/volumes/4dc8ad7ccc34b91b0beedf722072537cc545530f9b86de207305913614a82c0c/_data",</span></span><br><span class="line"><span class="comment">#                "Destination": "/home/coder/project",</span></span><br><span class="line"><span class="comment">#                "Driver": "local",</span></span><br><span class="line"><span class="comment">#                "Mode": "",</span></span><br><span class="line"><span class="comment">#                "RW": true,</span></span><br><span class="line"><span class="comment">#                "Propagation": ""</span></span><br><span class="line"><span class="comment">#            &#125;</span></span><br><span class="line"><span class="comment">#        ],</span></span><br><span class="line"><span class="comment"># 可以看出来其将容器的 /home/coder/project 目录挂载了匿名数据卷，并分配了 4dc8ad7ccc34b91b0beedf722072537cc545530f9b86de207305913614a82c0c 这个 name，该数据券其实是位于主机的 /var/lib/docker/volumes/&lt;volume_name&gt;/_data/ 目录下</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看指定数据卷（可以是命名的，也可以是匿名的）的信息， </span></span><br><span class="line"><span class="comment"># 比如 my-vol 就是一个命名数据卷，后者就是某个匿名数据卷的 name</span></span><br><span class="line"><span class="comment"># docker volume inspect my-vol</span></span><br><span class="line">docker volume inspect 4dc8ad7ccc34b91b0beedf722072537cc545530f9b86de207305913614a82c0c</span><br><span class="line"><span class="comment"># 大致输出如下：</span></span><br><span class="line"><span class="comment">#[</span></span><br><span class="line"><span class="comment">#    &#123;</span></span><br><span class="line"><span class="comment">#        "Driver": "local",</span></span><br><span class="line"><span class="comment">#        "Labels": null,</span></span><br><span class="line"><span class="comment">#        "Mountpoint": "/var/lib/docker/volumes/4dc8ad7ccc34b91b0beedf722072537cc545530f9b86de207305913614a82c0c/_data",</span></span><br><span class="line"><span class="comment">#        "Name": "4dc8ad7ccc34b91b0beedf722072537cc545530f9b86de207305913614a82c0c",</span></span><br><span class="line"><span class="comment">#        "Options": &#123;&#125;,</span></span><br><span class="line"><span class="comment">#        "Scope": "local"</span></span><br><span class="line"><span class="comment">#    &#125;</span></span><br><span class="line"><span class="comment">#]</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>数据卷是可以指定存储位置（即 Driver 配置项），默认 local 为当前主机，也可以指定其他机器作为driver，感兴趣的可以看 <a href="https://www.cnblogs.com/sparkdev/p/8504050.html" target="_blank" rel="noopener">Docker 数据卷之进阶篇</a></p>
+</blockquote>
+<p>所以我们可以回答前面两个问题了：</p>
+<p>我们项目中创建的文件（<code>/home/coder/project/</code> 目录下创建的），是存在于主机目录的，可以通过<code>docker inspect &lt;container-name&gt;</code> 查看，一般是在  <code>/var/lib/docker/volumes/&lt;volume_name&gt;/_data/</code> 目录下</p>
+<p>容器删除后数据不会丢失，都还在匿名数据卷目录下。</p>
+<p>只是有个问题，其他容器不知道这个匿名数据卷的存在</p>
+<p>所以你会发现，你再启动一个新的容器，它又创建了一个匿名数据卷，并且不会有上个匿名数据卷中的数据</p>
+<p>解决方法有两种：</p>
+<ol>
+<li>使用命名数据卷</li>
+<li>挂载主机目录</li>
+</ol>
+<p>先介绍做法，再讨论利弊</p>
+<h3 id="使用命名数据卷"><a href="#使用命名数据卷" class="headerlink" title="使用命名数据卷"></a>使用命名数据卷</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -e PASSWORD=xxxx -v coder_project:/home/coder/project  -p 8080:8080 codercom/code-server:v2</span><br></pre></td></tr></table></figure>
+<p><code>-v coder_project:/home/coder/project</code> ：挂载 coder_project 数据卷到容器的 <code>/home/coder/project</code> 目录，如果数据卷不存在，会进行创建。同时覆盖这个挂载设置： <code>VOLUME [ &quot;/home/coder/project&quot; ]</code></p>
+<p>我们在浏览器中访问该项目，并在 project 目录下新增几个文件，然后关闭容器。此时开启一个新的容器，打开浏览器进行访问，可以发现 project 目录下加载了刚刚创建的文件。</p>
+<p>说明现在多个容器都是去拿同个数据卷上的数据</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 展示 coder_project 数据卷的详细信息</span></span><br><span class="line"><span class="comment"># 可以看到数据存放在 /var/lib/docker/volumes/coder_project/_data</span></span><br><span class="line">docker volume inspect coder_project</span><br><span class="line"></span><br><span class="line"><span class="comment"># 可以看到我们刚刚创建的文件</span></span><br><span class="line"><span class="built_in">cd</span> /var/lib/docker/volumes/coder_project/_data &amp;&amp; ll</span><br></pre></td></tr></table></figure>
+
+<p>也可以使用 –mount 指令，上面的 -v 指令相当于</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--mount source&#x3D;coder_project,destination&#x3D;&#x2F;home&#x2F;coder&#x2F;project</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：Docker 17.06 版本之后才支持 –mount 指令</p>
+</blockquote>
+<p>关于两个指令的区别还可以看 <a href="https://docs.docker.com/storage/volumes/" target="_blank" rel="noopener">Use volumes</a></p>
+<p>当 coder_project 数据卷不存在时，会报错而不是自动创建</p>
+<h3 id="挂载主机目录"><a href="#挂载主机目录" class="headerlink" title="挂载主机目录"></a>挂载主机目录</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -e PASSWORD=xxxx -v /usr/<span class="built_in">local</span>/coder/project:/home/coder/project  -p 8080:8080 codercom/code-server:v2</span><br></pre></td></tr></table></figure>
+
+<p><code>-v /usr/local/coder/project:/home/coder/project</code> ：挂载 主机的 <code>/usr/local/coder/project</code> 目录到容器的 <code>/home/coder/project</code> 目录，如果主机目录不存在，会进行创建。同时覆盖这个挂载设置： <code>VOLUME [ &quot;/home/coder/project&quot; ]</code></p>
+<p>我们创建几个文件试试</p>
+<blockquote>
+<p>如果发现 Permission denied ，可能是 selinux 的问题或者用户目录权限的问题，可以自行搜索解决方案</p>
+</blockquote>
+<p>可以发现主机目录 <code>/usr/local/coder/project</code> 也会有刚刚创建的文件，我们往主机目录创建的文件，容器中也可以看到。</p>
+<p>也可以使用 –mount 指令，上面的 -v 指令相当于</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--mount type&#x3D;bind,source&#x3D;&#x2F;usr&#x2F;local&#x2F;coder&#x2F;project,target&#x3D;&#x2F;home&#x2F;coder&#x2F;project</span><br></pre></td></tr></table></figure>
+<p>type=bind 表示挂载主机目录，默认为 volume</p>
+<p>当 主机目录 不存在时，会报错而不是自动创建</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>数据卷拥有挂载主机目录的特点和优点，并且支持挂载在其他主机上，对我们后续集群应用提供了可行性。</p>
+<p>个人更偏向于采用数据卷的方式。</p>
+<p><strong>因此，我们的容器启动命令如下：</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -e PASSWORD=xxxx -v coder_project:/home/coder/project  -p 8080:8080 codercom/code-server:v2</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="git-配置"><a href="#git-配置" class="headerlink" title="git 配置"></a>git 配置</h2><p>code server 内置了 git 插件了</p>
+<p>我们 new Terminal，clone 一个自己的项目看看</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/francecil/LearningWeb.git</span><br></pre></td></tr></table></figure>
+<p>修改提交，此时会提示说你没有配置 git 账号</p>
+<p>按说明的指示，输入以下命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global user.email &quot;you@example.com&quot;</span><br><span class="line">git config --global user.name &quot;Your Name&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后进行 push （使用命令行 git push ），此时会提示输入账号密码。</p>
+<p>输入完后即可推送成功。</p>
+<p>所以 git 其实也没有什么需要配置的</p>
+<h2 id="插件安装和配置同步"><a href="#插件安装和配置同步" class="headerlink" title="插件安装和配置同步"></a>插件安装和配置同步</h2><p>直接在线下载，很多插件都不能用，并且 code server 的插件市场 和 vs code 的不一样，见 <a href="https://github.com/cdr/code-server#extensions" target="_blank" rel="noopener">https://github.com/cdr/code-server#extensions</a></p>
+<p>所以推荐的方式是 <code>Install from VSIX...</code></p>
+<p>如何快速离线安装拓展，可以参考我之前写的文章 <a href="../2019Q3/vscode配置同步及拓展批量离线安装.md">vscode配置同步及拓展批量离线安装</a></p>
+<p>注意，拓展应该下载到数据卷中，这样容器就可以进行共享了</p>
+<p>有了前文的经验，我们明白此时应该采用命名数据卷的方法。</p>
+<p>那么目标容器目录是哪个呢，从官方的介绍中得知</p>
+<p>code server 的配置和拓展处在 <code>/home/coder/.local/share/code-server</code> 目录</p>
+<p>修改下我们的容器运行命令如下</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -e PASSWORD=xxxx -v coder_project:/home/coder/project -v coder_config:/home/coder/.<span class="built_in">local</span>/share/code-server -p 8080:8080 codercom/code-server:v2</span><br></pre></td></tr></table></figure>
+
+<p>成功运行？ 不，正常你应该会得到这个报错(可以通过 docker logs &lt;容器名&gt;查看)</p>
+<blockquote>
+<p>permission denied, mkdir ‘/home/coder/.local/share/code-server/extensions’</p>
+</blockquote>
+<p><a href="https://github.com/cdr/code-server/issues/992" target="_blank" rel="noopener">issue</a> 上有这个的讨论，好像是因为权限问题</p>
+<p>有个解决方案，chmod 设置该所挂载的主机目录权限</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod 777 -R &#x2F;var&#x2F;lib&#x2F;docker&#x2F;volumes&#x2F;coder_config&#x2F;_data</span><br></pre></td></tr></table></figure>
+
+<p>然后重新执行上面的容器运行命令，执行以下命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;var&#x2F;lib&#x2F;docker&#x2F;volumes&#x2F;coder_config&#x2F;_data &amp;&amp; ll</span><br><span class="line"></span><br><span class="line">-rw-r--r-- 1 coder coder   75 Nov  1 19:31 coder.json</span><br><span class="line">drwxr-xr-x 2 coder coder 4096 Nov  1 19:30 extensions</span><br><span class="line">-rw-r--r-- 1 coder coder    0 Nov  1 19:31 heartbeat</span><br><span class="line">-rw-r--r-- 1 coder coder    2 Nov  1 19:31 languagepacks.json</span><br><span class="line">drwxr-xr-x 3 coder coder 4096 Nov  1 19:30 logs</span><br><span class="line">-rw-r--r-- 1 coder coder   36 Nov  1 19:30 machineid</span><br><span class="line">drwxr-xr-x 4 coder coder 4096 Nov  1 19:31 User</span><br></pre></td></tr></table></figure>
+<p>可以看到自动创建了很多文件。</p>
+<p>回到正题，我们安装的插件应该就是放在 extensions 目录下</p>
+<p>我们新建个目录用来存放离线下载的插件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[xxx _data]# mkdir tmp</span><br></pre></td></tr></table></figure>
+
+<p>然后 <code>Install from VSIX...</code> 的时候就从该目录加载即可，安装成功后会存在于 extensions 下</p>
+<p>后面新建的容器直接读的 extensions 目录，无需再次安装</p>
+<h2 id="docker-compose-的使用"><a href="#docker-compose-的使用" class="headerlink" title="docker-compose 的使用"></a>docker-compose 的使用</h2><p>是不是觉得 docker run 的命令太长了，还有容器挂了怎么办。</p>
+<p>我们可以采用 docker-compose 技术</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#安装docker-compose</span></span><br><span class="line">curl -L https://github.com/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` &gt; /usr/<span class="built_in">local</span>/bin/docker-compose</span><br><span class="line">chmod +x /usr/<span class="built_in">local</span>/bin/docker-compose</span><br><span class="line"><span class="comment">#查看安装情况</span></span><br><span class="line">docker-compose --version</span><br></pre></td></tr></table></figure>
+
+<p>然后找个目录（如 <code>/usr/local/code-server</code>）创建 docker-compose.yml , 内容如下</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">"2"</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">code-server:</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">code-server</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">codercom/code-server:v2</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"8080:8080"</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"coder_project:/home/coder/project"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"coder_config:/home/coder/.local/share/code-server"</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">PASSWORD:</span> <span class="string">"xxxx"</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">coder_project:</span></span><br><span class="line">    <span class="attr">external:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">coder_config:</span></span><br><span class="line">    <span class="attr">external:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>注意这里配置了 <code>restart: always</code> 当容器挂掉,或 docker 启动的时候， code-server 会进行启动（重启）</p>
+<p>命名数据卷需要在外层使用 volumes 指定。这里增加 <code>external: true</code> 配置表示使用外部已经定义的数据卷，不存在则会报错，提示我们需要先用 <code>docker volume create --name=coder_project</code> 创建</p>
+<p>那不配置的话呢，会创建数据卷，名为 code-server_coder_project 和 code-server_coder_config ，即 <code>&lt;service-name&gt;_&lt;volume-name&gt;</code></p>
+<p>和我们之前已创建的数据卷不一致，另外还有可能出现之前的 Permission denied 问题。因此这里直接用的原数据卷</p>
+<p>然后在 docker-compose.yml 同级目录下执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
+<p>即可启动服务</p>
+<h2 id="域名配置和转发"><a href="#域名配置和转发" class="headerlink" title="域名配置和转发"></a>域名配置和转发</h2><p>目前，我们的项目是通过 ip 访问的，太过麻烦（我是经常记不住</p>
+<p>买域名和配置dns解析这里就略过了。</p>
+<p>现在的问题是，访问域名怎么转发到 8080 端口的项目上去？</p>
+<p>显然，我们需要通过nginx进行转发，且nginx是跑在80端口上的。</p>
+<ul>
+<li>安装 nginx<blockquote>
+<p>yum install nginx</p>
+</blockquote>
+</li>
+<li>修改配置<blockquote>
+<p>vi /etc/nginx/nginx.conf <br>增加如下配置,当采用域名 <code>code.test.com</code> 访问的时候，会转发到本地 8080 端口的项目 <br>因为用到了 websocket ，所以还加了一些头部设置</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  code.test.com;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">      proxy_pass http://127.0.0.1:8080;</span><br><span class="line">      proxy_set_header Host <span class="variable">$host</span>;</span><br><span class="line">      proxy_set_header Upgrade <span class="variable">$http_upgrade</span>;</span><br><span class="line">      proxy_set_header Connection upgrade;</span><br><span class="line">      proxy_set_header Accept-Encodeing gzip;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>启动 nginx<blockquote>
+<p>systemctl start nginx</p>
+</blockquote>
+</li>
+</ul>
+<p>此时，我们访问 <a href="http://code.test.com/" target="_blank" rel="noopener">http://code.test.com/</a> 即可进入我们的 code server 项目 ~</p>
+<h2 id="ssl-配置"><a href="#ssl-配置" class="headerlink" title="ssl 配置"></a>ssl 配置</h2><p>为了让我们的项目更安全，比如防劫持，我们需要配置上 ssl</p>
+<p>首先进行ssl证书申请</p>
+<h3 id="免费申请-ssl-证书"><a href="#免费申请-ssl-证书" class="headerlink" title="免费申请 ssl 证书"></a>免费申请 ssl 证书</h3><p><a href="https://common-buy.aliyun.com/?commodityCode=cas#/buy" target="_blank" rel="noopener">申请界面</a></p>
+<p>切换到最后的 免费型 DV SSL，然后0元购买，接着按提示点点点，然后等待审核就可以了</p>
+<p>一般10分钟就审核完毕</p>
+<p>可以在 SSL 证书页面查看到状态显示为 <code>已签发</code></p>
+<blockquote>
+<p>可以通过顶部搜索栏搜 ssl 快速找到该页面</p>
+</blockquote>
+<p>然后下载证书，将证书上传到服务器即可。</p>
+<h3 id="nginx-配置"><a href="#nginx-配置" class="headerlink" title="nginx 配置"></a>nginx 配置</h3><p>阿里云的文档写的很详细，这里以 nginx 为例</p>
+<ol>
+<li>解压下载的文件，得到 .crt 和 .key 文件，比如 a.crt 和 a.key</li>
+<li>进入服务器的 nginx 配置目录 /etc/nginx<blockquote>
+<p>如果是自己编译生成的 nginx 就用 <code>whereis nginx</code> 命令看下安装目录在哪，如 /usr/local/nginx/</p>
+</blockquote>
+</li>
+<li>创建 cert 目录，将解压后的两个文件放入该目录<blockquote>
+<p>我这个新买的服务器没有 rz 工具，得进行安装： <code>yum install -y lrzsz</code> <br>或者使用 xshell 的文件传输 sftp</p>
+</blockquote>
+</li>
+<li>编辑 nginx.conf 文件，找到 443 相关的注释<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#    server &#123;</span></span><br><span class="line"><span class="comment">#        listen       443 ssl http2 default_server;</span></span><br><span class="line"><span class="comment">#        listen       [::]:443 ssl http2 default_server;</span></span><br><span class="line"><span class="comment">#        server_name  _;</span></span><br><span class="line"><span class="comment">#        root         /usr/share/nginx/html;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#        ssl_certificate "/etc/pki/nginx/server.crt";</span></span><br><span class="line"><span class="comment">#        ssl_certificate_key "/etc/pki/nginx/private/server.key";</span></span><br><span class="line"><span class="comment">#        ssl_session_cache shared:SSL:1m;</span></span><br><span class="line"><span class="comment">#        ssl_session_timeout  10m;</span></span><br><span class="line"><span class="comment">#        ssl_ciphers HIGH:!aNULL:!MD5;</span></span><br><span class="line"><span class="comment">#        ssl_prefer_server_ciphers on;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#        # Load configuration files for the default server block.</span></span><br><span class="line"><span class="comment">#        include /etc/nginx/default.d/*.conf;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#        location / &#123;</span></span><br><span class="line"><span class="comment">#        &#125;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#        error_page 404 /404.html;</span></span><br><span class="line"><span class="comment">#            location = /40x.html &#123;</span></span><br><span class="line"><span class="comment">#        &#125;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#        error_page 500 502 503 504 /50x.html;</span></span><br><span class="line"><span class="comment">#            location = /50x.html &#123;</span></span><br><span class="line"><span class="comment">#        &#125;</span></span><br><span class="line"><span class="comment">#    &#125;</span></span><br></pre></td></tr></table></figure></li>
+<li>配置替换为<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">  listen 443;</span><br><span class="line">  server_name localhost;</span><br><span class="line">  ssl on;</span><br><span class="line">  root html;</span><br><span class="line">  index index.html index.htm;</span><br><span class="line">  ssl_certificate   cert/a.pem;</span><br><span class="line">  ssl_certificate_key  cert/a.key;</span><br><span class="line">  ssl_session_timeout 5m;</span><br><span class="line">  ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;</span><br><span class="line">  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">  ssl_prefer_server_ciphers on;</span><br><span class="line">  location / &#123;</span><br><span class="line">    root html;</span><br><span class="line">    index index.html index.htm;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>重启 nginx 配置 <code>systemctl reload nginx</code></li>
+</ol>
+<p>上面是通用步骤，由于我们的 code server 项目放在8080端口，因此我的最终配置如下：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">  listen 443;</span><br><span class="line">  <span class="comment"># 这里写上你的域名</span></span><br><span class="line">  server_name code.test.com;</span><br><span class="line">  ssl on;</span><br><span class="line">  ssl_certificate   cert/a.pem;</span><br><span class="line">  ssl_certificate_key  cert/a.key;</span><br><span class="line">  ssl_session_timeout 5m;</span><br><span class="line">  ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;</span><br><span class="line">  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">  ssl_prefer_server_ciphers on;</span><br><span class="line">  location / &#123;</span><br><span class="line">      proxy_pass http://127.0.0.1:8080;</span><br><span class="line">      proxy_set_header Host <span class="variable">$host</span>;</span><br><span class="line">      proxy_set_header Upgrade <span class="variable">$http_upgrade</span>;</span><br><span class="line">      proxy_set_header Connection upgrade;</span><br><span class="line">      proxy_set_header Accept-Encodeing gzip;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此时我们通过 <a href="https://code.test.com/" target="_blank" rel="noopener">https://code.test.com/</a> 就可以访问了</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/10/10/2019Q4/%E4%B8%BA%E4%BB%80%E4%B9%88%200.._%20%E7%AD%89%E4%BA%8E%20undefined/" rel="prev" title="为什么 0.._ 等于 undefined">
+      <i class="fa fa-chevron-left"></i> 为什么 0.._ 等于 undefined
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/10/2019Q4/Promise%20then%20%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" rel="next" title="Promise then 原理分析">
+      Promise then 原理分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">2.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#快速开始"><span class="nav-number">3.</span> <span class="nav-text">快速开始</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据存储"><span class="nav-number">4.</span> <span class="nav-text">数据存储</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用命名数据卷"><span class="nav-number">4.1.</span> <span class="nav-text">使用命名数据卷</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#挂载主机目录"><span class="nav-number">4.2.</span> <span class="nav-text">挂载主机目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">4.3.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-配置"><span class="nav-number">5.</span> <span class="nav-text">git 配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插件安装和配置同步"><span class="nav-number">6.</span> <span class="nav-text">插件安装和配置同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#docker-compose-的使用"><span class="nav-number">7.</span> <span class="nav-text">docker-compose 的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#域名配置和转发"><span class="nav-number">8.</span> <span class="nav-text">域名配置和转发</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ssl-配置"><span class="nav-number">9.</span> <span class="nav-text">ssl 配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#免费申请-ssl-证书"><span class="nav-number">9.1.</span> <span class="nav-text">免费申请 ssl 证书</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nginx-配置"><span class="nav-number">9.2.</span> <span class="nav-text">nginx 配置</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

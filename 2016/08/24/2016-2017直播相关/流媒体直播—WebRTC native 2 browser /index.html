@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言关于browser 2 browser的网上文章很多，我就不介绍了。 可以参考我的这篇文章流媒体直播——资料整理、你想要了解的都在这 里面给的链接可以去看看 这边我要讲的是WebRTC编译后的执行文件和Web端进行交互。 首先要明确的是，browser 2 browser的应用场景太狭小了：视频通话… 而编译WebRTC我们就可以做更多的事：屏幕共享.. 录播.. 远程教育【切换通话和屏幕】.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="流媒体直播—WebRTC native 2 browser">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2016&#x2F;08&#x2F;24&#x2F;2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3&#x2F;%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94WebRTC%20native%202%20browser%20&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言关于browser 2 browser的网上文章很多，我就不介绍了。 可以参考我的这篇文章流媒体直播——资料整理、你想要了解的都在这 里面给的链接可以去看看 这边我要讲的是WebRTC编译后的执行文件和Web端进行交互。 首先要明确的是，browser 2 browser的应用场景太狭小了：视频通话… 而编译WebRTC我们就可以做更多的事：屏幕共享.. 录播.. 远程教育【切换通话和屏幕】.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-08-24T04:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.150Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="WebRTC">
+<meta property="article:tag" content="ffmpeg">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94WebRTC%20native%202%20browser%20/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>流媒体直播—WebRTC native 2 browser | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94WebRTC%20native%202%20browser%20/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          流媒体直播—WebRTC native 2 browser
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-08-24 12:00:00" itemprop="dateCreated datePublished" datetime="2016-08-24T12:00:00+08:00">2016-08-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B5%81%E5%AA%92%E4%BD%93/" itemprop="url" rel="index">
+                    <span itemprop="name">流媒体</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>关于browser 2 browser的网上文章很多，我就不介绍了。</p>
+<p>可以参考我的这篇文章<a href="https://www.hongweipeng.com/index.php/archives/835/" target="_blank" rel="noopener">流媒体直播——资料整理、你想要了解的都在这</a></p>
+<p>里面给的链接可以去看看</p>
+<p>这边我要讲的是<strong>WebRTC编译后的执行文件</strong>和<strong>Web端</strong>进行交互。</p>
+<p><strong>首先要明确的是</strong>，browser 2 browser的应用场景太狭小了：视频通话…</p>
+<p>而编译WebRTC我们就可以做更多的事：屏幕共享.. 录播.. 远程教育【切换通话和屏幕】..</p>
+<p>因为视频源我们是可控的，不像 Web. 【其实b2b也可以做屏幕共享，不过c2b会比较可控】</p>
+<p>编译WebRTC是一件麻烦的事，可以参考上面那篇文章。<br>这里我直接给出两个可运行程序</p>
+<blockquote>
+<p>下载地址：<a href="http://pan.baidu.com/s/1bVpx9O" target="_blank" rel="noopener">http://pan.baidu.com/s/1bVpx9O</a></p>
+</blockquote>
+<p>如果网盘挂了请提醒我</p>
+<a id="more"></a>
+
+
+<h1 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h1><p>先用起来吧，虽然js有注释，不过我后面还是会详细解析的。</p>
+<h2 id="构架Web端"><a href="#构架Web端" class="headerlink" title="构架Web端"></a>构架Web端</h2><ol>
+<li>新建一个文件夹作为该web项目的根目录，就叫WebrtcTEST吧</li>
+<li>在根目录下新建js文件夹</li>
+<li>下载<a href="https://www.hongweipeng.com/usr/uploads/2016/08/2467397271.rar" target="_blank" rel="noopener">所需js文件.rar</a>并解压，把得到的文件放入js文件夹中。</li>
+<li>根目录下新建test.html文件，代码如下</li>
+</ol>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+
+    &lt;head&gt;
+        &lt;meta charset=&quot;utf-8&quot; /&gt;
+        &lt;title&gt;游戏&lt;/title&gt;
+        &lt;script type=&quot;text/javascript&quot; src=&quot;./jquery-1.11.1.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script type=&quot;text/javascript&quot; src=&quot;./adapter.js&quot;&gt;&lt;/script&gt;
+        &lt;!--&lt;script type=&quot;text/javascript&quot; src=&quot;./adapter_no_global.js&quot;&gt;&lt;/script&gt;--&gt;
+        &lt;script&gt;
+            var request = null;
+            var hangingGet = null;
+            var localName;
+            var server;
+            var my_id = -1;
+            //记录其他peer
+            var other_peers = {};
+            var message_counter = 0;
+
+            // added stuff start 
+            var pc;
+            //constraints for desktop browser 
+            var desktopConstraints = {
+
+                video: {
+                    mandatory: {
+                        maxWidth: 800,
+                        maxHeight: 600
+                    }
+                },
+
+                audio: true
+            };
+
+            //constraints for mobile browser 
+            var mobileConstraints = {
+
+                video: {
+                    mandatory: {
+                        maxWidth: 480,
+                        maxHeight: 320,
+                    }
+                },
+
+                audio: true
+            }
+
+            //if a user is using a mobile browser 
+            if(/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                var constraints = mobileConstraints;
+            } else {
+                var constraints = desktopConstraints;
+            }
+            var remoteStream;
+
+            function trace(txt) {
+                var elem = document.getElementById(&quot;debug&quot;);
+                elem.innerHTML += txt + &quot;&lt;br&gt;&quot;;
+            }
+
+            function sendToPeer(peer_id, data) {
+                if(my_id == -1) {
+                    alert(&quot;Not connected&quot;);
+                    return;
+                }
+                if(peer_id == my_id) {
+                    alert(&quot;Can&apos;t send a message to oneself :)&quot;);
+                    return;
+                }
+                var r = new XMLHttpRequest();
+                r.open(&quot;POST&quot;, server + &quot;/message?peer_id=&quot; + my_id + &quot;&amp;to=&quot; + peer_id,
+                    false);
+                r.setRequestHeader(&quot;Content-Type&quot;, &quot;text/plain&quot;);
+                r.send(data);
+                console.log(peer_id, &quot; Send &quot;, data);
+                trace(peer_id + &quot; Send :&quot; + data);
+                var dataJson = JSON.parse(data);
+                console.log(peer_id, &quot; send &quot;, data);
+                r = null;
+            }
+            var onSessionConnecting = function(message) {
+
+                console.log(&quot;Session connecting.&quot;);
+                trace(&quot;Session connecting.&quot;);
+            }
+
+            var onSessionOpened = function(message) {
+                console.log(&quot;Session opened.&quot;);
+                trace(&quot;Session opened.&quot;);
+            }
+
+            var onRemoteStreamRemoved = function(event) {
+                    console.log(&quot;Remote stream removed.&quot;);
+                    trace(&quot;Remote stream removed.&quot;);
+                }
+                //This function 
+            var createPeerConnection = function(connectionId) {
+                var pc_config = {
+                    &quot;iceServers&quot;: [{
+                        &quot;url&quot;: &quot;stun:stun.l.google.com:19302&quot;
+                    }]
+                };
+                try {
+                    console.log(pc_config);
+                    trace(pc_config);
+                    // 创建PeerConnection实例 (参数为null则没有iceserver，即使没有stunserver和turnserver，仍可在局域网下通讯)
+                    pc = new RTCPeerConnection(pc_config);
+                    // 发送ICE候选到其他客户端
+                    pc.onicecandidate = function(event) {
+                        if(event.candidate) {
+                            var msgCANDIDATE = {};
+                            msgCANDIDATE.sdpMLineIndex = event.candidate.sdpMLineIndex;
+                            msgCANDIDATE.sdpMid = event.candidate.sdpMid;
+                            msgCANDIDATE.candidate = event.candidate.candidate;
+                            sendToPeer(connectionId, JSON.stringify(msgCANDIDATE));
+                        } else {
+                            console.log(&quot;End of candidates.&quot;);
+                            trace(&quot;End of candidates.&quot;);
+                        }
+                    };
+                    pc.onconnecting = onSessionConnecting;
+                    pc.onopen = onSessionOpened;
+                    // 如果检测到媒体流连接到本地，将其绑定到一个video标签上输出
+                    pc.onaddstream = function(event) {
+                        console.log(&quot;Remote stream added.&quot;);
+                        trace(&quot;Remote stream added.&quot;);
+                        document.getElementById(&apos;remoteVideo&apos;).src = URL.createObjectURL(event.stream);
+                    }
+                    pc.onremovestream = onRemoteStreamRemoved;
+                    console.log(&quot;Created RTCPeerConnnection with config \&quot;&quot; + JSON.stringify(pc_config) + &quot;\&quot;. for &quot;);
+                    trace(&quot;Created RTCPeerConnnection with config \&quot;&quot; + JSON.stringify(pc_config) + &quot;\&quot;. for &quot;);
+                    //setLocalStream(connectionId);//解除注释将可以双端通信 不过延迟就高了
+                } catch(e) {
+                    console.log(&quot;Failed to create PeerConnection with &quot; + connectionId + &quot;, exception: &quot; + e.message);
+                    trace(&quot;Failed to create PeerConnection with &quot; + connectionId + &quot;, exception: &quot; + e.message);
+                }
+
+            }
+
+            function setLocalStream(connectionId) {
+                // 获取本地音频和视频流
+                navigator.getUserMedia(constraints, function(stream) {
+                    //绑定本地媒体流到video标签用于输出
+                    document.getElementById(&apos;localVideo&apos;).src = URL.createObjectURL(stream);
+                    //向PeerConnection中加入需要发送的流
+                    pc.addStream(stream);
+                    //如果是发起方则发送一个offer信令
+                    pc.createOffer(function sendOfferFn(desc) {
+                        pc.setLocalDescription(desc);
+                        var data = JSON.stringify(desc);
+                        sendToPeer(connectionId, data);
+                    }, function(error) {
+                        console.log(&apos;Failure callback: &apos; + error);
+                        trace(&apos;Failure callback: &apos; + error);
+                    });
+                }, function(error) {
+                    //处理媒体流创建失败错误
+                    console.log(&apos;getUserMedia error: &apos; + error);
+                    trace(&apos;getUserMedia error: &apos; + error);
+                });
+
+            }
+            //添加新加入的peer到本地
+            function handleServerNotification(data) {
+                console.log(&quot;Server notification: &quot; + data);
+                trace(&quot;Server notification: &quot; + data);
+                var parsed = data.split(&apos;,&apos;);
+                if(parseInt(parsed[2]) != 0)
+                    other_peers[parseInt(parsed[1])] = parsed[0];
+            }
+            //如果是一个ICE的候选，则将其加入到PeerConnection中，否则设定对方的session描述为传递过来的描述
+            function handlePeerMessage(peer_id, data) {
+                var dataJson = JSON.parse(data);
+                if(data.search(&quot;offer&quot;) != -1) {
+                    //json:{&quot;sdp&quot;:xxx,type:&quot;offer&quot;}
+                    createPeerConnection(peer_id);
+                    pc.setRemoteDescription(new RTCSessionDescription(dataJson));
+                    pc.createAnswer(function(sessionDescription) {
+                        var answerData = JSON.stringify(sessionDescription);
+                        console.log(&quot;answer:&quot; + answerData);
+                        trace(&quot;answer:&quot; + answerData);
+                        pc.setLocalDescription(sessionDescription);
+                        sendToPeer(peer_id, answerData);
+                    }, function(error) {
+                        console.log(&apos;Failure callback: &apos; + error);
+                        trace(&apos;Failure callback: &apos; + error);
+                    });
+                } else {
+                    //It is a candidate
+                    var candidate = new RTCIceCandidate({
+                        sdpMLineIndex: dataJson.sdpMLineIndex,
+                        candidate: dataJson.candidate
+                    });
+                    pc.addIceCandidate(candidate);
+                }
+            }
+
+            function GetIntHeader(r, name) {
+                var val = r.getResponseHeader(name);
+                return val != null &amp;&amp; val.length ? parseInt(val) : -1;
+            }
+            //等待服务器返回，当出现以下情况或超时才会返回 
+            //1.其他peer连接上server会返回peer的数据{peerName,peerID,xx};用于本地添加
+            //本地响应handleServerNotification
+            //2.其他peer点击my_name(即发送 发送-接收视频 请求)，返回 一个ice的候选或者offer
+            //    {
+            // &quot;candidate&quot; : &quot;candidate:1918330882 1 udp 2122260223 192.168.253.1 55710 typ host generation 0 ufrag YUtt network-id 4 network-cost 50&quot;,
+            // &quot;sdpMLineIndex&quot; : 0,
+            // &quot;sdpMid&quot; : &quot;audio&quot;
+            //} this is ice
+            //本地响应handlePeerMessage
+            function hangingGetCallback() {
+                try {
+                    if(hangingGet.readyState != 4)
+                        return; //why?
+                    if(hangingGet.status != 200) {
+                        console.log(&quot;server error: &quot; + hangingGet.statusText);
+                        trace(&quot;server error: &quot; + hangingGet.statusText);
+                        disconnect();
+                    } else {
+                        var peer_id = GetIntHeader(hangingGet, &quot;Pragma&quot;);
+
+                        if(peer_id == my_id) {
+                            console.log(&quot;handleServerNotification:&quot; + hangingGet.responseText);
+                            trace(&quot;handleServerNotification:&quot; + hangingGet.responseText);
+                            handleServerNotification(hangingGet.responseText);
+                        } else {
+                            console.log(&quot;handlePeerMessage:&quot; + hangingGet.responseText);
+                            trace(&quot;handlePeerMessage:&quot; + hangingGet.responseText);
+                            handlePeerMessage(peer_id, hangingGet.responseText);
+                        }
+                    }
+
+                    if(hangingGet) {
+                        hangingGet.abort();
+                        hangingGet = null;
+                    }
+
+                    if(my_id != -1)
+                        window.setTimeout(startHangingGet, 0);
+                } catch(e) {
+                    console.log(&quot;Hanging get error: &quot; + e.description);
+                    trace(&quot;Hanging get error: &quot; + e.description);
+                }
+            }
+            //继续把my_id发给server 当其他peer连接服务器的时候其他peer就可以获取my_id
+            function startHangingGet() {
+                try {
+                    hangingGet = new XMLHttpRequest();
+                    hangingGet.onreadystatechange = hangingGetCallback;
+                    hangingGet.ontimeout = onHangingGetTimeout;
+                    hangingGet.open(&quot;GET&quot;, server + &quot;/wait?peer_id=&quot; + my_id, true);
+                    hangingGet.send();
+                } catch(e) {
+                    console.log(&quot;error&quot; + e.description);
+                    trace(&quot;error&quot; + e.description);
+                }
+            }
+            //如果超时则继续发送startHangingGet请求
+            function onHangingGetTimeout() {
+                console.log(&quot;hanging get timeout. issuing again.&quot;);
+                trace(&quot;hanging get timeout. issuing again.&quot;);
+                hangingGet.abort();
+                hangingGet = null;
+                if(my_id != -1)
+                    window.setTimeout(startHangingGet, 0);
+            }
+            //server返回my_id(服务器已递增的方式生成id)和远端peer的id
+            //那如果browser先连接，没有其他peer，该方法返回时没有远端peer的id 后面是哪里获取的呢？
+            //所以它又做了一个startHangingGet();
+            //通过handleServerNotification 得到,log:Server notification: zhengjx@X-CDN-zhengjx,2,1
+            function signInCallback() {
+                try {
+                    console.log(&quot;request.readyState:&quot; + request.readyState);
+                    trace(&quot;request.readyState:&quot; + request.readyState);
+                    if(request.readyState == 4) {
+                        if(request.status == 200) {
+                            var peers = request.responseText.split(&quot;\n&quot;);
+                            my_id = parseInt(peers[0].split(&apos;,&apos;)[1]);
+                            console.log(&quot;My id: &quot; + my_id); //My id 1
+                            trace(&quot;My id: &quot; + my_id); //My id 1
+                            //Peer 1: zhengjx@X-CDN-zhengjx,2,parsed[2]没用到 
+                            for(var i = 1; i &lt; peers.length; ++i) {
+                                if(peers[i].length &gt; 0) {
+                                    console.log(&quot;Peer &quot; + i + &quot;: &quot; + peers[i]);
+                                    trace(&quot;Peer &quot; + i + &quot;: &quot; + peers[i]);
+                                    var parsed = peers[i].split(&apos;,&apos;);
+                                    other_peers[parseInt(parsed[1])] = parsed[0];
+                                }
+                            }
+                            startHangingGet();
+                            request = null;
+                        }
+                    }
+                } catch(e) {
+                    console.log(&quot;error: &quot; + e.description);
+                    trace(&quot;error: &quot; + e.description);
+                }
+            }
+            //注册，把自己的localName发给server
+            function signIn() {
+                try {
+                    request = new XMLHttpRequest();
+                    request.onreadystatechange = signInCallback;
+                    request.open(&quot;GET&quot;, server + &quot;/sign_in?&quot; + localName, true);
+                    request.send();
+                } catch(e) {
+                    console.log(&quot;error: &quot; + e.description);
+                    trace(&quot;error: &quot; + e.description);
+                }
+            }
+
+            function connect() {
+                localName = document.getElementById(&quot;local&quot;).value.toLowerCase();
+                server = document.getElementById(&quot;server&quot;).value.toLowerCase();
+                if(localName.length == 0) {
+                    alert(&quot;I need a name please.&quot;);
+                    document.getElementById(&quot;local&quot;).focus();
+                } else {
+                    document.getElementById(&quot;connect&quot;).disabled = true;
+                    document.getElementById(&quot;disconnect&quot;).disabled = false;
+                    //document.getElementById(&quot;send&quot;).disabled = false;
+                    signIn();
+                }
+            }
+
+            function disconnect() {
+                if(request) {
+                    request.abort();
+                    request = null;
+                }
+
+                if(hangingGet) {
+                    hangingGet.abort();
+                    hangingGet = null;
+                }
+
+                if(my_id != -1) {
+                    request = new XMLHttpRequest();
+                    request.open(&quot;GET&quot;, server + &quot;/sign_out?peer_id=&quot; + my_id, false);
+                    request.send();
+                    request = null;
+                    my_id = -1;
+                }
+
+                document.getElementById(&quot;connect&quot;).disabled = false;
+                document.getElementById(&quot;disconnect&quot;).disabled = true;
+                //document.getElementById(&quot;send&quot;).disabled = true;
+            }
+        &lt;/script&gt;
+    &lt;/head&gt;
+
+    &lt;body&gt;
+        Local: &lt;br&gt;
+        &lt;video id=&quot;localVideo&quot; autoplay&gt;&lt;/video&gt;&lt;br&gt; Remote: &lt;br&gt;
+        &lt;video id=&quot;remoteVideo&quot; autoplay style=&quot;width:400px;height:300px;&quot;&gt;&lt;/video&gt;
+
+        Server: &lt;input type=&quot;text&quot; id=&quot;server&quot; value=&quot;http://172.27.35.1:8888&quot; /&gt;&lt;br&gt; Your name: &lt;input type=&quot;text&quot; id=&quot;local&quot; value=&quot;my_name&quot; /&gt;
+        &lt;button id=&quot;connect&quot; onclick=&quot;connect();&quot;&gt;Connect&lt;/button&gt;
+        &lt;button disabled=&quot;true&quot; id=&quot;disconnect&quot; onclick=&quot;disconnect();&quot;&gt;Disconnect&lt;/button&gt;
+        &lt;pre id=&quot;debug&quot;&gt;
+        &lt;/pre&gt;
+    &lt;/body&gt;
+
+&lt;/html&gt;</code></pre><p>将WebrtcTEST项目放入HTTP服务器<br>访问 <a href="http://localhost/WebrtcTEST/test.html" target="_blank" rel="noopener">http://localhost/WebrtcTEST/test.html</a></p>
+<h1 id="服务器端"><a href="#服务器端" class="headerlink" title="服务器端"></a>服务器端</h1><p>下载百度云的那个rar并解压得到<br><code>peerconnection_client.exe</code> 和 <code>peerconnection_server.exe</code><br><code>peerconnection_client.exe</code>的网络运行环境任意，可局域网可公网。<br>但<code>peerconnection_server.exe</code>网络运行环境必须保证能让<code>peerconnection_client</code>和<code>Web端localhost</code>所在网络运行环境访问到。<br>也就是说，<strong>要么<code>peerconnection_server</code>处于公网，要么三者均处于局域网。</strong></p>
+<blockquote>
+<p>PS:测试时为了方便选择局域网，并让peerconnection_client和peerconnection_server处于同一台PC</p>
+</blockquote>
+<h2 id="测试流程如下："><a href="#测试流程如下：" class="headerlink" title="测试流程如下："></a>测试流程如下：</h2><ol>
+<li>服务器端运行<code>peerconnection_server</code></li>
+<li>服务器端运行<code>peerconnection_client</code>，并直接点击<code>connect</code></li>
+<li>另一Client的Web端设置<code>Server IP</code>地址和<code>Your name</code>【name随意】,点击<code>connect</code></li>
+<li>服务器端peerconnection_client显示Web端连接上了，列表上出现name，对其进行点击;</li>
+<li>现在就可以在Web端看到服务器端摄像头的画面了，延迟小于200ms.</li>
+<li>如果想让服务器端看到Web端用户摄像头画面，将test.html的第132行注释去掉</li>
+</ol>
+<pre><code>//setLocalStream(connectionId);//解除注释将可以双端通信 不过延迟就高了</code></pre><h1 id="JS具体流程分析"><a href="#JS具体流程分析" class="headerlink" title="JS具体流程分析"></a>JS具体流程分析</h1><h2 id="从function-connect-开始分析"><a href="#从function-connect-开始分析" class="headerlink" title="从function connect() 开始分析"></a>从<code>function connect()</code> 开始分析</h2><h2 id="调用signIn-函数"><a href="#调用signIn-函数" class="headerlink" title="调用signIn()函数"></a>调用signIn()函数</h2><p>将自己的localName【填写的Your name】发给server,响应结束将调用signInCallback</p>
+<h2 id="分析signInCallback"><a href="#分析signInCallback" class="headerlink" title="分析signInCallback()"></a>分析signInCallback()</h2><p>server返回my_id(服务器已递增的方式生成id)和远端peer的id<br><strong>那如果browser先连接，没有其他peer，该方法返回时没有远端peer的id 后面是哪里获取的呢？</strong><br>所以它又做了一个startHangingGet();<br>返回的peer数据格式：peer_name,peer_id,第三个参数没有用到我也不知道是什么。</p>
+<h2 id="执行startHangingGet"><a href="#执行startHangingGet" class="headerlink" title="执行startHangingGet();"></a>执行startHangingGet();</h2><p>不管上一步有没有获取到peer该步骤都会进行的。</p>
+<h4 id="该步骤是把my-id发送给server"><a href="#该步骤是把my-id发送给server" class="headerlink" title="该步骤是把my_id发送给server."></a>该步骤是把my_id发送给server.</h4><p>当其他peer进行操作<strong>[1.连接服务器的时候其他peer就可以获取my_id;2.发送播流指令]</strong>XHR请求将成功响应,并且自己将执行hangingGetCallback。<br>如果请求超时的话将回调onHangingGetTimeout，其结果是重新执行startHangingGet</p>
+<h2 id="执行hangingGetCallback"><a href="#执行hangingGetCallback" class="headerlink" title="执行hangingGetCallback"></a>执行hangingGetCallback</h2><p>正如刚刚说的，有两种情况，服务器将响应返回</p>
+<h3 id="1-其他peer连接上server会返回peer的数据-peerName-peerID-xx-用于本地添加"><a href="#1-其他peer连接上server会返回peer的数据-peerName-peerID-xx-用于本地添加" class="headerlink" title="1.其他peer连接上server会返回peer的数据{peerName,peerID,xx};用于本地添加"></a>1.其他peer连接上server会返回peer的数据{peerName,peerID,xx};用于本地添加</h3><p>本地响应<code>handleServerNotification</code><br>log打印：</p>
+<pre><code>handleServerNotification:zhengjx@X-CDN-zhengjx,4,1
+Server notification: zhengjx@X-CDN-zhengjx,4,1</code></pre><h3 id="2-其他peer点击my-name-即发送-播流-请求-，返回-一个ice的候选或者offer"><a href="#2-其他peer点击my-name-即发送-播流-请求-，返回-一个ice的候选或者offer" class="headerlink" title="2.其他peer点击my_name(即发送 播流 请求)，返回 一个ice的候选或者offer"></a>2.其他peer点击my_name(即发送 播流 请求)，返回 一个ice的候选或者offer</h3><p>本地响应<code>handlePeerMessage</code></p>
+<h2 id="这里我们直接分析peer发送播流请求"><a href="#这里我们直接分析peer发送播流请求" class="headerlink" title="这里我们直接分析peer发送播流请求"></a>这里我们直接分析peer发送播流请求</h2><h3 id="远端peer先发送了一个携带音视频信息sdp的offer"><a href="#远端peer先发送了一个携带音视频信息sdp的offer" class="headerlink" title="远端peer先发送了一个携带音视频信息sdp的offer"></a>远端peer先发送了一个携带音视频信息sdp的offer</h3><pre><code>handlePeerMessage:{
+   &quot;sdp&quot; : &quot;v=0\r\no=- 1915807044938492152 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE audio video\r\na=msid-semantic: WMS stream_label\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111 103 104 9 102 0 8 106 105 13 127 126\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:s+rj\r\na=ice-pwd:JZspr0P/+RWnF3WFF7H2njf+\r\na=fingerprint:sha-256 DC:1B:45:26:86:B0:51:E1:2C:84:F6:04:83:1F:13:87:5F:54:9D:9F:4C:8D:04:33:E3:2F:69:BC:69:23:51:D5\r\na=setup:actpass\r\na=mid:audio\r\na=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\r\na=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\na=sendrecv\r\na=rtcp-mux\r\na=rtpmap:111 opus/48000/2\r\na=rtcp-fb:111 transport-cc\r\na=fmtp:111 minptime=10;useinbandfec=1\r\na=rtpmap:103 ISAC/16000\r\na=rtpmap:104 ISAC/32000\r\na=rtpmap:9 G722/8000\r\na=rtpmap:102 ILBC/8000\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:106 CN/32000\r\na=rtpmap:105 CN/16000\r\na=rtpmap:13 CN/8000\r\na=rtpmap:127 red/8000\r\na=rtpmap:126 telephone-event/8000\r\na=ssrc:1946889360 cname:oeS68Tdb4Ls6Qz2u\r\na=ssrc:1946889360 msid:stream_label audio_label\r\na=ssrc:1946889360 mslabel:stream_label\r\na=ssrc:1946889360 label:audio_label\r\nm=video 9 UDP/TLS/RTP/SAVPF 100 101 116 117 96 97 98\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:s+rj\r\na=ice-pwd:JZspr0P/+RWnF3WFF7H2njf+\r\na=fingerprint:sha-256 DC:1B:45:26:86:B0:51:E1:2C:84:F6:04:83:1F:13:87:5F:54:9D:9F:4C:8D:04:33:E3:2F:69:BC:69:23:51:D5\r\na=setup:actpass\r\na=mid:video\r\na=extmap:2 urn:ietf:params:rtp-hdrext:toffset\r\na=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\na=extmap:4 urn:3gpp:video-orientation\r\na=sendrecv\r\na=rtcp-mux\r\na=rtcp-rsize\r\na=rtpmap:100 VP8/90000\r\na=rtcp-fb:100 ccm fir\r\na=rtcp-fb:100 nack\r\na=rtcp-fb:100 nack pli\r\na=rtcp-fb:100 goog-remb\r\na=rtcp-fb:100 transport-cc\r\na=rtpmap:101 VP9/90000\r\na=rtcp-fb:101 ccm fir\r\na=rtcp-fb:101 nack\r\na=rtcp-fb:101 nack pli\r\na=rtcp-fb:101 goog-remb\r\na=rtcp-fb:101 transport-cc\r\na=rtpmap:116 red/90000\r\na=rtpmap:117 ulpfec/90000\r\na=rtpmap:96 rtx/90000\r\na=fmtp:96 apt=100\r\na=rtpmap:97 rtx/90000\r\na=fmtp:97 apt=101\r\na=rtpmap:98 rtx/90000\r\na=fmtp:98 apt=116\r\na=ssrc-group:FID 1010645505 1298682012\r\na=ssrc:1010645505 cname:oeS68Tdb4Ls6Qz2u\r\na=ssrc:1010645505 msid:stream_label video_label\r\na=ssrc:1010645505 mslabel:stream_label\r\na=ssrc:1010645505 label:video_label\r\na=ssrc:1298682012 cname:oeS68Tdb4Ls6Qz2u\r\na=ssrc:1298682012 msid:stream_label video_label\r\na=ssrc:1298682012 mslabel:stream_label\r\na=ssrc:1298682012 label:video_label\r\n&quot;,
+   &quot;type&quot; : &quot;offer&quot;
+}</code></pre><h3 id="createPeerConnection，设定对方的sdp为传递过来的描述"><a href="#createPeerConnection，设定对方的sdp为传递过来的描述" class="headerlink" title="createPeerConnection，设定对方的sdp为传递过来的描述"></a>createPeerConnection，设定对方的sdp为传递过来的描述</h3><p>执行</p>
+<pre><code>createPeerConnection(peer_id);
+pc.setRemoteDescription(new RTCSessionDescription(dataJson));                                    pc.createAnswer(function(sessionDescription)  {
+        var answerData = JSON.stringify(sessionDescription);
+        console.log(&quot;answer:&quot; + answerData);
+        trace(&quot;answer:&quot; + answerData);
+        pc.setLocalDescription(sessionDescription);
+        sendToPeer(peer_id, answerData);
+                    }, function(error) {
+                        console.log(&apos;Failure callback: &apos; + error);
+                        trace(&apos;Failure callback: &apos; + error);
+                    });</code></pre><p>创建PeerConnection实例 (参数为null则没有iceserver，即使没有stunserver和turnserver，仍可在局域网下通讯)<br>这里我们设置了<code>onicecandidate</code>：</p>
+<pre><code>{&quot;iceServers&quot;:[{&quot;url&quot;:&quot;stun:stun.l.google.com:19302&quot;}]}</code></pre><p>通过执行sendToPeer函数发送ICE候选到其他客户端，该过程会慢于RTCPeerConnection.onaddstream。</p>
+<p>当上面做的pc.setRemoteDescription成功执行时，pc.onaddstream将调用。<br>官网原话:</p>
+<pre><code>RTCPeerConnection.onaddstream：
+The event is sent immediately after the call RTCPeerConnection.setRemoteDescription() </code></pre><p>回复的answer sdp 如下：</p>
+<pre><code>answer:{&quot;type&quot;:&quot;answer&quot;,&quot;sdp&quot;:&quot;v=0\r\no=- 681837714082552550 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE audio video\r\na=msid-semantic: WMS\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111 103 104 9 0 8 106 105 13 126\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:XNSrC9DEJco2wMEV\r\na=ice-pwd:PhP5CUsS6P8wxnCZZa5aZ5nD\r\na=fingerprint:sha-256 F8:93:41:5C:50:E9:EF:11:66:0F:2F:64:F7:CE:C4:BB:C5:57:D8:3C:C3:04:19:27:33:B7:93:DE:58:9F:DF:74\r\na=setup:active\r\na=mid:audio\r\na=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\r\na=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\na=recvonly\r\na=rtcp-mux\r\na=rtpmap:111 opus/48000/2\r\na=rtcp-fb:111 transport-cc\r\na=fmtp:111 minptime=10;useinbandfec=1\r\na=rtpmap:103 ISAC/16000\r\na=rtpmap:104 ISAC/32000\r\na=rtpmap:9 G722/8000\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:106 CN/32000\r\na=rtpmap:105 CN/16000\r\na=rtpmap:13 CN/8000\r\na=rtpmap:126 telephone-event/8000\r\na=maxptime:60\r\nm=video 9 UDP/TLS/RTP/SAVPF 100 101 116 117 96 97 98\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:XNSrC9DEJco2wMEV\r\na=ice-pwd:PhP5CUsS6P8wxnCZZa5aZ5nD\r\na=fingerprint:sha-256 F8:93:41:5C:50:E9:EF:11:66:0F:2F:64:F7:CE:C4:BB:C5:57:D8:3C:C3:04:19:27:33:B7:93:DE:58:9F:DF:74\r\na=setup:active\r\na=mid:video\r\na=extmap:2 urn:ietf:params:rtp-hdrext:toffset\r\na=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\na=extmap:4 urn:3gpp:video-orientation\r\na=recvonly\r\na=rtcp-mux\r\na=rtcp-rsize\r\na=rtpmap:100 VP8/90000\r\na=rtcp-fb:100 ccm fir\r\na=rtcp-fb:100 nack\r\na=rtcp-fb:100 nack pli\r\na=rtcp-fb:100 goog-remb\r\na=rtcp-fb:100 transport-cc\r\na=rtpmap:101 VP9/90000\r\na=rtcp-fb:101 ccm fir\r\na=rtcp-fb:101 nack\r\na=rtcp-fb:101 nack pli\r\na=rtcp-fb:101 goog-remb\r\na=rtcp-fb:101 transport-cc\r\na=rtpmap:116 red/90000\r\na=rtpmap:117 ulpfec/90000\r\na=rtpmap:96 rtx/90000\r\na=fmtp:96 apt=100\r\na=rtpmap:97 rtx/90000\r\na=fmtp:97 apt=101\r\na=rtpmap:98 rtx/90000\r\na=fmtp:98 apt=116\r\n&quot;}</code></pre><h3 id="接下来的过程"><a href="#接下来的过程" class="headerlink" title="接下来的过程"></a>接下来的过程</h3><p>上一步提到的，本地发送ICE候选到其他客户端</p>
+<pre><code>&quot; Send &quot; &quot;{&quot;sdpMLineIndex&quot;:0,&quot;sdpMid&quot;:&quot;audio&quot;,&quot;candidate&quot;:&quot;candidate:3604340130 1 udp 2122260223 192.168.216.1 50938 typ host generation 0 ufrag XNSrC9DEJco2wMEV network-id 4&quot;}&quot;</code></pre><p>该过程会执行多次，每次携带的candidate都不一致，直到打印<code>console.log(&quot;End of candidates.&quot;);</code><br>与此同时，本地通过handlePeerMessage获取到ICE的候选，并将其加入到PeerConnection中。<br>这样两端就都有各自的ICE候选了，那么就可以进行通信。</p>
+<p>pc.onaddstream在前一步调用，那么接下来peer就应该开始传流。<br>本地通过handlePeerMessage获取的音视频数据部分如下</p>
+<pre><code>handlePeerMessage:{
+   &quot;candidate&quot; : &quot;candidate:2013099291 2 udp 2122194686 10.8.146.177 54148 typ host generation 0 ufrag s+rj network-id 3 network-cost 50&quot;,
+   &quot;sdpMLineIndex&quot; : 0,
+   &quot;sdpMid&quot; : &quot;audio&quot;
+}
+
+VM122 phone_frame.html:450 handlePeerMessage:{
+   &quot;candidate&quot; : &quot;candidate:2719042630 1 udp 2122260223 172.27.35.1 54149 typ host generation 0 ufrag s+rj network-id 4 network-cost 50&quot;,
+   &quot;sdpMLineIndex&quot; : 1,
+   &quot;sdpMid&quot; : &quot;video&quot;
+}</code></pre><p><strong>[注意之间建立了的candidate会在传输时用到，所以可以理解candidate是一种管道，我们创建了多个candidate就是多个管道，视音频数据就是通过这些管道来传输]</strong><br>当然，再具体的原理就不探讨了，涉及穿透等高深的知识= =。</p>
+<p>由于研究未深，如有错误，烦请指正，谢谢。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/WebRTC/" rel="tag"># WebRTC</a>
+              <a href="/tags/ffmpeg/" rel="tag"># ffmpeg</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/WebSocket%E4%B8%8EWebRTC%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90/" rel="prev" title="WebSocket 与 WebRTC 直播方案对比分析">
+      <i class="fa fa-chevron-left"></i> WebSocket 与 WebRTC 直播方案对比分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/10/18/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E7%9B%91%E5%90%AC%E5%B1%8F%E5%B9%95%E6%97%8B%E8%BD%AC/" rel="next" title="Android监听屏幕旋转">
+      Android监听屏幕旋转 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#流程"><span class="nav-number"></span> <span class="nav-text">流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#构架Web端"><span class="nav-number">1.</span> <span class="nav-text">构架Web端</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#服务器端"><span class="nav-number"></span> <span class="nav-text">服务器端</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#测试流程如下："><span class="nav-number">1.</span> <span class="nav-text">测试流程如下：</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#JS具体流程分析"><span class="nav-number"></span> <span class="nav-text">JS具体流程分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#从function-connect-开始分析"><span class="nav-number">1.</span> <span class="nav-text">从function connect() 开始分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调用signIn-函数"><span class="nav-number">2.</span> <span class="nav-text">调用signIn()函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析signInCallback"><span class="nav-number">3.</span> <span class="nav-text">分析signInCallback()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行startHangingGet"><span class="nav-number">4.</span> <span class="nav-text">执行startHangingGet();</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#该步骤是把my-id发送给server"><span class="nav-number">4.0.1.</span> <span class="nav-text">该步骤是把my_id发送给server.</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行hangingGetCallback"><span class="nav-number">5.</span> <span class="nav-text">执行hangingGetCallback</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-其他peer连接上server会返回peer的数据-peerName-peerID-xx-用于本地添加"><span class="nav-number">5.1.</span> <span class="nav-text">1.其他peer连接上server会返回peer的数据{peerName,peerID,xx};用于本地添加</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-其他peer点击my-name-即发送-播流-请求-，返回-一个ice的候选或者offer"><span class="nav-number">5.2.</span> <span class="nav-text">2.其他peer点击my_name(即发送 播流 请求)，返回 一个ice的候选或者offer</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#这里我们直接分析peer发送播流请求"><span class="nav-number">6.</span> <span class="nav-text">这里我们直接分析peer发送播流请求</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#远端peer先发送了一个携带音视频信息sdp的offer"><span class="nav-number">6.1.</span> <span class="nav-text">远端peer先发送了一个携带音视频信息sdp的offer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createPeerConnection，设定对方的sdp为传递过来的描述"><span class="nav-number">6.2.</span> <span class="nav-text">createPeerConnection，设定对方的sdp为传递过来的描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#接下来的过程"><span class="nav-number">6.3.</span> <span class="nav-text">接下来的过程</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

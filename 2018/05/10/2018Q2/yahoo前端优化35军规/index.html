@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言本文为 yahoo 前端优化35军规的梗概，部分优化技术已过时，请注意分辨">
+<meta property="og:type" content="article">
+<meta property="og:title" content="yahoo前端优化35军规">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;05&#x2F;10&#x2F;2018Q2&#x2F;yahoo%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%9635%E5%86%9B%E8%A7%84&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言本文为 yahoo 前端优化35军规的梗概，部分优化技术已过时，请注意分辨">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-09T17:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.154Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="前端优化">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2018/05/10/2018Q2/yahoo%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%9635%E5%86%9B%E8%A7%84/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>yahoo前端优化35军规 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/05/10/2018Q2/yahoo%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%9635%E5%86%9B%E8%A7%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          yahoo前端优化35军规
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-05-10 01:00:00" itemprop="dateCreated datePublished" datetime="2018-05-10T01:00:00+08:00">2018-05-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文为 yahoo 前端优化35军规的梗概，部分优化技术已过时，请注意分辨</p>
+<a id="more"></a>
+
+<h1 id="内容"><a href="#内容" class="headerlink" title="内容"></a>内容</h1><h2 id="1-尽量减少HTTP请求数"><a href="#1-尽量减少HTTP请求数" class="headerlink" title="1.尽量减少HTTP请求数"></a>1.尽量减少HTTP请求数</h2><ol>
+<li>资源合并</li>
+<li>小图片base64编码</li>
+<li>多图合并为单图</li>
+<li>CSS Sprites，通过background-image和background-position属性来定位要显示的部分</li>
+</ol>
+<h2 id="2-减少DNS查找"><a href="#2-减少DNS查找" class="headerlink" title="2. 减少DNS查找"></a>2. 减少DNS查找</h2><p>组件分散到2-4个主机名，这是同时减少DNS查找和允许高并发下载的折中方案</p>
+<h2 id="3-避免重定向"><a href="#3-避免重定向" class="headerlink" title="3. 避免重定向"></a>3. 避免重定向</h2><p>HTTP 重定向是一项用于将客户端重定向到设备专用网址的常用技术。</p>
+<p>但采用重定向会增加延迟。</p>
+<p>若必须重定向的话，请使用HTTP重定向（响应体为空）并用301(永久转移)或302（暂时转移）状态码。（两者区别在于302会被url拦截，具体百度</p>
+<p>因为系统会根据 HTTP 请求标头中的用户代理来执行重定向。 例子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP&#x2F;1.1 301 Moved Permanently</span><br><span class="line">Location: http:&#x2F;&#x2F;example.com&#x2F;newuri</span><br><span class="line">Content-Type: text&#x2F;html</span><br></pre></td></tr></table></figure>
+
+
+<p>若难以实现HTTP重定向，则用js再去做。该做法多了文档下载，js解析的过程。</p>
+<p><strong>注意1：</strong>有一种常见的极其浪费资源的重定向，就是URL尾部缺少一个斜线的时候。</p>
+<p>例如，跳转到<a href="http://astrology.yahoo.com/astrology会返回一个重定向到http://astrology.yahoo.com/astrology/的301响应（注意添在尾部的斜线）。" target="_blank" rel="noopener">http://astrology.yahoo.com/astrology会返回一个重定向到http://astrology.yahoo.com/astrology/的301响应（注意添在尾部的斜线）。</a></p>
+<p>在Apache中可以用Alias，mod_rewrite或者DirectorySlash指令来取消不必要的重定向。</p>
+<p><strong>注意2：</strong>进行双向重定向与单向重定向</p>
+<p>将访问桌面版网页的移动用户重定向到对应的移动版网页 – “单向”重定向</p>
+<p>在移动用户以及桌面设备用户分别访问桌面版网站和移动网站上的网页时，对他们进行重定向 –“双向”重定向</p>
+<p><a href="https://developers.google.com/search/mobile-sites/mobile-seo/separate-urls#automatic-redirection" target="_blank" rel="noopener">https://developers.google.com/search/mobile-sites/mobile-seo/separate-urls#automatic-redirection</a></p>
+<!--more-->
+
+
+<h2 id="4-缓存Ajax"><a href="#4-缓存Ajax" class="headerlink" title="4. 缓存Ajax"></a>4. 缓存Ajax</h2><p>Ajax GET请求，可以使用客户端缓存（而且只要地址一样，它总是会使用客户端缓存）</p>
+<p>e.g: 邮箱web,请求通讯录数据，请求时返回结果带上通讯录最后修改的时间。后续请求带上该时间戳&amp;t=xxx，若通讯录没有改变则请求缓存。若通讯录做了修改，时间戳改变，后续该请求新的数据.</p>
+<p><strong>注意：</strong>可能只适用于单用户，如这边的通讯录数据可以多人更改的话，就不能缓存了</p>
+<h2 id="5-延迟加载组件"><a href="#5-延迟加载组件" class="headerlink" title="5. 延迟加载组件"></a>5. 延迟加载组件</h2><p>与渲染页面无关的内容可以往后。</p>
+<p>比如淘宝首页，把非关键模块放入了懒加载队列，满足一定条件的时候再去加载，参考：<a href="http://taobaofed.org/blog/2016/04/06/optimize-in-tbhome#关键模块优先" target="_blank" rel="noopener">http://taobaofed.org/blog/2016/04/06/optimize-in-tbhome#关键模块优先</a></p>
+<h2 id="6-预加载组件"><a href="#6-预加载组件" class="headerlink" title="6. 预加载组件"></a>6. 预加载组件</h2><p>利用浏览器空闲时间请求用户接下来可能会访问的组件。</p>
+<ol>
+<li>无条件预加载 <blockquote>
+<p>比如：搜索主页，预加载后面搜索页一定会出现的资源</p>
+</blockquote>
+</li>
+<li>条件性预加载<blockquote>
+<p>猜测用户将要跳转到哪里并据此预加载。比如正在填写“添加表单”，后面会跳到表单详情，则先把表单详情的资源拿到</p>
+</blockquote>
+</li>
+<li>提前预加载<blockquote>
+<p>比如提供了一个新版网站入口。用户从旧版转向新版时，资源都是初次加载，会比较慢。此时可以选择预加载</p>
+</blockquote>
+</li>
+</ol>
+<h2 id="7-减少dom元素数量"><a href="#7-减少dom元素数量" class="headerlink" title="7. 减少dom元素数量"></a>7. 减少dom元素数量</h2><p>只在语义上有意义的时候使用<code>&lt;div&gt;</code>，而不是因为它能够渲染一个新行</p>
+<p>按需加载</p>
+<p><code>document.getElementsByTagName(&#39;*&#39;).length</code> 查看dom元素数量</p>
+<h2 id="8-跨域分离组件"><a href="#8-跨域分离组件" class="headerlink" title="8. 跨域分离组件"></a>8. 跨域分离组件</h2><p>可以最大化并行下载。与 <strong><code>2. 减少DNS查找</code></strong> 结合，一般不超过2-4个域</p>
+<h2 id="9-尽量少用，合理使用iframe"><a href="#9-尽量少用，合理使用iframe" class="headerlink" title="9. 尽量少用，合理使用iframe"></a>9. 尽量少用，合理使用iframe</h2><p>缺点：</p>
+<ol>
+<li>代价高，即使是空白的iframe</li>
+<li>浏览器返回按钮失效</li>
+<li>堵塞主页面的onload事件，</li>
+<li>与主页面共享连接池，而浏览器对相同域的连接有限制，所以会影响页面的并行加载</li>
+</ol>
+<p>优点：</p>
+<ol>
+<li>可以引入缓慢的第三方内容，如广告</li>
+<li>iframe引入了安全沙箱，可避免引入的页面对自己的页面产生不利的影响。比如防止访问父页面dom,防止读写cookie等数据</li>
+</ol>
+<p>建议：</p>
+<blockquote>
+<p>如果要使用iframe,采用动态给iframe添加src属性值的方式（js脚本放在body底部）。<br>可以避免上述缺点的3和4</p>
+</blockquote>
+<h2 id="10-避免404"><a href="#10-避免404" class="headerlink" title="10. 避免404"></a>10. 避免404</h2><p>请求不存在的脚本文件，即使返回404，仍会去解析响应内容，无疑多了很多处理时间</p>
+<h1 id="css-部分"><a href="#css-部分" class="headerlink" title="css 部分"></a>css 部分</h1><h2 id="11-避免在css中使用表达式"><a href="#11-避免在css中使用表达式" class="headerlink" title="11. 避免在css中使用表达式"></a>11. 避免在css中使用表达式</h2><p>运算多次，性能消耗大。</p>
+<p>现代浏览器已不支持了，无需了解。</p>
+<h2 id="12-使用link而不是-import导入样式表"><a href="#12-使用link而不是-import导入样式表" class="headerlink" title="12. 使用link而不是@import导入样式表"></a>12. 使用link而不是@import导入样式表</h2><p>使用更加标准的link标记，而不是使用IE专用的@import语句</p>
+<h2 id="13-避免使用Filters-滤镜"><a href="#13-避免使用Filters-滤镜" class="headerlink" title="13. 避免使用Filters(滤镜)"></a>13. 避免使用Filters(滤镜)</h2><p>滤镜会阻塞渲染，影响性能。</p>
+<p>现代浏览器已不支持了，无需了解。</p>
+<h2 id="14-把样式表放在顶部"><a href="#14-把样式表放在顶部" class="headerlink" title="14. 把样式表放在顶部"></a>14. 把样式表放在顶部</h2><p>之所以放在顶部，是为了能让页面逐步渲染（渐进式呈现（render progressively））</p>
+<h1 id="js部分"><a href="#js部分" class="headerlink" title="js部分"></a>js部分</h1><h2 id="15-去除重复脚本"><a href="#15-去除重复脚本" class="headerlink" title="15. 去除重复脚本"></a>15. 去除重复脚本</h2><h2 id="16-尽量减少DOM访问"><a href="#16-尽量减少DOM访问" class="headerlink" title="16. 尽量减少DOM访问"></a>16. 尽量减少DOM访问</h2><ol>
+<li>缓存已访问过的dom元素</li>
+<li>一批节点操作，不用一个一个的在dom树上操作，应该一起操作完再放dom树上</li>
+<li>避免js直接修改布局，而是用js让节点选择预定义的其他css布局 </li>
+</ol>
+<h2 id="17-设计“智能”的事件处理程序"><a href="#17-设计“智能”的事件处理程序" class="headerlink" title="17. 设计“智能”的事件处理程序"></a>17. 设计“智能”的事件处理程序</h2><p>举例：监听A节点下的10个子节点的点击事件。应该把事件处理器绑定A节点而不是10个节点各自绑定。</p>
+<p>通过事件冒泡获知哪个按钮是事件源</p>
+<p>这样做维护方便（取消监听时只要取消一处），性能好（只有一个事件监听器）</p>
+<h2 id="18-把脚本放在底部"><a href="#18-把脚本放在底部" class="headerlink" title="18. 把脚本放在底部"></a>18. 把脚本放在底部</h2><p>脚本会堵塞页面的解析和渲染。</p>
+<p>如果脚本不存在document依赖，则可以放在页面底部</p>
+<h1 id="js-css"><a href="#js-css" class="headerlink" title="js,css"></a>js,css</h1><h2 id="19-将js和css作为外部文件引用"><a href="#19-将js和css作为外部文件引用" class="headerlink" title="19. 将js和css作为外部文件引用"></a>19. 将js和css作为外部文件引用</h2><p>优点：</p>
+<ol>
+<li>提高复用性</li>
+<li>可以被浏览器缓存</li>
+<li>提高可维护性</li>
+</ol>
+<p>缺点：<br>增加额外请求</p>
+<p>在下面三种情况下应该考虑直接在<strong>页面中</strong>定义脚本和样式：</p>
+<ol>
+<li>不复用</li>
+<li>页面不被经常访问</li>
+<li>脚本和样式很少</li>
+</ol>
+<h2 id="20-压缩JAVASCRIPT和CSS"><a href="#20-压缩JAVASCRIPT和CSS" class="headerlink" title="20. 压缩JAVASCRIPT和CSS"></a>20. 压缩JAVASCRIPT和CSS</h2><p>压缩，混淆。</p>
+<h1 id="图片"><a href="#图片" class="headerlink" title="图片"></a>图片</h1><h2 id="21-优化图片"><a href="#21-优化图片" class="headerlink" title="21. 优化图片"></a>21. 优化图片</h2><p>gif采用<code>&lt;video&gt;</code>实现</p>
+<p>图片继续压缩</p>
+<h2 id="22-优化-CSS-Sprite"><a href="#22-优化-CSS-Sprite" class="headerlink" title="22. 优化 CSS Sprite"></a>22. 优化 CSS Sprite</h2><p>在<code>1.尽量减少HTTP请求数</code>中提到的技术。</p>
+<p>通过background-image和background-position属性来定位要显示的部分</p>
+<p>该技术的注意点：</p>
+<ol>
+<li>选用<a href="https://www.toptal.com/developers/css/sprite-generator" target="_blank" rel="noopener">工具</a>完成图片合并，省去人工测量像素位置</li>
+<li>额外维护工作：某图片修改了，不仅需要生成新的图片，还涉及css的修改</li>
+<li>一般只能使用固定大小的盒子，这样才能够遮挡住不应该看到的部分</li>
+</ol>
+<p>几个优化建议：</p>
+<ol>
+<li>尽可能使用横向组合图片，这比纵向组合图片的体积通常更小一点</li>
+<li>尽量使图片具有接近的色系，这样最终组合出来的图片也会小一些。</li>
+<li>尽量使用小一些的图片，并且图片之间的间隙尽量也小一些，目的还是为了最终组合出来的图片体积更小</li>
+</ol>
+<h2 id="23-不要在页面中缩放图片"><a href="#23-不要在页面中缩放图片" class="headerlink" title="23. 不要在页面中缩放图片"></a>23. 不要在页面中缩放图片</h2><p>不要因为html本身可以设置宽高来使用<strong>本不需要的大图</strong>，</p>
+<p>若需要<code>&lt;img width=&quot;100&quot; height=&quot;100&quot; src=&quot;mycat.jpg&quot; alt=&quot;My Cat&quot; /&gt;</code></p>
+<p>那么图片本身应该是100x100 px的，而不是去缩放500x500 px。</p>
+<p>请记住并遵守这条原则：你需要在网页中显示什么尺寸的图片，就请图片设计人员提供什么尺寸的图片，而不是在网页中进行缩放。</p>
+<h2 id="24-使favicon-ico尽可能小并可缓存"><a href="#24-使favicon-ico尽可能小并可缓存" class="headerlink" title="24. 使favicon.ico尽可能小并可缓存"></a>24. 使favicon.ico尽可能小并可缓存</h2><p><strong>注意：</strong>即便你不管它，浏览器也会自动请求它，导致出现404。放在</p>
+<p>建议：</p>
+<ol>
+<li>1KB左右，百度：在线favicon.icon制作</li>
+<li>可缓存</li>
+<li>放在其他主机，避免请求时带上cookie</li>
+</ol>
+<h1 id="cookie"><a href="#cookie" class="headerlink" title="cookie"></a>cookie</h1><h2 id="25-减小Cookie的体积"><a href="#25-减小Cookie的体积" class="headerlink" title="25. 减小Cookie的体积"></a>25. 减小Cookie的体积</h2><ol>
+<li>设置合适的有效期</li>
+<li>设置合适的域级别</li>
+<li>尽可能小</li>
+</ol>
+<h2 id="26-把组件放在不含cookie的域下"><a href="#26-把组件放在不含cookie的域下" class="headerlink" title="26. 把组件放在不含cookie的域下"></a>26. 把组件放在不含cookie的域下</h2><p>页面请求某个域时，会带上该域的cookie，对于一些静态资源，该cookie是没有必要发送的，此时可以把这些静态资源放在另外的域上。</p>
+<p>除了不带cookie,还增加了页面资源的并发下载</p>
+<h1 id="移动端"><a href="#移动端" class="headerlink" title="移动端"></a>移动端</h1><h2 id="27-保证单个内容体积＜25K"><a href="#27-保证单个内容体积＜25K" class="headerlink" title="27. 保证单个内容体积＜25K"></a>27. 保证单个内容体积＜25K</h2><p>iOS safari 早期版本（v3.2） 不能缓存超过25K（未压缩大小）的组件。 </p>
+<p>现在版本应该能比较大了，也不知道其他浏览器支持的都多大= =</p>
+<p>不过，总的来说<strong>20. 压缩JAVASCRIPT和CSS</strong>是必要的</p>
+<h2 id="28-将组件直接打包到页面"><a href="#28-将组件直接打包到页面" class="headerlink" title="28. 将组件直接打包到页面"></a>28. 将组件直接打包到页面</h2><p>例子：</p>
+<ol>
+<li>CSS中还有小图片的请求，可以直接把小图片base64化替换该css样式的图片url</li>
+<li>邮件内容带图片，这种图片也是作为正文的一部分被编码进去的，无需新请求</li>
+</ol>
+<h1 id="服务器"><a href="#服务器" class="headerlink" title="服务器"></a>服务器</h1><h2 id="29-Gzip组件"><a href="#29-Gzip组件" class="headerlink" title="29. Gzip组件"></a>29. Gzip组件</h2><p>请求头中带有如下信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Accept-Encoding: gzip, deflate</span><br></pre></td></tr></table></figure>
+<p>这是根据浏览器的设置决定的,表示浏览器接受的压缩格式。</p>
+<p>web服务器通过Content-Encoding相应头来通知客户端数据采用了哪种压缩方式。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Content-Encoding: gzip</span><br></pre></td></tr></table></figure>
+<h2 id="30-避免将img的src属性设置为空"><a href="#30-避免将img的src属性设置为空" class="headerlink" title="30. 避免将img的src属性设置为空"></a>30. 避免将img的src属性设置为空</h2><p>早期浏览器仍会发送请求，现代浏览器不会发了。</p>
+<p>设置为空，本意可能是想先不加载，等页面解析完再用js去设置img的src。</p>
+<p>应该采取更好的实现方式：ImageLoader</p>
+<h2 id="31-配置ETags"><a href="#31-配置ETags" class="headerlink" title="31. 配置ETags"></a>31. 配置ETags</h2><p>ETags 是一个字符串，作为某组件某版本的唯一标识符。</p>
+<p>服务器响应组件资源时，带上ETags响应头。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">HTTP&#x2F;1.1 200 OK</span><br><span class="line">Last-Modified: Tue, 12 Dec 2006 03:03:59 GMT</span><br><span class="line">ETag: &quot;10c24bc-4ab-457e1c1f&quot;</span><br><span class="line">Content-Length: 12195</span><br></pre></td></tr></table></figure>
+
+<p>浏览器继续请求组件时，会用If-None-Match请求头来把ETag传回源服务器。如果匹配成功，返回304，就减少了12195字节的响应</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GET &#x2F;i&#x2F;yahoo.gif HTTP&#x2F;1.1</span><br><span class="line">      Host: us.yimg.com</span><br><span class="line">      If-Modified-Since: Tue, 12 Dec 2006 03:03:59 GMT</span><br><span class="line">      If-None-Match: &quot;10c24bc-4ab-457e1c1f&quot;</span><br><span class="line">      HTTP&#x2F;1.1 304 Not Modified</span><br></pre></td></tr></table></figure>
+
+<h2 id="32-对Ajax用GET请求"><a href="#32-对Ajax用GET请求" class="headerlink" title="32. 对Ajax用GET请求"></a>32. 对Ajax用GET请求</h2><p>推荐用GET请求的原因：</p>
+<ol>
+<li>GET请求能利用客户端的缓存</li>
+<li>POST请求进行了两次请求：先发送请求头再发送数据</li>
+</ol>
+<p>但是，长度方面可能会有限制。</p>
+<p>语义不易理解，违背RESTful原则</p>
+<h2 id="33-尽早发送缓冲区内容"><a href="#33-尽早发送缓冲区内容" class="headerlink" title="33. 尽早发送缓冲区内容"></a>33. 尽早发送缓冲区内容</h2><p>后台服务器还在组装html页面的时候，先发一部分到给浏览器，一般是head之后。这样浏览器端可以先去加载head中指定的资源 和页面的剩余部分加载是并行的。</p>
+<p>当响应耗时主要在后台的动态页面组装时，最能体现优势</p>
+<p>具体实现技术应该是动态网页相关的，暂时不是很理解，这边先留个坑。</p>
+<h2 id="34-使用CDN"><a href="#34-使用CDN" class="headerlink" title="34. 使用CDN"></a>34. 使用CDN</h2><p><a href="http://www.wangsu.com/" target="_blank" rel="noopener">网宿科技</a>了解一下</p>
+<h2 id="35-添上Expires或者Cache-Control-HTTP头"><a href="#35-添上Expires或者Cache-Control-HTTP头" class="headerlink" title="35. 添上Expires或者Cache-Control HTTP头"></a>35. 添上Expires或者Cache-Control HTTP头</h2><p><del>需要总结下缓存控制的用法。这边先留个坑</del></p>
+<p>这两个都是用于强缓存(200 form cache)的，</p>
+<blockquote>
+<p>Cache-Control:缓存时间值<br>Expires:绝对时间<br>同时存在时，<code>Cache-Control</code> 优先于<code>Expires</code>，使用<code>Cache-Control</code>的一个好处是不用担心服务端时间和本地时间不一致</p>
+</blockquote>
+<p>这篇总结的还行：<a href="https://www.cnblogs.com/wonyun/p/5524617.html" target="_blank" rel="noopener">http协商缓存VS强缓存</a></p>
+<p>这里补充两点：</p>
+<ol>
+<li>浏览器开发者工具开启 <strong>Disable cache</strong>后，任何请求都不会走本地强缓存，但是会走304协商缓存（强制刷新除外）</li>
+<li>未开启<strong>Disable cache</strong>的状态下，ctrl+F5强制刷新，对于<code>page load</code>前的请求，都是不走缓存(强缓存和协商缓存<code>cache-control:no-cache</code>)的，但是<code>page load</code>后的请求不受限制可以走缓存</li>
+</ol>
+<h1 id="其他新技术"><a href="#其他新技术" class="headerlink" title="其他新技术"></a>其他新技术</h1><h2 id="DNS预解析-dns-prefetch"><a href="#DNS预解析-dns-prefetch" class="headerlink" title="DNS预解析-dns-prefetch"></a>DNS预解析-dns-prefetch</h2><p>见 <code>W3C_DNS_Prefetching.md</code></p>
+<h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>以上内容只是对35优化原则的简单记录和个人见解，非译文。</p>
+<p>yahoo原文：<a href="https://developer.yahoo.com/performance/rules.html" target="_blank" rel="noopener">https://developer.yahoo.com/performance/rules.html</a></p>
+<p>分享几篇写的不错的：</p>
+<ol>
+<li><a href="https://www.cnblogs.com/xianyulaodi/p/5755079.html" target="_blank" rel="noopener">雅虎前端优化的35条军规</a></li>
+<li><a href="http://www.cnblogs.com/chenxizhang/archive/2013/05/20/3088196.html" target="_blank" rel="noopener">优化网站设计系列文章总结和导读</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%96/" rel="tag"># 前端优化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/04/14/2018Q2/log4js%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/" rel="prev" title="log4js配置详解">
+      <i class="fa fa-chevron-left"></i> log4js配置详解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/05/14/2018Q2/%E5%9F%BA%E4%BA%8ECDN%E7%9A%84%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%96%E5%8F%AF%E8%A1%8C%E6%80%A7%E5%88%86%E6%9E%90/" rel="next" title="基于CDN的前端优化可行性分析">
+      基于CDN的前端优化可行性分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内容"><span class="nav-number">2.</span> <span class="nav-text">内容</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-尽量减少HTTP请求数"><span class="nav-number">2.1.</span> <span class="nav-text">1.尽量减少HTTP请求数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-减少DNS查找"><span class="nav-number">2.2.</span> <span class="nav-text">2. 减少DNS查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-避免重定向"><span class="nav-number">2.3.</span> <span class="nav-text">3. 避免重定向</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-缓存Ajax"><span class="nav-number">2.4.</span> <span class="nav-text">4. 缓存Ajax</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-延迟加载组件"><span class="nav-number">2.5.</span> <span class="nav-text">5. 延迟加载组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-预加载组件"><span class="nav-number">2.6.</span> <span class="nav-text">6. 预加载组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-减少dom元素数量"><span class="nav-number">2.7.</span> <span class="nav-text">7. 减少dom元素数量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-跨域分离组件"><span class="nav-number">2.8.</span> <span class="nav-text">8. 跨域分离组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-尽量少用，合理使用iframe"><span class="nav-number">2.9.</span> <span class="nav-text">9. 尽量少用，合理使用iframe</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-避免404"><span class="nav-number">2.10.</span> <span class="nav-text">10. 避免404</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#css-部分"><span class="nav-number">3.</span> <span class="nav-text">css 部分</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-避免在css中使用表达式"><span class="nav-number">3.1.</span> <span class="nav-text">11. 避免在css中使用表达式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-使用link而不是-import导入样式表"><span class="nav-number">3.2.</span> <span class="nav-text">12. 使用link而不是@import导入样式表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-避免使用Filters-滤镜"><span class="nav-number">3.3.</span> <span class="nav-text">13. 避免使用Filters(滤镜)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#14-把样式表放在顶部"><span class="nav-number">3.4.</span> <span class="nav-text">14. 把样式表放在顶部</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#js部分"><span class="nav-number">4.</span> <span class="nav-text">js部分</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#15-去除重复脚本"><span class="nav-number">4.1.</span> <span class="nav-text">15. 去除重复脚本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#16-尽量减少DOM访问"><span class="nav-number">4.2.</span> <span class="nav-text">16. 尽量减少DOM访问</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-设计“智能”的事件处理程序"><span class="nav-number">4.3.</span> <span class="nav-text">17. 设计“智能”的事件处理程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-把脚本放在底部"><span class="nav-number">4.4.</span> <span class="nav-text">18. 把脚本放在底部</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#js-css"><span class="nav-number">5.</span> <span class="nav-text">js,css</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#19-将js和css作为外部文件引用"><span class="nav-number">5.1.</span> <span class="nav-text">19. 将js和css作为外部文件引用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#20-压缩JAVASCRIPT和CSS"><span class="nav-number">5.2.</span> <span class="nav-text">20. 压缩JAVASCRIPT和CSS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#图片"><span class="nav-number">6.</span> <span class="nav-text">图片</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#21-优化图片"><span class="nav-number">6.1.</span> <span class="nav-text">21. 优化图片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#22-优化-CSS-Sprite"><span class="nav-number">6.2.</span> <span class="nav-text">22. 优化 CSS Sprite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#23-不要在页面中缩放图片"><span class="nav-number">6.3.</span> <span class="nav-text">23. 不要在页面中缩放图片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#24-使favicon-ico尽可能小并可缓存"><span class="nav-number">6.4.</span> <span class="nav-text">24. 使favicon.ico尽可能小并可缓存</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#cookie"><span class="nav-number">7.</span> <span class="nav-text">cookie</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#25-减小Cookie的体积"><span class="nav-number">7.1.</span> <span class="nav-text">25. 减小Cookie的体积</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#26-把组件放在不含cookie的域下"><span class="nav-number">7.2.</span> <span class="nav-text">26. 把组件放在不含cookie的域下</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#移动端"><span class="nav-number">8.</span> <span class="nav-text">移动端</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#27-保证单个内容体积＜25K"><span class="nav-number">8.1.</span> <span class="nav-text">27. 保证单个内容体积＜25K</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#28-将组件直接打包到页面"><span class="nav-number">8.2.</span> <span class="nav-text">28. 将组件直接打包到页面</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#服务器"><span class="nav-number">9.</span> <span class="nav-text">服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#29-Gzip组件"><span class="nav-number">9.1.</span> <span class="nav-text">29. Gzip组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#30-避免将img的src属性设置为空"><span class="nav-number">9.2.</span> <span class="nav-text">30. 避免将img的src属性设置为空</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#31-配置ETags"><span class="nav-number">9.3.</span> <span class="nav-text">31. 配置ETags</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#32-对Ajax用GET请求"><span class="nav-number">9.4.</span> <span class="nav-text">32. 对Ajax用GET请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#33-尽早发送缓冲区内容"><span class="nav-number">9.5.</span> <span class="nav-text">33. 尽早发送缓冲区内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#34-使用CDN"><span class="nav-number">9.6.</span> <span class="nav-text">34. 使用CDN</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#35-添上Expires或者Cache-Control-HTTP头"><span class="nav-number">9.7.</span> <span class="nav-text">35. 添上Expires或者Cache-Control HTTP头</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他新技术"><span class="nav-number">10.</span> <span class="nav-text">其他新技术</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DNS预解析-dns-prefetch"><span class="nav-number">10.1.</span> <span class="nav-text">DNS预解析-dns-prefetch</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#后记"><span class="nav-number">11.</span> <span class="nav-text">后记</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="WebSocket同步首先说同步策略">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebSocket 与 WebRTC 直播方案对比分析">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2016&#x2F;08&#x2F;24&#x2F;2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3&#x2F;WebSocket%E4%B8%8EWebRTC%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="WebSocket同步首先说同步策略">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-08-24T03:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.120Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="WebRTC">
+<meta property="article:tag" content="ffmpeg">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/WebSocket%E4%B8%8EWebRTC%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>WebSocket 与 WebRTC 直播方案对比分析 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/WebSocket%E4%B8%8EWebRTC%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          WebSocket 与 WebRTC 直播方案对比分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-08-24 11:00:00" itemprop="dateCreated datePublished" datetime="2016-08-24T11:00:00+08:00">2016-08-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B5%81%E5%AA%92%E4%BD%93/" itemprop="url" rel="index">
+                    <span itemprop="name">流媒体</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="WebSocket"><a href="#WebSocket" class="headerlink" title="WebSocket"></a>WebSocket</h1><h2 id="同步"><a href="#同步" class="headerlink" title="同步"></a>同步</h2><p>首先说同步策略</p>
+<a id="more"></a>
+
+<h3 id="采用RTMP协议"><a href="#采用RTMP协议" class="headerlink" title="采用RTMP协议"></a>采用RTMP协议</h3><p>需要了解RTMP的协议，将音视频流(H264/SPEEX)构造成RTMP包，通过WebSocket发送到客户端<br>这样的话，开发成本大，需要搭建一台用于发送RTMP包的WebSocket服务器而不是普通的RTMP服务器<br>这东西网上基本没人做，搜到了一个别人做的demo，但是没有文档，实在难以研究,且不知性能如何</p>
+<p>参考：<a href="http://my.oschina.net/langhuihui/blog" target="_blank" rel="noopener">http://my.oschina.net/langhuihui/blog</a></p>
+<h3 id="开两个WebSocket"><a href="#开两个WebSocket" class="headerlink" title="开两个WebSocket"></a>开两个WebSocket</h3><p>我自己写的，从服务器端同时发送音视频流，由于音频方面我没做编解码直接推的PCM可能数据量较大，<br>视频的话采用jsmpeg解码然后通过canvas绘制</p>
+<p>这样的话没有做同步。</p>
+<p>可以参考我上次发的fiiser技术研究：</p>
+<p>同步：每5s发送一个同步指令给客户端进行同步(具体细节我就不懂了)</p>
+<p>编解码:BroadwayJS+SpeexJS 大概做法和我差不多 就是编解码的效率问题了</p>
+<h2 id="解码-软解码"><a href="#解码-软解码" class="headerlink" title="解码-软解码"></a>解码-软解码</h2><p>如果是采用RTMP同步，客户端还要去写JS解协议包(这方面不懂，资料也比较少)</p>
+<p>然后一般都是利用BroadwayJS+SpeexJS来解码，这两个是利用Emscripten把原生代码编译成JS，比普通JS效率高</p>
+<h2 id="渲染"><a href="#渲染" class="headerlink" title="渲染"></a>渲染</h2><p>Canvas+AudioContext </p>
+<h2 id="支持情况"><a href="#支持情况" class="headerlink" title="支持情况"></a>支持情况</h2><p>除IE外，其他大部分PC/Mobile浏览器(有的可能需要较新版本)都支持上述技术</p>
+<h2 id="延迟及卡顿情况"><a href="#延迟及卡顿情况" class="headerlink" title="延迟及卡顿情况"></a>延迟及卡顿情况</h2><p>局域网内，我的方案基本没有延迟(200ms以内)和卡顿</p>
+<h2 id="开发成本"><a href="#开发成本" class="headerlink" title="开发成本"></a>开发成本</h2><p>首先同步本身不好做，还有编解码这块，需要编译上述两个解码库然后找下文档看怎么用，然后服务端还得构造相应编码的流来测试。</p>
+<p>想做好一套解决方案一个人基本搞不定</p>
+<h1 id="WebRTC"><a href="#WebRTC" class="headerlink" title="WebRTC"></a>WebRTC</h1><h2 id="同步及渲染"><a href="#同步及渲染" class="headerlink" title="同步及渲染"></a>同步及渲染</h2><p>浏览器端已经做好同步策略，绑定<code>&lt;video&gt;</code>标签进行渲染</p>
+<h2 id="解码-硬解码"><a href="#解码-硬解码" class="headerlink" title="解码-硬解码"></a>解码-硬解码</h2><h2 id="支持情况-1"><a href="#支持情况-1" class="headerlink" title="支持情况"></a>支持情况</h2><ul>
+<li>PC:Chrome29和火狐47以上支持，Opera 39以上支持，IE内核的浏览器、Edge、Safari不支持</li>
+<li>Mobile：Chrome for Android ，firefox for Android支持<br>Android WebView(5.0以上支持，4.4部分手机(samsung htc等)支持)，手机自带浏览器(4.4以上部分厂商支持)<br>QQ/UC/百度浏览器 正在测试，<br>WP手机不支持(可以考虑后面兼容ORTC)</li>
+</ul>
+<p>参考 <a href="http://www.tutorialspoint.com/webrtc/webrtc_mobile_support.htm" target="_blank" rel="noopener">http://www.tutorialspoint.com/webrtc/webrtc_mobile_support.htm</a> 并做了下验证</p>
+<h3 id="Question-苹果用户怎么使用"><a href="#Question-苹果用户怎么使用" class="headerlink" title="Question:苹果用户怎么使用"></a>Question:苹果用户怎么使用</h3><p>苹果官方15年底声称Safari接下来会支持，有望在近两年得到使用</p>
+<p>如果苹果用户想使用，可以下载 Bowser(<a href="http://www.openwebrtc.org/bowser/" target="_blank" rel="noopener">http://www.openwebrtc.org/bowser/</a>) 或者Chrome</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/WebRTC/" rel="tag"># WebRTC</a>
+              <a href="/tags/ffmpeg/" rel="tag"># ffmpeg</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Web_video%E6%A0%87%E7%AD%BE%E4%B8%8B%E8%A7%A6%E6%91%B8%E5%9D%90%E6%A0%87%E5%BD%92%E4%B8%80%E5%8C%96/" rel="prev" title="video标签下触摸坐标归一化">
+      <i class="fa fa-chevron-left"></i> video标签下触摸坐标归一化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94WebRTC%20native%202%20browser%20/" rel="next" title="流媒体直播—WebRTC native 2 browser">
+      流媒体直播—WebRTC native 2 browser <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#WebSocket"><span class="nav-number">1.</span> <span class="nav-text">WebSocket</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#同步"><span class="nav-number">1.1.</span> <span class="nav-text">同步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#采用RTMP协议"><span class="nav-number">1.1.1.</span> <span class="nav-text">采用RTMP协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#开两个WebSocket"><span class="nav-number">1.1.2.</span> <span class="nav-text">开两个WebSocket</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解码-软解码"><span class="nav-number">1.2.</span> <span class="nav-text">解码-软解码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#渲染"><span class="nav-number">1.3.</span> <span class="nav-text">渲染</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#支持情况"><span class="nav-number">1.4.</span> <span class="nav-text">支持情况</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#延迟及卡顿情况"><span class="nav-number">1.5.</span> <span class="nav-text">延迟及卡顿情况</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开发成本"><span class="nav-number">1.6.</span> <span class="nav-text">开发成本</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#WebRTC"><span class="nav-number">2.</span> <span class="nav-text">WebRTC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#同步及渲染"><span class="nav-number">2.1.</span> <span class="nav-text">同步及渲染</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解码-硬解码"><span class="nav-number">2.2.</span> <span class="nav-text">解码-硬解码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#支持情况-1"><span class="nav-number">2.3.</span> <span class="nav-text">支持情况</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Question-苹果用户怎么使用"><span class="nav-number">2.3.1.</span> <span class="nav-text">Question:苹果用户怎么使用</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言 换电脑后，怎么保持 配置（settings.json,插件,键位设置等）同步？ 离线安装拓展？ 利用脚本自动进行前面两个步骤">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vscode配置同步及拓展批量离线安装">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2019&#x2F;07&#x2F;01&#x2F;2019Q3&#x2F;vscode%E9%85%8D%E7%BD%AE%E5%90%8C%E6%AD%A5%E5%8F%8A%E6%8B%93%E5%B1%95%E6%89%B9%E9%87%8F%E7%A6%BB%E7%BA%BF%E5%AE%89%E8%A3%85&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言 换电脑后，怎么保持 配置（settings.json,插件,键位设置等）同步？ 离线安装拓展？ 利用脚本自动进行前面两个步骤">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-06-30T18:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.162Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="vscode">
+<meta property="article:tag" content="shell">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2019/07/01/2019Q3/vscode%E9%85%8D%E7%BD%AE%E5%90%8C%E6%AD%A5%E5%8F%8A%E6%8B%93%E5%B1%95%E6%89%B9%E9%87%8F%E7%A6%BB%E7%BA%BF%E5%AE%89%E8%A3%85/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>vscode配置同步及拓展批量离线安装 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2019/07/01/2019Q3/vscode%E9%85%8D%E7%BD%AE%E5%90%8C%E6%AD%A5%E5%8F%8A%E6%8B%93%E5%B1%95%E6%89%B9%E9%87%8F%E7%A6%BB%E7%BA%BF%E5%AE%89%E8%A3%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          vscode配置同步及拓展批量离线安装
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-07-01 02:00:00" itemprop="dateCreated datePublished" datetime="2019-07-01T02:00:00+08:00">2019-07-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9A%8F%E7%AC%94/" itemprop="url" rel="index">
+                    <span itemprop="name">随笔</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ol>
+<li>换电脑后，怎么保持 配置（settings.json,插件,键位设置等）同步？</li>
+<li>离线安装拓展？</li>
+<li>利用脚本自动进行前面两个步骤</li>
+</ol>
+<a id="more"></a>
+
+<h2 id="配置同步"><a href="#配置同步" class="headerlink" title="配置同步"></a>配置同步</h2><p><a href="https://juejin.im/post/5b9b5a6f6fb9a05d22728e36" target="_blank" rel="noopener">三分钟教你同步 Visual Studio Code 设置</a></p>
+<h2 id="离线安装拓展"><a href="#离线安装拓展" class="headerlink" title="离线安装拓展"></a>离线安装拓展</h2><p><a href="https://blog.csdn.net/u012814856/article/details/80684376" target="_blank" rel="noopener">简单的 VSCode 插件离线安装方法</a></p>
+<p>安装指令</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># vscode安装目录/bin</span></span><br><span class="line"><span class="comment"># 注意拓展的路径</span></span><br><span class="line"></span><br><span class="line">./code --install-extension xxx/octref.vetur-0.22.6.vsix</span><br></pre></td></tr></table></figure>
+
+<h2 id="批量下载离线安装包"><a href="#批量下载离线安装包" class="headerlink" title="批量下载离线安装包"></a>批量下载离线安装包</h2><p>这个需求的来源是：云桌面不能访问外网但是可以访问宿主机，想要同步宿主机的 vscode 拓展到云桌面环境</p>
+<p>可以直接采用 <code>离线安装拓展</code> 的做法，但是当拓展多了就很浪费时间。</p>
+<p>故主要做的事情就是：</p>
+<ol>
+<li>获取并解析 拓展列表 配置文件</li>
+<li>根据配置下载安装包</li>
+</ol>
+<!--more-->
+
+<p>我们先上最终的操作步骤：</p>
+<blockquote>
+<p>为了保证平台统一，我们的操作采用 <code>git bash</code></p>
+</blockquote>
+<p>进入宿主机的 vscode安装目录/bin 下,右键 <code>Git Bash Here</code> 执行以下脚本</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 先创建一个tmp临时目录，安装包都会下到里面</span></span><br><span class="line"><span class="comment"># tr '\n' ' ' 多行转一行</span></span><br><span class="line"><span class="comment"># | sh 将输出进行执行</span></span><br><span class="line">mkdir tmp;</span><br><span class="line">./code --list-extensions --show-versions | sed -r <span class="string">'s/(.*?)\.(.*?)@(.*)/https:\/\/marketplace.visualstudio.com\/_apis\/public\/gallery\/publishers\/\1\/vsextensions\/\2\/\3\/vspackage -o tmp\/\1.\2-\3.vsix/'</span> | tr <span class="string">'\n'</span> <span class="string">' '</span> | sed -r <span class="string">'s/(.*)/curl \1/'</span> | sh</span><br></pre></td></tr></table></figure>
+<p>安装包下载到 tmp 目录下</p>
+<p>在云桌面的 vscode 中，点击 EXTENSIONS 后面的 … 符号，选择 <code>install from VXIS</code> 然后选择本地相应的插件包，插入，reload 即可。</p>
+<blockquote>
+<p>下面进行详细介绍：</p>
+</blockquote>
+<h3 id="一、获取并解析-拓展列表-配置文件"><a href="#一、获取并解析-拓展列表-配置文件" class="headerlink" title="一、获取并解析 拓展列表 配置文件"></a>一、获取并解析 拓展列表 配置文件</h3><h4 id="方案0-直接拿-配置同步-时-gist-github-中保存的json"><a href="#方案0-直接拿-配置同步-时-gist-github-中保存的json" class="headerlink" title="方案0: 直接拿 配置同步 时 gist.github 中保存的json"></a>方案0: 直接拿 <code>配置同步</code> 时 gist.github 中保存的json</h4><h4 id="方案1：解析目录并得到列表："><a href="#方案1：解析目录并得到列表：" class="headerlink" title="方案1：解析目录并得到列表："></a>方案1：解析目录并得到列表：</h4><p>我们可以在以下目录中拿到拓展列表目录，目录名为<code>${publisher}.${name}-${version}</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Windows %USERPROFILE%\.vscode\extensions</span><br><span class="line">Mac ~&#x2F;.vscode&#x2F;extensions</span><br><span class="line">Linux ~&#x2F;.vscode&#x2F;extensions</span><br></pre></td></tr></table></figure>
+<p>这个方案是可行的，但是感觉操作有点麻烦，弃</p>
+<h4 id="方案2：使用code-list-extensions命令"><a href="#方案2：使用code-list-extensions命令" class="headerlink" title="方案2：使用code --list-extensions命令"></a>方案2：使用<code>code --list-extensions</code>命令</h4><p>在 vscode 安装目录下的bin目录中执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// linux or git shell</span><br><span class="line">./code --list-extensions --show-versions</span><br><span class="line">// windows cmd or powershell</span><br><span class="line">.\code --list-extensions --show-versions</span><br></pre></td></tr></table></figure>
+<p>可以列出 <code>${publisher}.${name}@${version}</code>列表</p>
+<p>例如（第一行为命名行操作完的提示，不在实际输出中）：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[createInstance] extensionManagementService depends on downloadService <span class="built_in">which</span> is NOT registered.</span><br><span class="line">Andreabbondanza.ignoregit@1.0.1</span><br><span class="line">bpruitt-goddard.mermaid-markdown-syntax-highlighting@1.0.1</span><br><span class="line">dbaeumer.vscode-eslint@1.6.0</span><br></pre></td></tr></table></figure>
+
+<p>参考<a href="https://code.visualstudio.com/docs/editor/command-line" target="_blank" rel="noopener">Command Line Interface (CLI)</a></p>
+<h4 id="方案3：使用-vscode-npm-包"><a href="#方案3：使用-vscode-npm-包" class="headerlink" title="方案3：使用 vscode npm 包"></a>方案3：使用 vscode npm 包</h4><p>本想使用 vscode.extensions.all 接口拿到，碰到一些ts相关的问题后放弃了</p>
+<hr>
+<blockquote>
+<p>最终采用 <strong>方案2</strong></p>
+</blockquote>
+<h3 id="二、根据配置下载安装包"><a href="#二、根据配置下载安装包" class="headerlink" title="二、根据配置下载安装包"></a>二、根据配置下载安装包</h3><p>下载链接为：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://marketplace.visualstudio.com/_apis/public/gallery/publishers/<span class="variable">$&#123;publisher&#125;</span>/vsextensions/<span class="variable">$&#123;name&#125;</span>/<span class="variable">$&#123;version&#125;</span>/vspackage</span><br></pre></td></tr></table></figure>
+
+<p>假设某个插件配置为</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"metadata"</span>: &#123;</span><br><span class="line">    <span class="attr">"id"</span>: <span class="string">"e337c67b-55c2-4fef-8949-eb260e7fb7fd"</span>,</span><br><span class="line">    <span class="attr">"publisherId"</span>: <span class="string">"Shan.code-settings-sync"</span>,</span><br><span class="line">    <span class="attr">"publisherDisplayName"</span>: <span class="string">"Shan"</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">"name"</span>: <span class="string">"code-settings-sync"</span>,</span><br><span class="line">  <span class="attr">"publisher"</span>: <span class="string">"Shan"</span>,</span><br><span class="line">  <span class="attr">"version"</span>: <span class="string">"3.1.2"</span></span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+<p>则 下载链接为 </p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://marketplace.visualstudio.com/_apis/public/gallery/publishers/Shan/vsextensions/code-settings-sync/3.1.2/vspackage</span><br></pre></td></tr></table></figure>
+
+<p>下载的文件名为 <code>Shan.code-settings-sync-3.1.2.vsix</code></p>
+<h4 id="在指定目录下利用-git-bash-下载文件"><a href="#在指定目录下利用-git-bash-下载文件" class="headerlink" title="在指定目录下利用 git bash 下载文件"></a>在指定目录下利用 git bash 下载文件</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl https:&#x2F;&#x2F;marketplace.visualstudio.com&#x2F;_apis&#x2F;public&#x2F;gallery&#x2F;publishers&#x2F;Shan&#x2F;vsextensions&#x2F;code-settings-sync&#x2F;3.1.2&#x2F;vspackage -O</span><br></pre></td></tr></table></figure>
+<p>本以为使用 -O （以服务器上的名称保存在本地），下载的文件名是 <code>Shan.code-settings-sync-3.1.2.vsix</code>，结果是 <code>vspackage</code></p>
+<p>根据 <a href="http://www.codebelief.com/article/2017/05/linux-command-line-curl-usage/#3" target="_blank" rel="noopener">cURL-将链接保存到文件</a> 中得知，</p>
+<blockquote>
+<p>注意：使用 -O 选项时，必须确保链接末尾包含文件名，否则 curl 无法正确保存文件。如果遇到链接中无文件名的情况，应该使用 -o 选项手动指定文件名，或使用重定向符号。</p>
+</blockquote>
+<p>另外介绍下 sh 的正则和文本替换</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> dbaeumer.vscode-eslint@1.6.0 | egrep <span class="string">"(.*?)\.(.*?)@(.*)"</span></span><br><span class="line"><span class="comment">#输出 dbaeumer.vscode-eslint@1.6.0</span></span><br></pre></td></tr></table></figure>
+<p>一开始使用 egrep 命令，发现不能直接做替换，后直接采用 sed 命令</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">'dbaeumer.vscode-eslint@1.6.0'</span> |  sed -r <span class="string">'s/(.*?)\.(.*?)@(.*)/\1.\2-\3.vsix/'</span></span><br><span class="line"><span class="comment"># 输出 dbaeumer.vscode-eslint-1.6.0.vsix</span></span><br></pre></td></tr></table></figure>
+
+<p>-r 参数表示 sed 开启拓展正则功能</p>
+<p>参考 <a href="https://www.cnblogs.com/jcli/p/4088514.html" target="_blank" rel="noopener">sed介绍</a></p>
+<p><strong>单文件下载的 sh 命令即</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">'dbaeumer.vscode-eslint@1.6.0'</span> | sed -r <span class="string">'s/(.*?)\.(.*?)@(.*)/curl https:\/\/marketplace.visualstudio.com\/_apis\/public\/gallery\/publishers\/\1\/vsextensions\/\2\/\3\/vspackage -o \1.\2-\3.vsix/'</span> | sh</span><br></pre></td></tr></table></figure>
+
+<p>结合步骤一</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 先创建一个tmp临时目录，安装包都会下到里面</span></span><br><span class="line"><span class="comment"># tr '\n' ' ' 多行转一行</span></span><br><span class="line"><span class="comment"># | sh 将输出进行执行</span></span><br><span class="line">mkdir tmp;</span><br><span class="line">./code --list-extensions --show-versions | sed -r <span class="string">'s/(.*?)\.(.*?)@(.*)/https:\/\/marketplace.visualstudio.com\/_apis\/public\/gallery\/publishers\/\1\/vsextensions\/\2\/\3\/vspackage -o tmp\/\1.\2-\3.vsix/'</span> | tr <span class="string">'\n'</span> <span class="string">' '</span> | sed -r <span class="string">'s/(.*)/curl \1/'</span> | sh</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="后续"><a href="#后续" class="headerlink" title="后续"></a>后续</h2><p>发现有的文件下载下来安装不了，提示 <code>end of central directory record signature not found</code></p>
+<p>可能是当前插件所依赖的 vscode 版本较高，要么升级 vscode 要么下载旧版插件</p>
+<blockquote>
+<p>可以去 <code>https://marketplace.visualstudio.com/items/${publisher}.${name}/changelog</code> 查看版本记录下载旧版本</p>
+</blockquote>
+<p>也有可能需要去 <code>gallery.vsassets.io</code> 下载</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://<span class="variable">$&#123;publisher&#125;</span>.gallery.vsassets.io/_apis/public/gallery/publisher/<span class="variable">$&#123;publisher&#125;</span>/extension/<span class="variable">$&#123;extension name&#125;</span>/<span class="variable">$&#123;version&#125;</span>/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage</span><br></pre></td></tr></table></figure>
+
+<p>sh 命令</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">'dbaeumer.vscode-eslint@1.6.0'</span> | sed -r <span class="string">'s/(.*?)\.(.*?)@(.*)/curl https:\/\/\1.gallery.vsassets.io\/_apis\/public\/gallery\/publisher\/\1\/extension\/\2\/\3\/assetbyname\/Microsoft.VisualStudio.Services.VSIXPackage -o \1.\2-\3.vsix/'</span> | sh</span><br></pre></td></tr></table></figure>
+
+<p>注意，如果用命令行下载的时候提示：<code>curl:(92) HTTP/2 stream 1 was not closed cleanly: HTTP_1_1_REQUIRED (err 13)</code>,需要重新下</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/vscode/" rel="tag"># vscode</a>
+              <a href="/tags/shell/" rel="tag"># shell</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/07/01/2019Q3/React%20Context%E5%8F%8A%E6%8D%A2%E8%82%A4%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0/" rel="prev" title="React Context及换肤功能实现">
+      <i class="fa fa-chevron-left"></i> React Context及换肤功能实现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/07/02/2019Q3/%E5%A4%A7%E5%B1%8F%E5%8F%AF%E8%A7%86%E5%8C%96%E4%B9%8B%E7%BB%84%E4%BB%B6%E5%B1%82%E7%BA%A7%E8%AE%BE%E7%BD%AE/" rel="next" title="大屏可视化之组件层级设置">
+      大屏可视化之组件层级设置 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置同步"><span class="nav-number">2.</span> <span class="nav-text">配置同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#离线安装拓展"><span class="nav-number">3.</span> <span class="nav-text">离线安装拓展</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#批量下载离线安装包"><span class="nav-number">4.</span> <span class="nav-text">批量下载离线安装包</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、获取并解析-拓展列表-配置文件"><span class="nav-number">4.1.</span> <span class="nav-text">一、获取并解析 拓展列表 配置文件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#方案0-直接拿-配置同步-时-gist-github-中保存的json"><span class="nav-number">4.1.1.</span> <span class="nav-text">方案0: 直接拿 配置同步 时 gist.github 中保存的json</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#方案1：解析目录并得到列表："><span class="nav-number">4.1.2.</span> <span class="nav-text">方案1：解析目录并得到列表：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#方案2：使用code-list-extensions命令"><span class="nav-number">4.1.3.</span> <span class="nav-text">方案2：使用code --list-extensions命令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#方案3：使用-vscode-npm-包"><span class="nav-number">4.1.4.</span> <span class="nav-text">方案3：使用 vscode npm 包</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、根据配置下载安装包"><span class="nav-number">4.2.</span> <span class="nav-text">二、根据配置下载安装包</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#在指定目录下利用-git-bash-下载文件"><span class="nav-number">4.2.1.</span> <span class="nav-text">在指定目录下利用 git bash 下载文件</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#后续"><span class="nav-number">5.</span> <span class="nav-text">后续</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

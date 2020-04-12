@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言不考虑箭头函数等特异函数，本文所说的函数都是指的构造函数 之前对原型，原型链，构造函数等都是零零散散的知识碎片，这次写个文章记录一下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重学 JS 原型链">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2019&#x2F;12&#x2F;31&#x2F;2019Q4&#x2F;%E9%87%8D%E5%AD%A6%20JS%20%E5%8E%9F%E5%9E%8B%E9%93%BE&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言不考虑箭头函数等特异函数，本文所说的函数都是指的构造函数 之前对原型，原型链，构造函数等都是零零散散的知识碎片，这次写个文章记录一下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-efe713a1eb340c2d.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="article:published_time" content="2019-12-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.164Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="ECMAScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-efe713a1eb340c2d.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+
+<link rel="canonical" href="https://gahing.top/2019/12/31/2019Q4/%E9%87%8D%E5%AD%A6%20JS%20%E5%8E%9F%E5%9E%8B%E9%93%BE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>重学 JS 原型链 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2019/12/31/2019Q4/%E9%87%8D%E5%AD%A6%20JS%20%E5%8E%9F%E5%9E%8B%E9%93%BE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          重学 JS 原型链
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-31 00:00:00" itemprop="dateCreated datePublished" datetime="2019-12-31T00:00:00+08:00">2019-12-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>不考虑箭头函数等特异函数，本文所说的函数都是指的构造函数</p>
+<p>之前对原型，原型链，构造函数等都是零零散散的知识碎片，这次写个文章记录一下</p>
+<a id="more"></a>
+
+<h2 id="原型对象-prototype"><a href="#原型对象-prototype" class="headerlink" title="原型对象 prototype"></a>原型对象 prototype</h2><p>创建一个函数 F 时，会自动为该函数 F 创建一个 prototype 属性，指向一个原型对象 F.prototype</p>
+<p>默认情况下，函数 F 的原型对象 F.prototype 会自动获得一个 constructor （构造函数）属性，并指向 F </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">F.prototype.constructor === F <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<p>而原型对象也是对象，可以对其添加属性和方法</p>
+<h2 id="proto"><a href="#proto" class="headerlink" title="__proto__"></a>__proto__</h2><p>每个对象都有一个 <code>__proto__</code> 属性，<strong>指向生成该对象的构造函数的原型对象</strong></p>
+<p>如 F.prototype 原型对象是 Object 的一个实例， <code>__proto__</code> 指向 <code>Object.prototype</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">F.prototype.__proto__ === <span class="built_in">Object</span>.prototype <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<p>Object.prototype 这个原型对象也是对象，那么其 <code>__proto__</code> 指向哪？其实指向的是 null</p>
+<p>Object.prototype 为万物起源</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Object</span>.prototype.__proto__ === <span class="literal">null</span> <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<p>当实例化 F 得到对象 f 时,f 的 <code>__proto__</code> 属性指向 F 的原型对象 F.prototype</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> f = <span class="keyword">new</span> F()</span><br><span class="line">f.__proto__ === F.prototype <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<p>这个指向再创建后就确定了，后续修改 F 的原型对象指向也没有影响</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">F</span>(<span class="params"></span>)</span>&#123;&#125;</span><br><span class="line"><span class="keyword">const</span> f1 = <span class="keyword">new</span> F</span><br><span class="line">F.prototype = &#123;&#125;</span><br><span class="line"><span class="keyword">const</span> f2 = <span class="keyword">new</span> F</span><br><span class="line"><span class="comment">// 指向不一致</span></span><br><span class="line">f1.__proto__ !== f2.__proto__ <span class="comment">// true</span></span><br><span class="line"><span class="comment">// 新的原型对象 &#123;&#125; 没有构造函数，可以为其赋值</span></span><br><span class="line">F.prototype.constructor !== F <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+<h2 id="原型链"><a href="#原型链" class="headerlink" title="原型链"></a>原型链</h2><p>上述的关系，通过原型串接起来，可以得到下面这个图</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-efe713a1eb340c2d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image"></p>
+<p>如果问什么是原型，就这么回答：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">每个构造函数有个原型对象</span><br><span class="line">每个实例对象有个 __proto__ 属性，指向该实例的构造函数的原型对象</span><br></pre></td></tr></table></figure>
+
+<p>对对象属性或方法的访问，采用的是原型链搜索，先搜索对象实例 f 自身，没找到的话，搜索原型对象，再没找到，搜素该原型对象的原型对象，直到不存在原型对象</p>
+<p>比如访问 <code>f.name</code> 将按以下顺序搜索值</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">f.name</span><br><span class="line">f.__proto__.name / F.prototype.name</span><br><span class="line">f.__proto__.__proto__.name / <span class="built_in">Object</span>.prototype.name</span><br></pre></td></tr></table></figure>
+
+<p>判断实例 f 中是否含有 name 属性，可以通过以下方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">f.hasOwnProperty(<span class="string">"name"</span>)</span><br></pre></td></tr></table></figure>
+<p>判断原型中是否含有 name 属性，可以通过以下方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!f.hasOwnProperty(<span class="string">"name"</span>) &amp;&amp; <span class="string">"name"</span> <span class="keyword">in</span> f</span><br></pre></td></tr></table></figure>
+
+<h2 id="继承"><a href="#继承" class="headerlink" title="继承"></a>继承</h2><h3 id="class"><a href="#class" class="headerlink" title="class"></a>class</h3><p>在 es6 中，我们是这样做的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Engineer</span> </span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>(name)&#123;</span><br><span class="line">    <span class="keyword">this</span>.name = name</span><br><span class="line">    <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">  &#125;</span><br><span class="line">  coding()&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FeEngineer</span> <span class="keyword">extends</span> <span class="title">Engineer</span></span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>(name)&#123;</span><br><span class="line">    <span class="keyword">super</span>(name)</span><br><span class="line">    <span class="keyword">this</span>.skills.push(<span class="string">'web'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">  croping()&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>每个 Engineer 都有一套基础技能 skills 和一个编码方法 coding</p>
+<p>FeEngineer 继承了 Engineer 的基础技能和编码方法，并添加了自己的技能</p>
+<p>实例化一个 FeEngineer 看下效果</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> fe = <span class="keyword">new</span> FeEngineer(<span class="string">"gahing"</span>)</span><br><span class="line"><span class="built_in">console</span>.log(fe)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">&#123;</span></span><br><span class="line"><span class="comment">  name: "gahing",</span></span><br><span class="line"><span class="comment">  skills: ["linux", "network", "os", "web"],</span></span><br><span class="line"><span class="comment">  __proto__: Engineer &#123;</span></span><br><span class="line"><span class="comment">    constructor: class FeEngineer,</span></span><br><span class="line"><span class="comment">    croping: ƒ croping(),</span></span><br><span class="line"><span class="comment">    __proto__: Object &#123;</span></span><br><span class="line"><span class="comment">      coding: ƒ coding()</span></span><br><span class="line"><span class="comment">      constructor: class Engineer</span></span><br><span class="line"><span class="comment">      __proto__: Object</span></span><br><span class="line"><span class="comment">    &#125;</span></span><br><span class="line"><span class="comment">  &#125;</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">Engineer.prototype.constructor === Engineer <span class="comment">// true</span></span><br><span class="line">fe.__proto__ === FeEngineer.prototype <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>然后说说实例化 FeEngineer 执行的过程</p>
+<p>子类中的构造函数必须调用 super ，原因在于 js 是这样处理的：</p>
+<ul>
+<li>实例化一个普通的构造函数时，会创建一个空对象作为 this ，然后继续运行</li>
+<li>而实例化一个派生（子类）的构造函数时，需要利用父构造函数来完成上面这件事 – 执行 <code>super(...)</code>。于是，父构造函数创建了一个空对象作为 this，然后继续运行父构造函数的代码。而后利用该 this 对象继续执行子类的构造函数中的代码</li>
+</ul>
+<p>注意创建 this 的位置，所以下面代码是会报错的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Super</span></span>&#123;&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Sub</span> <span class="keyword">extends</span> <span class="title">Super</span></span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>()&#123;</span><br><span class="line">    <span class="keyword">this</span>.name = <span class="string">"1"</span></span><br><span class="line">    <span class="keyword">super</span>()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">new</span> Sub() <span class="comment">// Uncaught ReferenceError: Must call super constructor in derived class before accessing 'this' or returning from derived constructor</span></span><br></pre></td></tr></table></figure>
+<p>提示 this 的访问必须在执行 super 之后，所以和等等要谈到的<em>借用构造函数法</em>还是有点不一样的，这里先简单的上个组合继承的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Super</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.age = <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Sub</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = <span class="string">"test"</span></span><br><span class="line">  Super.call(<span class="keyword">this</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">new</span> Sub() <span class="comment">// &#123;age:1,name:"test"&#125;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>下面我们看看用 es5 怎么实现上面的效果</p>
+<h3 id="原型链继承法"><a href="#原型链继承法" class="headerlink" title="原型链继承法"></a>原型链继承法</h3><p>创建构造函数时，原型对象会自动创建，也可以将其指向其他对象，实现原型链继承</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Engineer</span> (<span class="params">name</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">&#125;</span><br><span class="line">Engineer.prototype.coding = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">FeEngineer</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> engineer = <span class="keyword">new</span> Engineer(<span class="string">"gahing"</span>)</span><br><span class="line">FeEngineer.prototype = engineer</span><br><span class="line">FeEngineer.prototype.croping = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样实例化 FeEngineer 后，该对象就能访问父类对象的所有属性和方法了</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fe = <span class="keyword">new</span> FeEngineer(<span class="string">'gahing'</span>)</span><br><span class="line"><span class="built_in">console</span>.log(fe)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">FeEngineer &#123;</span></span><br><span class="line"><span class="comment">  __proto__: Engineer</span></span><br><span class="line"><span class="comment">    croping: ƒ ()</span></span><br><span class="line"><span class="comment">    name: "gahing"</span></span><br><span class="line"><span class="comment">    skills: (3) ["linux", "network", "os"]</span></span><br><span class="line"><span class="comment">    __proto__: Object</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>但是看到没有， <code>__proto__</code> 把 fe 实例和原型对象 engineer 连接起来了，</p>
+<p>修改 fe 的属性和方法可能会改动到 engineer</p>
+<p>如上面的例子，本来 engineer 是没有 croping 方法的，后面却因为要给 fe 添加原型方法，导致 engineer 也有这个方法</p>
+<h3 id="借用构造函数法"><a href="#借用构造函数法" class="headerlink" title="借用构造函数法"></a>借用构造函数法</h3><p>由于不用原型继承，需要把父类的原型方法转到实例方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Engineer</span> (<span class="params">name</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">  <span class="keyword">this</span>.coding = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">FeEngineer</span>(<span class="params">name</span>)</span>&#123;</span><br><span class="line">  Engineer.call(<span class="keyword">this</span>,name)</span><br><span class="line">  <span class="keyword">this</span>.skills.push(<span class="string">'web'</span>)</span><br><span class="line">&#125;</span><br><span class="line">FeEngineer.prototype.croping = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样实例化 FeEngineer 后，该对象就拥有了父类对象的所有属性和方法了</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fe = <span class="keyword">new</span> FeEngineer(<span class="string">'gahing'</span>)</span><br><span class="line"><span class="built_in">console</span>.log(fe)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">FeEngineer &#123;</span></span><br><span class="line"><span class="comment">  coding: ƒ ()</span></span><br><span class="line"><span class="comment">  name: "gahing"</span></span><br><span class="line"><span class="comment">  skills: (4) ["linux", "network", "os", "web"]</span></span><br><span class="line"><span class="comment">  __proto__:</span></span><br><span class="line"><span class="comment">    croping: ƒ ()</span></span><br><span class="line"><span class="comment">    constructor: ƒ FeEngineer(name)</span></span><br><span class="line"><span class="comment">    __proto__: Object</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<p>但是这样会产生一个问题， FeEngineer 实例的 coding 方法和 Engineer 实例的 coding 方法不一样，并且每个 FeEngineer 实例的 coding 方法也不一样</p>
+<p>因为该方法是每次实例化的时候生成的，所以也非常占内存</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> engineer = <span class="keyword">new</span> Engineer()</span><br><span class="line"><span class="keyword">var</span> fe = <span class="keyword">new</span> FeEngineer()</span><br><span class="line">fe.coding === engineer.coding <span class="comment">//false</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="组合继承法"><a href="#组合继承法" class="headerlink" title="组合继承法"></a>组合继承法</h3><p>借助<em>原型链继承法<em>实现原型方法的继承，借助</em>借用构造函数法</em> 实现父类实例属性和方法的继承</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Engineer</span> (<span class="params">name</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">&#125;</span><br><span class="line">Engineer.prototype.coding = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">FeEngineer</span>(<span class="params">name</span>)</span>&#123;</span><br><span class="line">  Engineer.call(<span class="keyword">this</span>,name)</span><br><span class="line">  <span class="keyword">this</span>.skills.push(<span class="string">'web'</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> engineer = <span class="keyword">new</span> Engineer(<span class="string">"gahing"</span>)</span><br><span class="line">FeEngineer.prototype = engineer</span><br><span class="line">FeEngineer.prototype.croping = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样实例化 FeEngineer 后，该对象就拥有了父类对象的所有属性和方法了</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fe = <span class="keyword">new</span> FeEngineer(<span class="string">'gahing'</span>)</span><br><span class="line"><span class="built_in">console</span>.log(fe)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">FeEngineer &#123;</span></span><br><span class="line"><span class="comment">  name: "gahing"</span></span><br><span class="line"><span class="comment">  skills: (4) ["linux", "network", "os", "web"]</span></span><br><span class="line"><span class="comment">  __proto__: Engineer</span></span><br><span class="line"><span class="comment">    croping: ƒ ()</span></span><br><span class="line"><span class="comment">    name: "gahing"</span></span><br><span class="line"><span class="comment">    skills: (3) ["linux", "network", "os"]</span></span><br><span class="line"><span class="comment">    __proto__: Object</span></span><br><span class="line"><span class="comment">      coding: ƒ ()</span></span><br><span class="line"><span class="comment">      constructor: ƒ Engineer(name)</span></span><br><span class="line"><span class="comment">      __proto__: Object</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>父类实例属性和方法被 fe 继承了，且父类的的方法还是挂在父类的原型对象上</p>
+<p>但是由于父类实例 engineer 被挂载到 fe 的原型对象上，修改 fe 的属性和方法可能会改动到 engineer</p>
+<p>同时，父类构造函数被调用了两次，fe 的原型对象 engineer 多了一些不必要的实例属性和方法</p>
+<h3 id="寄生组合式继承"><a href="#寄生组合式继承" class="headerlink" title="寄生组合式继承"></a>寄生组合式继承</h3><p>其实只要父类构造函数 Engineer 中的东西不被挂载到子类实例对象 fe 的原型对象上，就可以实现我们要的效果</p>
+<p>再上一次 es6 执行后的效果</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">&#123;</span></span><br><span class="line"><span class="comment">  name: "gahing",</span></span><br><span class="line"><span class="comment">  skills: ["linux", "network", "os", "web"],</span></span><br><span class="line"><span class="comment">  __proto__: Engineer &#123;</span></span><br><span class="line"><span class="comment">    constructor: class FeEngineer,</span></span><br><span class="line"><span class="comment">    croping: ƒ croping(),</span></span><br><span class="line"><span class="comment">    __proto__: Object &#123;</span></span><br><span class="line"><span class="comment">      coding: ƒ coding()</span></span><br><span class="line"><span class="comment">      constructor: class Engineer</span></span><br><span class="line"><span class="comment">      __proto__: Object</span></span><br><span class="line"><span class="comment">    &#125;</span></span><br><span class="line"><span class="comment">  &#125;</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<p>思路就是将子类实例对象 fe 的原型对象指向一个空对象，该空对象的构造函数的原型对象指向父类构造函数 Engineer 的原型对象</p>
+<p>然后调整下组合继承的代码，变成如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建 Engineer 的一个副本，区别在于没有任何实例属性</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Temp</span>(<span class="params"></span>)</span>&#123;&#125;</span><br><span class="line">Temp.prototype = Engineer.prototype</span><br><span class="line"><span class="keyword">const</span> temp = <span class="keyword">new</span> Temp() </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Engineer</span> (<span class="params">name</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">&#125;</span><br><span class="line">Engineer.prototype.coding = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">FeEngineer</span>(<span class="params">name</span>)</span>&#123;</span><br><span class="line">  Engineer.call(<span class="keyword">this</span>,name)</span><br><span class="line">  <span class="keyword">this</span>.skills.push(<span class="string">'web'</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 指向 temp</span></span><br><span class="line">FeEngineer.prototype = temp</span><br><span class="line">FeEngineer.prototype.croping = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实例化 FeEngineer 看下效果</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fe = <span class="keyword">new</span> FeEngineer(<span class="string">'gahing'</span>)</span><br><span class="line">fe.__proto__.constructor === FeEngineer <span class="comment">// false</span></span><br><span class="line"><span class="built_in">console</span>.log(fe)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">FeEngineer &#123;</span></span><br><span class="line"><span class="comment">  name: "gahing"</span></span><br><span class="line"><span class="comment">  skills: (4) ["linux", "network", "os", "web"]</span></span><br><span class="line"><span class="comment">  __proto__: Engineer &#123;</span></span><br><span class="line"><span class="comment">    croping: ƒ ()</span></span><br><span class="line"><span class="comment">    __proto__: &#123;</span></span><br><span class="line"><span class="comment">      coding: ƒ ()</span></span><br><span class="line"><span class="comment">      constructor: ƒ Engineer(name)</span></span><br><span class="line"><span class="comment">      __proto__: Object</span></span><br><span class="line"><span class="comment">    &#125;</span></span><br><span class="line"><span class="comment">  &#125;</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>由于实例化 Temp 时不会产生多余的属性和方法，因此这种做法基本能达到效果</p>
+<p>剩下的就是一些构造器方法的调整</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// fe 的原型对象的构造器方法应该指向 FeEngineer ，并且是不可修改的</span></span><br><span class="line"><span class="built_in">Object</span>.defineProperty(temp,<span class="string">'constructor'</span>,&#123;</span><br><span class="line">  enumerable: <span class="literal">false</span>,</span><br><span class="line">  value: FeEngineer</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>综合一下，得到如下的寄生组合式继承的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Temp</span>(<span class="params"></span>)</span>&#123;&#125;</span><br><span class="line">Temp.prototype = Engineer.prototype</span><br><span class="line"><span class="keyword">const</span> temp = <span class="keyword">new</span> Temp() </span><br><span class="line"><span class="built_in">Object</span>.defineProperty(temp,<span class="string">'constructor'</span>,&#123;</span><br><span class="line">  enumerable: <span class="literal">false</span>,</span><br><span class="line">  value: FeEngineer</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Engineer</span> (<span class="params">name</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">&#125;</span><br><span class="line">Engineer.prototype.coding = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">FeEngineer</span>(<span class="params">name</span>)</span>&#123;</span><br><span class="line">  Engineer.call(<span class="keyword">this</span>,name)</span><br><span class="line">  <span class="keyword">this</span>.skills.push(<span class="string">'web'</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 指向 temp</span></span><br><span class="line">FeEngineer.prototype = temp</span><br><span class="line">FeEngineer.prototype.croping = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再看下效果</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fe = <span class="keyword">new</span> FeEngineer(<span class="string">'gahing'</span>)</span><br><span class="line">fe.__proto__.constructor === FeEngineer <span class="comment">// true</span></span><br><span class="line"><span class="built_in">console</span>.log(fe)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">FeEngineer </span></span><br><span class="line"><span class="comment">  name: "gahing"</span></span><br><span class="line"><span class="comment">  skills: (4) ["linux", "network", "os", "web"]</span></span><br><span class="line"><span class="comment">  __proto__: Engineer</span></span><br><span class="line"><span class="comment">    croping: ƒ ()</span></span><br><span class="line"><span class="comment">    constructor: ƒ FeEngineer(name)</span></span><br><span class="line"><span class="comment">    __proto__:</span></span><br><span class="line"><span class="comment">      coding: ƒ ()</span></span><br><span class="line"><span class="comment">      constructor: ƒ Engineer(name)</span></span><br><span class="line"><span class="comment">      __proto__: Object</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<p>最后，我们希望把 Temp 相关的代码做个封装,实现 SubClass 和 SuperClass 之间的寄生组合式继承</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createTemp</span>(<span class="params">SuperClass</span>)</span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">Temp</span>(<span class="params"></span>)</span>&#123;&#125;</span><br><span class="line">  Temp.prototype = SuperClass.prototype</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> Temp() </span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createTemp2</span>(<span class="params">SuperClass</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">let</span> obj = &#123;&#125;</span><br><span class="line">  obj.__proto__ = SuperClass.prototype</span><br><span class="line">  <span class="keyword">return</span> obj</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">inheritPrototype</span> (<span class="params">SubClass, SuperClass</span>)</span>&#123;</span><br><span class="line">  <span class="comment">// 也可以直接用 Object.create(SuperClass.prototype)</span></span><br><span class="line">  <span class="comment">// 即 SuperClass.prototype 指向创建 temp 的构造函数的原型对象</span></span><br><span class="line">  <span class="comment">// temp.__proto__ === SuperClass.prototype</span></span><br><span class="line">  <span class="comment">// 这里也可以采用 createTemp2</span></span><br><span class="line">  <span class="keyword">const</span> temp = createTemp(SuperClass)</span><br><span class="line">  <span class="built_in">Object</span>.defineProperty(temp,<span class="string">'constructor'</span>,&#123;</span><br><span class="line">    enumerable: <span class="literal">false</span>,</span><br><span class="line">    value: SubClass</span><br><span class="line">  &#125;)</span><br><span class="line">  SubClass.prototype = temp</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以上面的代码又可以写成</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Engineer</span> (<span class="params">name</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.skills = [<span class="string">'linux'</span>,<span class="string">'network'</span>,<span class="string">'os'</span>]</span><br><span class="line">&#125;</span><br><span class="line">Engineer.prototype.coding = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在编码`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">FeEngineer</span>(<span class="params">name</span>)</span>&#123;</span><br><span class="line">  Engineer.call(<span class="keyword">this</span>,name)</span><br><span class="line">  <span class="keyword">this</span>.skills.push(<span class="string">'web'</span>)</span><br><span class="line">&#125;</span><br><span class="line">inheritPrototype(FeEngineer,Engineer)</span><br><span class="line">FeEngineer.prototype.croping = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> 正在切图`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://segmentfault.com/a/1190000015565616" target="_blank" rel="noopener">ES6 Class 继承与 super</a></li>
+<li><a href="https://chuchencheng.com/2019/05/27/%E5%9B%9E%E5%BF%86%E6%9D%80%EF%BC%9AJavaScript%E7%9A%84%E7%BB%A7%E6%89%BF/" target="_blank" rel="noopener">回忆杀：JavaScript的继承</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ECMAScript/" rel="tag"># ECMAScript</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/29/Web%E6%8A%80%E6%9C%AF/%E6%B5%8F%E8%A7%88%E5%99%A8%E7%BC%93%E5%AD%98/" rel="prev" title="浏览器缓存">
+      <i class="fa fa-chevron-left"></i> 浏览器缓存
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/31/2019Q4/%E6%B5%85%E8%B0%88Angular%E7%9A%84%E8%84%8F%E6%A3%80%E6%9F%A5%E6%9C%BA%E5%88%B6/" rel="next" title="浅谈Angular的脏检查机制">
+      浅谈Angular的脏检查机制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原型对象-prototype"><span class="nav-number">2.</span> <span class="nav-text">原型对象 prototype</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proto"><span class="nav-number">3.</span> <span class="nav-text">__proto__</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原型链"><span class="nav-number">4.</span> <span class="nav-text">原型链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继承"><span class="nav-number">5.</span> <span class="nav-text">继承</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#class"><span class="nav-number">5.1.</span> <span class="nav-text">class</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原型链继承法"><span class="nav-number">5.2.</span> <span class="nav-text">原型链继承法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#借用构造函数法"><span class="nav-number">5.3.</span> <span class="nav-text">借用构造函数法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#组合继承法"><span class="nav-number">5.4.</span> <span class="nav-text">组合继承法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#寄生组合式继承"><span class="nav-number">5.5.</span> <span class="nav-text">寄生组合式继承</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

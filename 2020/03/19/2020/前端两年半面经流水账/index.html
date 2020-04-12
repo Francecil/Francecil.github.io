@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="背景先简单介绍下本人的情况，2017年毕业于福州大学，然后在厦门一家 CDN 公司任职前端开发工程师，大概2年半的前端开发经验。 接触过后端移动端，目前主方向是前端。参与的项目基本都是 toB ，主要分为流媒体，可视化，前端优化，portal平台等几个方向。 在开源项目方面，实现了一个基于 antd3 的前端长列表相关组件库（现在已不维护，可直接使用 antd4 最近在研究的技术有：webasse">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端两年半面经流水账">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;03&#x2F;19&#x2F;2020&#x2F;%E5%89%8D%E7%AB%AF%E4%B8%A4%E5%B9%B4%E5%8D%8A%E9%9D%A2%E7%BB%8F%E6%B5%81%E6%B0%B4%E8%B4%A6&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="背景先简单介绍下本人的情况，2017年毕业于福州大学，然后在厦门一家 CDN 公司任职前端开发工程师，大概2年半的前端开发经验。 接触过后端移动端，目前主方向是前端。参与的项目基本都是 toB ，主要分为流媒体，可视化，前端优化，portal平台等几个方向。 在开源项目方面，实现了一个基于 antd3 的前端长列表相关组件库（现在已不维护，可直接使用 antd4 最近在研究的技术有：webasse">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-19T03:12:40.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.166Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="面经">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2020/03/19/2020/%E5%89%8D%E7%AB%AF%E4%B8%A4%E5%B9%B4%E5%8D%8A%E9%9D%A2%E7%BB%8F%E6%B5%81%E6%B0%B4%E8%B4%A6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>前端两年半面经流水账 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/03/19/2020/%E5%89%8D%E7%AB%AF%E4%B8%A4%E5%B9%B4%E5%8D%8A%E9%9D%A2%E7%BB%8F%E6%B5%81%E6%B0%B4%E8%B4%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          前端两年半面经流水账
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-19 11:12:40" itemprop="dateCreated datePublished" datetime="2020-03-19T11:12:40+08:00">2020-03-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9A%8F%E7%AC%94/" itemprop="url" rel="index">
+                    <span itemprop="name">随笔</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>先简单介绍下本人的情况，2017年毕业于福州大学，然后在厦门一家 CDN 公司任职前端开发工程师，大概2年半的前端开发经验。</p>
+<p>接触过后端移动端，目前主方向是前端。参与的项目基本都是 toB ，主要分为流媒体，可视化，前端优化，portal平台等几个方向。</p>
+<p>在开源项目方面，实现了一个基于 antd3 的前端长列表相关组件库（现在已不维护，可直接使用 antd4</p>
+<p>最近在研究的技术有：webassembly，webgl</p>
+<p>废话不多说，下面进入正题 ~</p>
+<a id="more"></a>
+
+<h2 id="面试总结与建议"><a href="#面试总结与建议" class="headerlink" title="面试总结与建议"></a>面试总结与建议</h2><p>先说这个，比较重要。</p>
+<p>19年底的几个面试没做好准备，对自己过于自信，直接拿大厂刷面经，现在想想是真的蠢。。</p>
+<p>建议大家先找朋友帮忙面试，然后可以先投一些不会去的厂刷刷经验。</p>
+<p>由于大厂的面试流程比较久，如果有流程较快的备胎公司的话，建议在大厂面试的末尾阶段再投，否则多个 hr 催着给答复很难受。</p>
+<p>技术面的话，大部分问题网上都可以找到，不过有些面试官会层层递进，背的还是理解的一试就知道</p>
+<p>然后要注意非技术题目也很重要，需要好好准备，包括且不限于：</p>
+<ul>
+<li>自我介绍（hr版本和技面版本）</li>
+<li>离职原因</li>
+<li>未来规划</li>
+<li>为什么你希望来我们公司工作?</li>
+<li>你希望通过这份工作获得什么?</li>
+<li>说说优缺点，用几个词描述自己</li>
+<li>还有什么其他问题</li>
+<li>为什么选择前端</li>
+<li>平时的学习方式</li>
+<li>和原同事的比较</li>
+<li>项目开发流程，管理流程</li>
+</ul>
+<p>有几个大厂就是因为非技术问题没有准备，回答的时候表述很乱，最终综合下挂了。。</p>
+<p>js 手写题和算法题的话可以参考这个<a href="https://github.com/francecil/leetcode/issues?q=is%3Aissue+is%3Aclosed" target="_blank" rel="noopener">项目</a>，这是我做过的题的一些记录</p>
+<p>由于疫情原因中间停了一段时间没有面试，加上等待 offer 的时间，从开始面试到最终确认 offer 前后也经历了三个月的时间。庆幸的是，最后拿到了满意的 offer。</p>
+<p>下面就以面试的顺序来进行描述，面试时没有录音，题目都是事后进行回忆，写的不全，有些重复的题目可能不再记录。</p>
+<h2 id="阿里-供应链平台"><a href="#阿里-供应链平台" class="headerlink" title="阿里-供应链平台"></a>阿里-供应链平台</h2><p>面试阿里的契机是有个大佬通过博客找到了我的邮箱，说帮我内推，正好准备找工作，于是就开始了面试之旅，其实那时候还没准备好。。</p>
+<h3 id="一面-19-12-16"><a href="#一面-19-12-16" class="headerlink" title="一面 19/12/16"></a>一面 19/12/16</h3><ul>
+<li><p>讲一个最有难度的项目</p>
+<ul>
+<li>追问：有哪些功能，负责什么模块</li>
+<li>追问：做了哪些体验优化</li>
+<li>追问：pv 多少</li>
+<li>追问：首屏加载时长</li>
+</ul>
+</li>
+<li><p>vue 和 react 的区别</p>
+<blockquote>
+<p>考察的是原理上的不同，千万不要讲用法。核心区别是数据更新触发页面重渲染的方式不一样。vue 采用的是数据拦截和依赖追踪，数据变化就会触发相应的更新；react 通过api去变更数据并进行局部更新，因为对数据变化无感知，因此可能需要对子组件也进行 render，不然子组件不知道是否应该重新render</p>
+</blockquote>
+</li>
+<li><p>虚拟dom用来解决什么问题，性能和设计两方面回答</p>
+<blockquote>
+<p>其实面试官想考察的是组件和底层元素的抽离这点，性能的话看业务代码不一定虚拟 dom 就比较优</p>
+</blockquote>
+</li>
+<li><p>react hooks 解决了什么问题</p>
+<blockquote>
+<p>状态逻辑难以复用；生命周期中的逻辑代码难以维护；this 指向问题</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><p>讲讲 vue 原理</p>
+<blockquote>
+<p>模板解析，响应式，渲染</p>
+</blockquote>
+<ul>
+<li>追问：模板解析过程，核心是什么<blockquote>
+<p>当时没理解问题要问什么，我猜应该是要问 vdom-&gt;diff-&gt;patch</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>从输入 url 到页面渲染的过程</p>
+<blockquote>
+<p>参看 <a href="https://gahing.top/2019/12/14/2019Q4/HTML%E6%96%87%E6%A1%A3%E7%9A%84%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/">从输入url后浏览器发生了什么</a></p>
+</blockquote>
+<ul>
+<li>追问：哪些地方可以做优化，做个归类</li>
+</ul>
+</li>
+<li><p>csrf</p>
+<ul>
+<li>追问：不是说 cookie 隔离的么，为什么其他页面发请求会带上<blockquote>
+<p>参看 <a href="https://gahing.top/2020/03/08/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF%20canvas%20%E6%B1%A1%E6%9F%93/">面试官问：什么是 canvas 污染</a></p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>settimeout ，promise，async/await 区别</p>
+<blockquote>
+<p>宏任务，微任务，协程</p>
+</blockquote>
+<ul>
+<li>追问：事件循环有哪些任务源<blockquote>
+<p>网络，定时器，history，用户交互事件，DOM manipulation</p>
+</blockquote>
+</li>
+<li>追问：以什么优先级取任务源<blockquote>
+<p>3/4概率拿交互任务源，避免交互堵塞</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>后端项目，用的什么框架</p>
+<ul>
+<li>express 的中间件原理<blockquote>
+<p>本质就是回调队列，next 执行</p>
+</blockquote>
+</li>
+<li>egg</li>
+</ul>
+</li>
+</ul>
+<h3 id="二面-19-12-26"><a href="#二面-19-12-26" class="headerlink" title="二面 19/12/26"></a>二面 19/12/26</h3><ul>
+<li>项目和业务的相关问题</li>
+<li>两道 js 手写题</li>
+</ul>
+<p>可能是项目经历和技能与岗位要求不匹配，在 28 号收到了拒信，简历进入了人才池..</p>
+<h2 id="字节-今日头条"><a href="#字节-今日头条" class="headerlink" title="字节-今日头条"></a>字节-今日头条</h2><p>头条是没做好准备就去面的，结果很差</p>
+<h3 id="一面-19-12-23"><a href="#一面-19-12-23" class="headerlink" title="一面 19/12/23"></a>一面 19/12/23</h3><ul>
+<li>聊项目</li>
+<li>vue/react 的相关问题</li>
+<li>【笔试】写个继承</li>
+<li>讲讲原型链<blockquote>
+<p>参看 <a href="https://gahing.top/2019/12/31/2019Q4/%E9%87%8D%E5%AD%A6%20JS%20%E5%8E%9F%E5%9E%8B%E9%93%BE/">重学 JS 原型链</a></p>
+</blockquote>
+</li>
+<li>讲讲模块化</li>
+<li>webpack 中 loader 和 plugin 的区别</li>
+<li>class 的 super 做了什么</li>
+</ul>
+<h2 id="美团-企平"><a href="#美团-企平" class="headerlink" title="美团-企平"></a>美团-企平</h2><h3 id="一面-19-12-26"><a href="#一面-19-12-26" class="headerlink" title="一面 19/12/26"></a>一面 19/12/26</h3><ul>
+<li>基本是讲项目<ul>
+<li>长列表为何不做节流<blockquote>
+<p>参看 <a href="https://gahing.top/2020/01/07/2020/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8rAF%E8%BF%9B%E8%A1%8C%E6%BB%9A%E5%8A%A8%E8%8A%82%E6%B5%81/">为什么不用rAF进行滚动节流</a></p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>同域请求的并发数限制的原因<blockquote>
+<p>线程切换损耗，端口占用限制</p>
+</blockquote>
+</li>
+<li>vuex 解决什么问题</li>
+<li>cdn 加速原理</li>
+<li>组内开发流程，如何提高代码质量</li>
+</ul>
+<h3 id="二面-19-12-17"><a href="#二面-19-12-17" class="headerlink" title="二面 19/12/17"></a>二面 19/12/17</h3><ul>
+<li>js 内存模型</li>
+<li>讲讲闭包</li>
+<li>讲讲原型链</li>
+<li>讲讲变量提升</li>
+<li>vue 和 react 的区别</li>
+<li>http2 的特点</li>
+<li>https 原理</li>
+<li>讲讲缓存</li>
+<li>讲讲双向绑定</li>
+<li>讲讲js的线程</li>
+<li>开放题：js 是一门面向对象的语言么？</li>
+<li>讲讲项目中用到的设计模式</li>
+<li>最近关注的新技术</li>
+<li>项目上的问题</li>
+<li>【笔试】转驼峰</li>
+</ul>
+<h2 id="shopee"><a href="#shopee" class="headerlink" title="shopee"></a>shopee</h2><p>一开始以为是小公司，想拿来刷面经，后面才发现这个公司挺不错的。</p>
+<p>本次面试应该是最后一次没有准备的面试</p>
+<h3 id="一面-2020-12-30"><a href="#一面-2020-12-30" class="headerlink" title="一面 2020/12/30"></a>一面 2020/12/30</h3><ul>
+<li>【笔试】模拟 instanceOf</li>
+<li>讲讲原型</li>
+<li>讲讲中间人攻击</li>
+</ul>
+<h2 id="ringcenter"><a href="#ringcenter" class="headerlink" title="ringcenter"></a>ringcenter</h2><p>先做了几道笔试题，主要考虑 es6语法和代码风格，我面试的部门听说只有一轮技术面，所以前后聊了快两个小时</p>
+<h3 id="一面-2020-1-2"><a href="#一面-2020-1-2" class="headerlink" title="一面 2020/1/2"></a>一面 2020/1/2</h3><ul>
+<li>react 相关问题</li>
+<li>css 基线</li>
+<li>css 盒模型 嵌套块元素最终 marginTop 的值</li>
+<li>vue 和 react 的比较</li>
+<li>https 仅用非对称加密的可行性</li>
+<li>词法环境</li>
+<li>事件循环，回调由哪个线程处理</li>
+<li>编程习惯相关</li>
+<li>代码性能相关</li>
+</ul>
+<p>css 没怎么准备，回答错了，最后挂掉</p>
+<h2 id="阿里-政务中台"><a href="#阿里-政务中台" class="headerlink" title="阿里-政务中台"></a>阿里-政务中台</h2><p>换了一个部门投递，不过部门之间是会交流的。不要以为前一个部门挂掉对下一个部门没有影响。。</p>
+<p>不过好像前一个部门对我的评价还行</p>
+<h3 id="一面-2020-1-3"><a href="#一面-2020-1-3" class="headerlink" title="一面 2020/1/3"></a>一面 2020/1/3</h3><ul>
+<li>某个列表组件有大量 dom 节点，如何优化</li>
+<li>虚拟 dom</li>
+<li>301 和 302 的使用场景</li>
+</ul>
+<h3 id="笔试-2020-1-7"><a href="#笔试-2020-1-7" class="headerlink" title="笔试 2020/1/7"></a>笔试 2020/1/7</h3><p>做了三道笔试题：去重，模拟 render，继承</p>
+<h3 id="二面-2020-1-8"><a href="#二面-2020-1-8" class="headerlink" title="二面 2020/1/8"></a>二面 2020/1/8</h3><ul>
+<li>主要是问项目</li>
+<li>状态码</li>
+<li>PUT 和 POST 的区别<blockquote>
+<p>幂等性</p>
+</blockquote>
+</li>
+</ul>
+<p>最后聊天的时候，面试官说已经认可我的技术了，让我好好准备后面的面试，另外让我注意下表示方式和技巧。那时候还以为稳了。。</p>
+<h3 id="三面-2020-1-16"><a href="#三面-2020-1-16" class="headerlink" title="三面 2020/1/16"></a>三面 2020/1/16</h3><ul>
+<li>技术成长相关</li>
+<li>和其他同事的比较</li>
+<li>学习和工作</li>
+<li>如何学习</li>
+<li>形容自己</li>
+</ul>
+<p>应该是平台的负责人面试，都是非技术性问题，有些题目没有准备结果回答的很差。。</p>
+<h3 id="交叉面-2020-1-17"><a href="#交叉面-2020-1-17" class="headerlink" title="交叉面 2020/1/17"></a>交叉面 2020/1/17</h3><p>隔天就收到了四面的通知，如果这面过了应该就稳了。。</p>
+<p>结果上来就是 react 相关问题， 由于我 react 了解的不是那么深入，很多回答不上来，我只好对面试官自己熟悉的 vue ，希望往 vue 方面靠。后面面试官就没有继续问了，主要聊项目这块。</p>
+<p>面试完之后感觉凉了，由于没有收到拒信，但是内心又存在着一点小希望。</p>
+<p>后面就是过年了，boss 上问内推的那个人也没有回复，直到2月初又有新的部门从简历池把我捞起来，我才知道挂了。</p>
+<p>这里建议可以加一下面试官的微信（如果对方同意的话），可以了解反馈，交个朋友</p>
+<h2 id="美团民宿"><a href="#美团民宿" class="headerlink" title="美团民宿"></a>美团民宿</h2><h3 id="一面-2020-1-7"><a href="#一面-2020-1-7" class="headerlink" title="一面 2020/1/7"></a>一面 2020/1/7</h3><ul>
+<li>项目相关</li>
+<li>【笔试】找到字符串中出现次数最多的字母</li>
+<li>java 怎么实现单例<blockquote>
+<p>饿汉，懒汉</p>
+</blockquote>
+</li>
+<li>为什么 js 中没有单例<blockquote>
+<p>单线程</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="美团民宿-二面-2020-1-7"><a href="#美团民宿-二面-2020-1-7" class="headerlink" title="美团民宿 二面 2020/1/7"></a>美团民宿 二面 2020/1/7</h3><p>技术成长方面</p>
+<p>在“为什么离职”这个问题上走远了。。</p>
+<h2 id="腾讯文档"><a href="#腾讯文档" class="headerlink" title="腾讯文档"></a>腾讯文档</h2><h3 id="一面-2020-1-9"><a href="#一面-2020-1-9" class="headerlink" title="一面 2020/1/9"></a>一面 2020/1/9</h3><ul>
+<li>服务端渲染原理</li>
+<li>【笔试题】26进制<blockquote>
+<p><a href="https://github.com/francecil/leetcode/issues/29" target="_blank" rel="noopener">实现26进制</a></p>
+</blockquote>
+</li>
+<li>http 协议</li>
+<li>chrome 开久了卡顿的原因</li>
+</ul>
+<p>笔试题没有完美写出来，加之之前没准备面试的另一个部门对我的评价较差，综合下挂掉了。<br>再次提示，其他部门的面试反馈会影响本部门的面试成绩。</p>
+<h2 id="年前阶段总结"><a href="#年前阶段总结" class="headerlink" title="年前阶段总结"></a>年前阶段总结</h2><p>年前的面试大概就是这样，很惨，一个 offer 都没有。</p>
+<p>所以建议做好准备再开始面试</p>
+<p>受疫情影响，在家里呆了一个月。那时候疫情比较恐怖，打算直接找厦门的公司了</p>
+<h2 id="亿联"><a href="#亿联" class="headerlink" title="亿联"></a>亿联</h2><h3 id="一面-2020-2-25"><a href="#一面-2020-2-25" class="headerlink" title="一面 2020/2/25"></a>一面 2020/2/25</h3><ul>
+<li>数据结构： hash 表（红黑树，扩容，hash算法），LinkedList</li>
+<li>vue 和 react 在 dom diff 上的差别</li>
+<li>v8 的分代垃圾回收</li>
+</ul>
+<h3 id="二面-2020-2-26"><a href="#二面-2020-2-26" class="headerlink" title="二面 2020/2/26"></a>二面 2020/2/26</h3><ul>
+<li>后端数据太大，长列表白屏较久如何解决<blockquote>
+<p> 防抖+loading</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="字节跳动-西瓜视频"><a href="#字节跳动-西瓜视频" class="headerlink" title="字节跳动-西瓜视频"></a>字节跳动-西瓜视频</h2><p>发现字节在厦门也有团队，于是拜托了学弟帮我内推，整个过程还是比较顺利的</p>
+<h3 id="一、二面-2020-2-26"><a href="#一、二面-2020-2-26" class="headerlink" title="一、二面 2020/2/26"></a>一、二面 2020/2/26</h3><ul>
+<li>同源策略，为什么会有跨域限制？</li>
+<li>【笔试】fetch 增加超时功能</li>
+<li>【笔试】非递归二叉树前序遍历</li>
+<li>【笔试】取值 1~100 的元素，进行排序（计数排序&amp;快排）</li>
+<li>大数据的图表优化</li>
+</ul>
+<p>两个面试是一起的，总共大概2个多小时，后面能记住的题目也不多了。</p>
+<h3 id="三面-2020-3-3"><a href="#三面-2020-3-3" class="headerlink" title="三面 2020/3/3"></a>三面 2020/3/3</h3><p>先是问了之前面头条为什么会挂，然后把一些问题重问了一遍</p>
+<ul>
+<li>react 批量更新原理</li>
+<li>react fiber</li>
+<li>react hooks</li>
+<li>vue3 的改进</li>
+<li>websocket 协议，轮询，长连接</li>
+<li>canvas,svg 对比，canvas 转图片，canvas 污染</li>
+<li>流媒体相关</li>
+<li>JSBridge</li>
+<li>h5 开发相关</li>
+</ul>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>天道酬勤，与君共勉~</p>
+<p>希望本文能给您带来一点点帮助</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag"># 面经</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/18/WebGL/WebGL%20%E7%BA%B9%E7%90%86/" rel="prev" title="WebGL 纹理">
+      <i class="fa fa-chevron-left"></i> WebGL 纹理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/31/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E8%83%BD%E5%90%A6%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%BC%93%E5%AD%98%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E7%9A%84%E6%96%B9%E6%B3%95/" rel="next" title="面试官问：能否实现一个缓存计算结果的方法">
+      面试官问：能否实现一个缓存计算结果的方法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#面试总结与建议"><span class="nav-number">2.</span> <span class="nav-text">面试总结与建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#阿里-供应链平台"><span class="nav-number">3.</span> <span class="nav-text">阿里-供应链平台</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-19-12-16"><span class="nav-number">3.1.</span> <span class="nav-text">一面 19&#x2F;12&#x2F;16</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二面-19-12-26"><span class="nav-number">3.2.</span> <span class="nav-text">二面 19&#x2F;12&#x2F;26</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#字节-今日头条"><span class="nav-number">4.</span> <span class="nav-text">字节-今日头条</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-19-12-23"><span class="nav-number">4.1.</span> <span class="nav-text">一面 19&#x2F;12&#x2F;23</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#美团-企平"><span class="nav-number">5.</span> <span class="nav-text">美团-企平</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-19-12-26"><span class="nav-number">5.1.</span> <span class="nav-text">一面 19&#x2F;12&#x2F;26</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二面-19-12-17"><span class="nav-number">5.2.</span> <span class="nav-text">二面 19&#x2F;12&#x2F;17</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#shopee"><span class="nav-number">6.</span> <span class="nav-text">shopee</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-2020-12-30"><span class="nav-number">6.1.</span> <span class="nav-text">一面 2020&#x2F;12&#x2F;30</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ringcenter"><span class="nav-number">7.</span> <span class="nav-text">ringcenter</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-2020-1-2"><span class="nav-number">7.1.</span> <span class="nav-text">一面 2020&#x2F;1&#x2F;2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#阿里-政务中台"><span class="nav-number">8.</span> <span class="nav-text">阿里-政务中台</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-2020-1-3"><span class="nav-number">8.1.</span> <span class="nav-text">一面 2020&#x2F;1&#x2F;3</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#笔试-2020-1-7"><span class="nav-number">8.2.</span> <span class="nav-text">笔试 2020&#x2F;1&#x2F;7</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二面-2020-1-8"><span class="nav-number">8.3.</span> <span class="nav-text">二面 2020&#x2F;1&#x2F;8</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三面-2020-1-16"><span class="nav-number">8.4.</span> <span class="nav-text">三面 2020&#x2F;1&#x2F;16</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#交叉面-2020-1-17"><span class="nav-number">8.5.</span> <span class="nav-text">交叉面 2020&#x2F;1&#x2F;17</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#美团民宿"><span class="nav-number">9.</span> <span class="nav-text">美团民宿</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-2020-1-7"><span class="nav-number">9.1.</span> <span class="nav-text">一面 2020&#x2F;1&#x2F;7</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#美团民宿-二面-2020-1-7"><span class="nav-number">9.2.</span> <span class="nav-text">美团民宿 二面 2020&#x2F;1&#x2F;7</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#腾讯文档"><span class="nav-number">10.</span> <span class="nav-text">腾讯文档</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-2020-1-9"><span class="nav-number">10.1.</span> <span class="nav-text">一面 2020&#x2F;1&#x2F;9</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#年前阶段总结"><span class="nav-number">11.</span> <span class="nav-text">年前阶段总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#亿联"><span class="nav-number">12.</span> <span class="nav-text">亿联</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一面-2020-2-25"><span class="nav-number">12.1.</span> <span class="nav-text">一面 2020&#x2F;2&#x2F;25</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二面-2020-2-26"><span class="nav-number">12.2.</span> <span class="nav-text">二面 2020&#x2F;2&#x2F;26</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#字节跳动-西瓜视频"><span class="nav-number">13.</span> <span class="nav-text">字节跳动-西瓜视频</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、二面-2020-2-26"><span class="nav-number">13.1.</span> <span class="nav-text">一、二面 2020&#x2F;2&#x2F;26</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三面-2020-3-3"><span class="nav-number">13.2.</span> <span class="nav-text">三面 2020&#x2F;3&#x2F;3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">14.</span> <span class="nav-text">最后</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

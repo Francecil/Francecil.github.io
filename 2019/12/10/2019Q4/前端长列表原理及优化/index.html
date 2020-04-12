@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言长列表一般也叫虚拟列表，是一种大数据量下只渲染可见节点避免页面卡顿的优化方案  长列表也有时间分片的做法，比较少用，感兴趣的可以看 高性能渲染十万条数据(时间分片)  前端比较有名的有两个项目：  react-window vue-virtual-scroller  以及 Ant Design 4 的 virtual-list  本文将对这些开源库进行剖析，分析实现原理，并进行各个指标的评估，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端长列表原理及优化">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2019&#x2F;12&#x2F;10&#x2F;2019Q4&#x2F;%E5%89%8D%E7%AB%AF%E9%95%BF%E5%88%97%E8%A1%A8%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言长列表一般也叫虚拟列表，是一种大数据量下只渲染可见节点避免页面卡顿的优化方案  长列表也有时间分片的做法，比较少用，感兴趣的可以看 高性能渲染十万条数据(时间分片)  前端比较有名的有两个项目：  react-window vue-virtual-scroller  以及 Ant Design 4 的 virtual-list  本文将对这些开源库进行剖析，分析实现原理，并进行各个指标的评估，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;user-gold-cdn.xitu.io&#x2F;2019&#x2F;10&#x2F;29&#x2F;16e1519a393dee2c?imageView2&#x2F;0&#x2F;w&#x2F;1280&#x2F;h&#x2F;960&#x2F;format&#x2F;webp&#x2F;ignore-error&#x2F;1">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-629e103e1290b5c8.jpg?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="article:published_time" content="2019-12-09T17:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.164Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="前端优化">
+<meta property="article:tag" content="长列表">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;user-gold-cdn.xitu.io&#x2F;2019&#x2F;10&#x2F;29&#x2F;16e1519a393dee2c?imageView2&#x2F;0&#x2F;w&#x2F;1280&#x2F;h&#x2F;960&#x2F;format&#x2F;webp&#x2F;ignore-error&#x2F;1">
+
+<link rel="canonical" href="https://gahing.top/2019/12/10/2019Q4/%E5%89%8D%E7%AB%AF%E9%95%BF%E5%88%97%E8%A1%A8%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>前端长列表原理及优化 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2019/12/10/2019Q4/%E5%89%8D%E7%AB%AF%E9%95%BF%E5%88%97%E8%A1%A8%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          前端长列表原理及优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-10 01:00:00" itemprop="dateCreated datePublished" datetime="2019-12-10T01:00:00+08:00">2019-12-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>长列表一般也叫虚拟列表，是一种大数据量下只渲染可见节点避免页面卡顿的优化方案</p>
+<blockquote>
+<p>长列表也有时间分片的做法，比较少用，感兴趣的可以看 <a href="https://juejin.im/post/5d76f469f265da039a28aff7" target="_blank" rel="noopener">高性能渲染十万条数据(时间分片)</a></p>
+</blockquote>
+<p>前端比较有名的有两个项目：</p>
+<ul>
+<li>react-window</li>
+<li>vue-virtual-scroller</li>
+</ul>
+<p>以及 Ant Design 4 的 <a href="https://github.com/react-component/virtual-list" target="_blank" rel="noopener">virtual-list</a> </p>
+<p>本文将对这些开源库进行剖析，分析实现原理，并进行各个指标的评估，最终实现一个高可用的长列表组件</p>
+<a id="more"></a>
+
+<p>主要评估以下几点：</p>
+<ol>
+<li>渲染：回流， 渲染策略等</li>
+<li>计算：起止项和偏移位置的计算，总高度的计算</li>
+<li>功能：自适应高度，其他</li>
+<li>健壮：是否存在鼠标与滚动条不同步的 bug（计算时总高度增加了，则滚动条会相对鼠标向上）</li>
+</ol>
+<p>然后说下看源码的策略，主要看这几点：</p>
+<ol>
+<li>dom 结构</li>
+<li>查找起始位置</li>
+<li>计算偏移距离</li>
+<li>计算总高度</li>
+</ol>
+<h2 id="长列表入门"><a href="#长列表入门" class="headerlink" title="长列表入门"></a>长列表入门</h2><p>如果还不清楚长列表是什么，可以先看下这篇文章<a href="https://juejin.im/post/5db684ddf265da4d495c40e5" target="_blank" rel="noopener">「前端进阶」高性能渲染十万条数据(虚拟列表)</a></p>
+<p>一张图快速入门</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/10/29/16e1519a393dee2c?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt=""></p>
+<p>下面我们来看看其他开源库都怎么做的</p>
+<h2 id="vue-virtual-scroller"><a href="#vue-virtual-scroller" class="headerlink" title="vue-virtual-scroller"></a>vue-virtual-scroller</h2><p><a href="https://github.com/Akryum/vue-virtual-scroller" target="_blank" rel="noopener">项目地址</a></p>
+<p>功能： 支持自适应高度，横向滚动，图片自适应高度</p>
+<h3 id="渲染"><a href="#渲染" class="headerlink" title="渲染"></a>渲染</h3><p>dom 结构如下</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- position: relative;overflow-y: auto; --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"vue-recycle-scroller"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"vue-recycle-scroller__item-wrapper"</span> <span class="attr">:style</span>=<span class="string">"&#123; 'minHeight': totalSize + 'px' &#125;"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">        <span class="attr">v-for</span>=<span class="string">"view of pool"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">:key</span>=<span class="string">"view.nr.id"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">:style</span>=<span class="string">"&#123; transform: `translateY($&#123;view.position&#125;px)` &#125;"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">class</span>=<span class="string">"vue-recycle-scroller__item-view"</span></span></span><br><span class="line"><span class="tag">      &gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">slot</span></span></span><br><span class="line"><span class="tag">          <span class="attr">:item</span>=<span class="string">"view.item"</span></span></span><br><span class="line"><span class="tag">          <span class="attr">:index</span>=<span class="string">"view.nr.index"</span></span></span><br><span class="line"><span class="tag">          <span class="attr">:active</span>=<span class="string">"view.nr.used"</span></span></span><br><span class="line"><span class="tag">        /&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>一个相对定位的列表，由 <code>min-height</code> 撑开 wrapper 以产生滚动条</p>
+<p>每个列表项进行平移(translateY),这个偏移值为该项在列表中的高度累加值</p>
+<p>还有一些 <code>-9999px</code> 的不可见元素，这些其实是缓存池列表项，这个在 <strong>节点回收复用</strong> 一节会讲到</p>
+<p>列表项数据结构：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">listItem = &#123;</span><br><span class="line">  <span class="comment">// 数据项内容</span></span><br><span class="line">  item:<span class="built_in">Object</span>,</span><br><span class="line">  <span class="comment">// 非响应式数据</span></span><br><span class="line">  nr:&#123;</span><br><span class="line">    id,<span class="comment">// 唯一标识</span></span><br><span class="line">    index,<span class="comment">// 数据项中的索引</span></span><br><span class="line">    used: <span class="built_in">Boolean</span>,<span class="comment">// 是否已用来显示在可视区域</span></span><br><span class="line">    key,<span class="comment">// 数据项中的key</span></span><br><span class="line">    type,<span class="comment">// 在对应类型的缓冲池中存取</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// translateY 值</span></span><br><span class="line">  position: <span class="built_in">Number</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>不会产生回流（非自适应高度的情况）</p>
+<p>浏览器<strong>渲染速度快</strong>：进行滚动时产生变化的列表项会尽可能的使用缓存池元素并修改 translateY ，其他没有变动的列表项在dom结构中的位置不变</p>
+<h3 id="计算"><a href="#计算" class="headerlink" title="计算"></a>计算</h3><p>有三种场景</p>
+<h4 id="①-使用默认高度"><a href="#①-使用默认高度" class="headerlink" title="① 使用默认高度"></a>① 使用默认高度</h4><p>最简单的情况，需要设置 itemSize</p>
+<p>起始项索引可以通过 <code>~~(scrollTop / itemSize)</code> 得到</p>
+<p>列表总高度 = <code>itemSize * itemCount</code></p>
+<h4 id="②-定义高度字段"><a href="#②-定义高度字段" class="headerlink" title="② 定义高度字段"></a>② 定义高度字段</h4><p>itemSize 设为 null，通过数据项中的 height 字段定义每个列表项的高度</p>
+<p>由于所有列表项高度是确定的，一开始会计算每一项的高度和偏移值 </p>
+<blockquote>
+<p>O(n) 时间复杂度</p>
+</blockquote>
+<p>同时确定了列表总高度，固定为 <code>最后一项的偏移值+高度</code></p>
+<p>当进行滚动时，由于每一项的偏移位置是确定的，则查找起始项索引可以采用二分法</p>
+<blockquote>
+<p>O(logn) 时间复杂度</p>
+</blockquote>
+<h4 id="③-自适应高度"><a href="#③-自适应高度" class="headerlink" title="③ 自适应高度"></a>③ 自适应高度</h4><p>需要配置数据项最小高度，并根据这个值初始化每个数据项的高度和偏移值 – sizes</p>
+<blockquote>
+<p>O(n) 时间复杂度</p>
+</blockquote>
+<p>列表总高度为 <code>最后一项的偏移值+高度</code></p>
+<p>sizes 计算</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = items.length; i &lt; l; i++) &#123;</span><br><span class="line">  current = items[i][field] || minItemSize</span><br><span class="line">  accumulator += current</span><br><span class="line">  sizes[i] = &#123; accumulator, <span class="attr">size</span>: current &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>进行滚动，通过二分 sizes 得到起始项索引，结束项索引为起始项索引加上 <code>可视高度/最小列高</code></p>
+<blockquote>
+<p>O(logn) 时间复杂度</p>
+</blockquote>
+<p>之后进行节点渲染，渲染完毕时获取实际高度，并重新计算 sizes 以及列表总高度</p>
+<blockquote>
+<p>O(n) 时间复杂度</p>
+</blockquote>
+<p>总体来说，性能较差，有优化的空间</p>
+<h3 id="【卖点】节点回收与复用"><a href="#【卖点】节点回收与复用" class="headerlink" title="【卖点】节点回收与复用"></a>【卖点】节点回收与复用</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">连续滚动(continuous): 前后两次查找的数据范围有重叠，比如第一次为 1~10 第二次为 5~14 或者相反</span><br><span class="line">已使用的列表项(views): 记录已使用项的 Map ，key 为列表项的 key</span><br><span class="line">pool: 页面中所有渲染的列表项，包括未使用的</span><br><span class="line">类型-缓存池 Map (unusedViews): 记录类型和缓存池的 Map</span><br><span class="line">缓存池(unusedPool): 某种类型的缓存池，其中的列表项在页面中偏移位置为 -9999px</span><br></pre></td></tr></table></figure>
+<p>举个连续滚动的例子：</p>
+<ol>
+<li>一开始查到 1<del>10 放入 views 中，进行滚动，查到 5</del>14</li>
+<li>将 1~4 放入对应类型的 unusedPool 中，设置未使用，并从 views 中删除</li>
+<li>将原来的 5~10项 设置为 已使用</li>
+<li>查到 11 时，看 unusedPool 中有没有和 11 同类型的，有的话 pop 出来复用，替换下内容和偏移位置，没有的话新建一个 view，会放入 pool 中</li>
+</ol>
+<p>对应的，非连续滚动定义为 <strong>快速滚动</strong>，初始化一个空的 map – unusedIndex, 作用是记录同类型的 unusedPool 需要从哪个索引开始取值。</p>
+<p>如果 unusedPool 存在元素，拿来复用；如果同类型 pool 被用光了，addView</p>
+<blockquote>
+<p>感觉此处 <code>v++</code> 的处理有点问题，没有深究</p>
+</blockquote>
+<p>和安卓的列表滚动类似，按类型进行回收，新找到的列表项会复用缓存中同类型的，可以减少 layout 时间</p>
+<p>类似的还有 weex 的 <a href="https://weex.apache.org/zh/docs/components/recycle-list.html" target="_blank" rel="noopener">recycle-list</a></p>
+<h3 id="健壮"><a href="#健壮" class="headerlink" title="健壮"></a>健壮</h3><p>由于进度条高度会变化，因此存在鼠标与滚动条不同步的 bug</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>功能丰富，自适应高度方面的处理性能不行（尝试考虑pr），项目结构较差不易维护</p>
+<p>不建议使用</p>
+<h2 id="react-window"><a href="#react-window" class="headerlink" title="react-window"></a>react-window</h2><p>提供四种组件： </p>
+<ul>
+<li>FixedSizeList</li>
+<li>FixedSizeGrid</li>
+<li>VariableSizeList</li>
+<li>VariableSizeGrid</li>
+</ul>
+<p>不支持自适应高度</p>
+<p>grid 不分析了， FixedSizeList 就是最简单的固定高度的情景，做法都一样，我们直接分析 VariableSizeList</p>
+<blockquote>
+<p>先吐个槽， react-window 为了复用，代码封装了一层又一层，render 还是用的 createElement … 看源码的时候实在难受，而且还是用 flow 写的，编辑器各种报错</p>
+</blockquote>
+<p>不知道什么原因，依赖安装的时候一直失败，本地没有启动起来，这次是直接看的源码</p>
+<h3 id="渲染-1"><a href="#渲染-1" class="headerlink" title="渲染"></a>渲染</h3><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">"&#123;&#123;position: 'relative', height: `$&#123;height&#125;px`, overflow: 'auto'&#125;&#125;"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">"&#123;&#123;height: `$&#123;totalSize&#125;px`, width: '100%'&#125;&#125;"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">"position: absolute; left: 0px; top: 38px; height: 30px; width: 100%;"</span>&gt;</span></span><br><span class="line">      Row 1</span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">"position: absolute; left: 0px; top: 68px; height: 65px; width: 100%;"</span>&gt;</span></span><br><span class="line">      Row 2</span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    ....</span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">"position: absolute; left: 0px; top: 133px; height: 70px; width: 100%;"</span>&gt;</span></span><br><span class="line">      Row 3</span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>依然是用一个 totalSize 高度的容器去产生进度条，每个列表项通过绝对定位进行偏移</p>
+<p>这里其实用 <code>transform: translateY</code> 效果一样的，当然渲染上的性能差异我就不知道了</p>
+<h3 id="计算-1"><a href="#计算-1" class="headerlink" title="计算"></a>计算</h3><p>和这篇文章的实现一致 – <a href="https://zhuanlan.zhihu.com/p/34585166" target="_blank" rel="noopener">再谈前端虚拟列表的实现</a></p>
+<blockquote>
+<p>貌似对指数搜索有误解？</p>
+</blockquote>
+<p>设 lastMeasureItem 为已测量的最远元素，</p>
+<p>lastMeasureItem.offset 为该元素的偏移值</p>
+<p>lastMeasureItem.index 为该元素的索引</p>
+<p>列表总高度 = lastMeasureItem.offset + 未测量元素 * 默认高度</p>
+<p>初次滚动，从第0项开始测量并缓存已滚动过的元素的偏移和索引，更新 lastMeasureItem</p>
+<blockquote>
+<p>O(n) 时间复杂度</p>
+</blockquote>
+<p>当滚动偏移值小于 <code>lastMeasureItem.offset</code> 时，表示起始项在 0~lastMeasureItem.index 范围之间，由于该范围所有列表项偏移值都计算过了，此时采用二分即可快速得到起始项索引</p>
+<blockquote>
+<p>O(logn)</p>
+</blockquote>
+<p>当滚动偏移值小于 <code>lastMeasureItem.offset</code> 时，则以 <code>lastMeasureItem.index</code> 开始测量并缓存已滚动过的元素的偏移和索引，更新 lastMeasureItem</p>
+<blockquote>
+<p>O(n) 时间复杂度</p>
+</blockquote>
+<p>Watch 观察 lastMeasureItem.index ，若改变，则列表总高度跟着变</p>
+<p><a href="https://jsfiddle.net/furybean/teg2ur1b/1/" target="_blank" rel="noopener">在线 Demo</a></p>
+<p>本方案有两个缺点：</p>
+<ul>
+<li>拓展差，做不了自适应高度</li>
+<li>前面的滚动较耗时间，把没用到的也计算进去了</li>
+</ul>
+<h3 id="健壮-1"><a href="#健壮-1" class="headerlink" title="健壮"></a>健壮</h3><p>由于进度条高度会变化，因此存在鼠标与滚动条不同步的 bug</p>
+<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><p>不支持自适应高度，性能不行，不是 react 长列表的首选方案</p>
+<p>如果有用到 Grid 的话可以用</p>
+<h2 id="virtual-list"><a href="#virtual-list" class="headerlink" title="virtual-list"></a>virtual-list</h2><p><a href="https://github.com/react-component/virtual-list" target="_blank" rel="noopener">项目地址</a></p>
+<blockquote>
+<p>目前分析综合评分最高的一个</p>
+</blockquote>
+<p>支持自适应高度，支持动画效果，支持滚动位置复原</p>
+<h3 id="渲染-2"><a href="#渲染-2" class="headerlink" title="渲染"></a>渲染</h3><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 用户可见的容器高度可能只有 300px --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">  <span class="attr">class</span>=<span class="string">"container"</span></span></span><br><span class="line"><span class="tag">  <span class="attr">style</span>=<span class="string">"width: 200px; height: 300px;"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">scroll.passive</span>=<span class="string">"handleScroll"</span></span></span><br><span class="line"><span class="tag">&gt;</span></span><br><span class="line">  <span class="comment">&lt;!-- 总的列表 div ，用于撑起列表的高度 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">    <span class="attr">class</span>=<span class="string">"total-list"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">:style</span>=<span class="string">"&#123;</span></span></span><br><span class="line"><span class="tag"><span class="string">      height: `$&#123;itemHeight * data.length&#125;px`,</span></span></span><br><span class="line"><span class="tag"><span class="string">    &#125;"</span></span></span><br><span class="line"><span class="tag">  &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">      <span class="attr">class</span>=<span class="string">"visible-list"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">:style</span>=<span class="string">"&#123;</span></span></span><br><span class="line"><span class="tag"><span class="string">      transform: `translateY($&#123;topHeight&#125;px)`,</span></span></span><br><span class="line"><span class="tag"><span class="string">    &#125;"</span></span></span><br><span class="line"><span class="tag">    &gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">div</span></span></span><br><span class="line"><span class="tag">        <span class="attr">v-for</span>=<span class="string">"item in visibleList"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">:key</span>=<span class="string">"item.id"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">class</span>=<span class="string">"visible-list-item"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">:style</span>=<span class="string">"&#123;</span></span></span><br><span class="line"><span class="tag"><span class="string">        height: `$&#123;itemHeight&#125;px`,</span></span></span><br><span class="line"><span class="tag"><span class="string">      &#125;"</span></span></span><br><span class="line"><span class="tag">      &gt;</span>&#123;&#123; item.value &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">&lt;!-- 此处只需渲染可见列表即可，无需渲染全部数据 --&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>和上面的方案不一样，这里是创建了一个 total-list 的容器，直接对这个容器进行 translateY 偏移</p>
+<h3 id="计算-2"><a href="#计算-2" class="headerlink" title="计算"></a>计算</h3><p>总高度始终固定，等于 <code>列表项个数(itemCount) * 列表项最小高度(itemHeight)</code></p>
+<p>处理逻辑如下：</p>
+<ol>
+<li>滚动，确定定位项和起止项</li>
+<li>渲染起止列表项</li>
+<li>列表项渲染完毕，计算并调整起始项偏移位置</li>
+<li>进行重渲染</li>
+</ol>
+<blockquote>
+<p>注意：此处的渲染表示对 dom 进行操作，仍处于宏任务，还未到浏览器实际渲染(UI Render)阶段</p>
+</blockquote>
+<p><strong>核心思想是任意高度的列表项都占据相同的滚动条范围</strong></p>
+<h4 id="①-确定定位项和起止项"><a href="#①-确定定位项和起止项" class="headerlink" title="① 确定定位项和起止项"></a>① 确定定位项和起止项</h4><p>定位项与滚动条位置对应，可以理解为滚动条水平方向指向的那个列表项。</p>
+<p>当滚动条为0时，指向第0项，此时定位项为第0项</p>
+<p>当滚动条处于最大值时，指向最后一项，此时定位项为最后一项</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> itemCount = <span class="keyword">this</span>.data.length</span><br><span class="line"><span class="keyword">const</span> scrollTopMax = scrollHeight - clientHeight</span><br><span class="line"><span class="comment">/** 进度条滚动百分比 */</span></span><br><span class="line"><span class="keyword">const</span> scrollPtg = scrollTop / scrollTopMax</span><br><span class="line"><span class="comment">/** 确定定位项 */</span></span><br><span class="line"><span class="keyword">const</span> itemIndex = <span class="built_in">Math</span>.floor(scrollPtg * itemCount);</span><br><span class="line"><span class="comment">/** 可见列表项个数 = 可见容器高度 / 每个列表项高度 ，记得向上取整 */</span></span><br><span class="line"><span class="keyword">const</span> visibleCount = <span class="built_in">Math</span>.ceil(<span class="keyword">this</span>.$el.clientHeight / <span class="keyword">this</span>.itemHeight)</span><br><span class="line"><span class="comment">/** 确定起始项和结束项 */</span></span><br><span class="line"><span class="keyword">const</span> startIndex = <span class="built_in">Math</span>.max(<span class="number">0</span>, itemIndex - <span class="built_in">Math</span>.ceil(scrollPtg * visibleCount))</span><br><span class="line"><span class="keyword">const</span> endIndex = <span class="built_in">Math</span>.min(itemCount - <span class="number">1</span>, itemIndex + <span class="built_in">Math</span>.ceil((<span class="number">1</span> - scrollPtg) * visibleCount))</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="②-渲染列表项"><a href="#②-渲染列表项" class="headerlink" title="② 渲染列表项"></a>② 渲染列表项</h4><p>渲染 startIndex ~ endIndex 的列表项</p>
+<h4 id="③-调整-offset"><a href="#③-调整-offset" class="headerlink" title="③ 调整 offset"></a>③ 调整 offset</h4><p>在列表项渲染完毕后，触发 update 回调 </p>
+<p>获取并统计 startIndex ~ itemIndex 列表项的实际总高度 s2iHeight</p>
+<p>计算起始项偏移高度 startItemTop ,如下：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> startItemTop = 定位项绝对高度(itemAbsoluteTop) - 起始项至定位项的高度(s2iHeight)</span><br><span class="line"><span class="keyword">const</span> itemAbsoluteTop = scrollTop + 定位项相对视口高度(itemRelativeTop)</span><br><span class="line"><span class="keyword">const</span> itemRelativeTop = 滚动过的视口高度(scrollPtg * clientHeight) - 定位项偏移高度(itemOffsetPtg * itemHeight)</span><br></pre></td></tr></table></figure>
+
+<p>如图所示：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-629e103e1290b5c8.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<h3 id="健壮-2"><a href="#健壮-2" class="headerlink" title="健壮"></a>健壮</h3><p><strong>由于总高度固定，不存在鼠标和滚动条不同步的问题</strong></p>
+<h3 id="总结-2"><a href="#总结-2" class="headerlink" title="总结"></a>总结</h3><p>性能优异，通过几个数学公式即可确定起止位置（还有优化的空间）</p>
+<p>若需要自适应高度，则需要进行2次render，否则第一次render即可计算偏移位置</p>
+<p>目前<strong>唯一</strong>一种不产生鼠标和滚动条不同步问题的方案</p>
+<p>拓展性强，毕竟后面是 Ant Design 4 的核心组件之一</p>
+<p>react 长列表首选方案</p>
+<p>vue 可以尝试造个轮子</p>
+<h2 id="其他处理方案"><a href="#其他处理方案" class="headerlink" title="其他处理方案"></a>其他处理方案</h2><p>本节为其他一些长列表的处理方案，主要表现在起始项查找和更新列表高度方面的不同</p>
+<p>这里提到的几种方案，都会出现 <em>鼠标和滚动条不同步</em> 的问题</p>
+<h3 id="①-顺序查找，差量更新总高度"><a href="#①-顺序查找，差量更新总高度" class="headerlink" title="① 顺序查找，差量更新总高度"></a>① 顺序查找，差量更新总高度</h3><blockquote>
+<p>性能较差的一种方案</p>
+</blockquote>
+<p>定义数组 itemHeightRecord 记录列表项实际高度，可以是自适应计算出来的高度，也可以是定义高度方法计算得到的高度</p>
+<p>一开始，列表总高度 = 列表项个数 * 默认高度</p>
+<p>查找起始项，由于没有记录偏移值，只能采用顺序叠加的方式判断， itemHeightRecord 中有值的取值，没值的取默认高度</p>
+<blockquote>
+<p>时间复杂度 O(n) </p>
+</blockquote>
+<p>渲染列表项，并将取得的高度与默认值之间的差更新到 <em>列表总高度</em> 上，并对 itemHeightRecord 进行赋值</p>
+<p><em>缺点：查找起始项的效率太低</em></p>
+<h3 id="②-二分查找，顺序更新偏移值"><a href="#②-二分查找，顺序更新偏移值" class="headerlink" title="② 二分查找，顺序更新偏移值"></a>② 二分查找，顺序更新偏移值</h3><p>思路来源于 <a href="https://juejin.im/post/5db684ddf265da4d495c40e5" target="_blank" rel="noopener">「前端进阶」高性能渲染十万条数据(虚拟列表)</a> ，并对更新偏移值进行优化</p>
+<p>需要配置数据项最小高度，并根据这个值初始化每个数据项的高度和偏移值 – sizes</p>
+<p>列表总高度 = <code>sizes[length-1].offset + sizes[length-1].height</code></p>
+<p>查找起始项，根据 sizes 进行二分</p>
+<blockquote>
+<p>时间复杂度 O(logn)</p>
+</blockquote>
+<p>渲染列表项(假设有m项)，并将取得的高度替换 sizes 中的 height，并将 height 与默认值之间的差更新到其后每一项的 offset </p>
+<blockquote>
+<p>时间复杂度 O(n)</p>
+</blockquote>
+<p>与 vue-virtual-scroller 自适应高度的处理方式类似，只不过我们仅需要从起始项开始处理</p>
+<p><a href="https://codesandbox.io/s/virtuallist-3-i3h9v" target="_blank" rel="noopener">在线 Demo</a></p>
+<blockquote>
+<p>引用自 「前端进阶」高性能渲染十万条数据(虚拟列表) ，更新偏移值那边的时间复杂度为 O(n*m)</p>
+</blockquote>
+<p><em>缺点：更新 sizes 较为耗时</em></p>
+<h3 id="③-树状数组优化更新偏移值"><a href="#③-树状数组优化更新偏移值" class="headerlink" title="③ 树状数组优化更新偏移值"></a>③ 树状数组优化更新偏移值</h3><p>自己想出来的一种解决方案，能够达到查询和更新都是 <code>O(logn)</code> 时间复杂度</p>
+<p>在未看 <a href="https://github.com/react-component/virtual-list" target="_blank" rel="noopener">virtual-list</a> 的方案前，我一度以为这是最好的方案</p>
+<blockquote>
+<p>效率上两者差不多，不过本方案会有 <em>鼠标和滚动条不同步</em> 的问题</p>
+</blockquote>
+<p>我们先建立数据模型，列表项的高度列表为长度为 len 的正数数组 nums ，有两种操作：</p>
+<ol>
+<li>更新数组中某项的值</li>
+<li>找到一个最小的 n，前 n 项总和大于等于目标值 target ， 1&lt;= n &lt;= len</li>
+</ol>
+<p>很明显这是一个树状数组模板题，两个操作都是 O(logn) 的时间复杂度，模板可以参考我写的 <a href="https://github.com/francecil/LearningWeb/blob/master/source/_posts/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/%E5%9F%BA%E7%A1%80%E6%A8%A1%E6%9D%BF.js" target="_blank" rel="noopener">BinaryIndexedTree</a></p>
+<blockquote>
+<p>关于树状数组原理可以参考文章 – <a href="http://hawstein.com/2012/11/15/binary-indexed-trees/" target="_blank" rel="noopener">树状数组(Binary Indexed Trees)</a></p>
+</blockquote>
+<p>提供了几个方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">findGe</span>(<span class="params">target</span>) </span>&#123;&#125; <span class="comment">//找到最小的一个n，其前n项和大于等于 target</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">update</span> (<span class="params">i, val</span>) </span>&#123;&#125; <span class="comment">// 第 i 项增加差值val, 1&lt;=i&lt;=len</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">prefixSum</span> (<span class="params">n = this.tree.length - <span class="number">1</span></span>) </span>&#123;&#125; <span class="comment">//计算前 n 项的和 , 1&lt;=n&lt;=len</span></span><br></pre></td></tr></table></figure>
+
+<p>查找起始项可以采用 findGe, 查找起始项偏移位置以及列表总高度可以用 prefixSum, 更新偏移值采用 update</p>
+<p>测试效果：10W 条数据滚动时处理的计算时间在 1ms 左右</p>
+<p>感兴趣的可以看我的开源库 <a href="https://github.com/francecil/virtual-list-demo" target="_blank" rel="noopener">virtual-list-demo</a></p>
+<h3 id="回流优化"><a href="#回流优化" class="headerlink" title="回流优化"></a>回流优化</h3><p>可视区域的列表高度，一般不变，没必要每次都通过 <code>$el.clientHeight</code> 获取（会造成回流），在 resize 时再改变</p>
+<p>如果是自适应高度，那本操作可有可无</p>
+<h2 id="综合实现"><a href="#综合实现" class="headerlink" title="综合实现"></a>综合实现</h2><p>本来打算单独写一节的，最后决定采用 virtual-list 的设计方式</p>
+<p>列表项采用 <code>Render Props</code> 的形式，用 cloneElement 生成实际列表项。</p>
+<p>无论是自适应高度还是固定高度，都是通过参数配置，对外仅提供一个组件</p>
+<h2 id="展望"><a href="#展望" class="headerlink" title="展望"></a>展望</h2><h3 id="浏览器兼容性测试"><a href="#浏览器兼容性测试" class="headerlink" title="浏览器兼容性测试"></a>浏览器兼容性测试</h3><p>个人方案仅测试了 chrome ，还没测试过其他浏览器，看开源库的时候有看到其做了一些兼容处理</p>
+<p>比如火狐滚动白屏问题，Safari scrollTop 可能为负的问题，移动端卡顿的问题</p>
+<p>篇幅有限，这些不在本文的研究范围，建议就是生产环境尽量用开源库</p>
+<h3 id="图片自适应高度"><a href="#图片自适应高度" class="headerlink" title="图片自适应高度"></a>图片自适应高度</h3><p>若列表项高度是依赖于图片高度的，由于图片加载较慢，在初次渲染结束时（update生命周期中）并获取不到真实列表高度，需要等待图片加载完毕后计算</p>
+<p>具体做法就是采用 ResizeObserver API ，不过这个兼容性有点问题，</p>
+<p>vue-virtual-scroller 中其实有用到了，感兴趣的可以参考一下</p>
+<h3 id="响应键盘事件"><a href="#响应键盘事件" class="headerlink" title="响应键盘事件"></a>响应键盘事件</h3><p>通过方向键切换列表项，需要拦截键盘默认事件，并赋值 scrollTop</p>
+<p>这个更多的是基于长列表的 Select,Tree 中会用到，到时候用到再说</p>
+<hr>
+<p><a href="https://github.com/francecil/LearningWeb/blob/master/source/_posts/2019Q4/%E5%89%8D%E7%AB%AF%E9%95%BF%E5%88%97%E8%A1%A8%E5%8E%9F%E7%90%86%E5%8F%8A%E4%BC%98%E5%8C%96.md" target="_blank" rel="noopener">原文地址</a>，感兴趣的给个 star ~</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://github.com/ChuChencheng/virtual-list-demo" target="_blank" rel="noopener">virtual-list-demo</a></li>
+<li><a href="https://juejin.im/post/5db684ddf265da4d495c40e5" target="_blank" rel="noopener">「前端进阶」高性能渲染十万条数据(虚拟列表)</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/34585166" target="_blank" rel="noopener">再谈前端虚拟列表的实现</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%96/" rel="tag"># 前端优化</a>
+              <a href="/tags/%E9%95%BF%E5%88%97%E8%A1%A8/" rel="tag"># 长列表</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/10/2019Q4/Promise%20then%20%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" rel="prev" title="Promise then 原理分析">
+      <i class="fa fa-chevron-left"></i> Promise then 原理分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/11/2019Q4/%E9%80%9A%E8%AF%BB%20HTML%20Standard/" rel="next" title="通读 HTML Standard">
+      通读 HTML Standard <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#长列表入门"><span class="nav-number">2.</span> <span class="nav-text">长列表入门</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vue-virtual-scroller"><span class="nav-number">3.</span> <span class="nav-text">vue-virtual-scroller</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#渲染"><span class="nav-number">3.1.</span> <span class="nav-text">渲染</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算"><span class="nav-number">3.2.</span> <span class="nav-text">计算</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#①-使用默认高度"><span class="nav-number">3.2.1.</span> <span class="nav-text">① 使用默认高度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#②-定义高度字段"><span class="nav-number">3.2.2.</span> <span class="nav-text">② 定义高度字段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#③-自适应高度"><span class="nav-number">3.2.3.</span> <span class="nav-text">③ 自适应高度</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#【卖点】节点回收与复用"><span class="nav-number">3.3.</span> <span class="nav-text">【卖点】节点回收与复用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#健壮"><span class="nav-number">3.4.</span> <span class="nav-text">健壮</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">3.5.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#react-window"><span class="nav-number">4.</span> <span class="nav-text">react-window</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#渲染-1"><span class="nav-number">4.1.</span> <span class="nav-text">渲染</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算-1"><span class="nav-number">4.2.</span> <span class="nav-text">计算</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#健壮-1"><span class="nav-number">4.3.</span> <span class="nav-text">健壮</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结-1"><span class="nav-number">4.4.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#virtual-list"><span class="nav-number">5.</span> <span class="nav-text">virtual-list</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#渲染-2"><span class="nav-number">5.1.</span> <span class="nav-text">渲染</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算-2"><span class="nav-number">5.2.</span> <span class="nav-text">计算</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#①-确定定位项和起止项"><span class="nav-number">5.2.1.</span> <span class="nav-text">① 确定定位项和起止项</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#②-渲染列表项"><span class="nav-number">5.2.2.</span> <span class="nav-text">② 渲染列表项</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#③-调整-offset"><span class="nav-number">5.2.3.</span> <span class="nav-text">③ 调整 offset</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#健壮-2"><span class="nav-number">5.3.</span> <span class="nav-text">健壮</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结-2"><span class="nav-number">5.4.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他处理方案"><span class="nav-number">6.</span> <span class="nav-text">其他处理方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#①-顺序查找，差量更新总高度"><span class="nav-number">6.1.</span> <span class="nav-text">① 顺序查找，差量更新总高度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#②-二分查找，顺序更新偏移值"><span class="nav-number">6.2.</span> <span class="nav-text">② 二分查找，顺序更新偏移值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#③-树状数组优化更新偏移值"><span class="nav-number">6.3.</span> <span class="nav-text">③ 树状数组优化更新偏移值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#回流优化"><span class="nav-number">6.4.</span> <span class="nav-text">回流优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#综合实现"><span class="nav-number">7.</span> <span class="nav-text">综合实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#展望"><span class="nav-number">8.</span> <span class="nav-text">展望</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#浏览器兼容性测试"><span class="nav-number">8.1.</span> <span class="nav-text">浏览器兼容性测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#图片自适应高度"><span class="nav-number">8.2.</span> <span class="nav-text">图片自适应高度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#响应键盘事件"><span class="nav-number">8.3.</span> <span class="nav-text">响应键盘事件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">9.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

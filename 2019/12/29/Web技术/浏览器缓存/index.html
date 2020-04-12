@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言Web 缓存分为浏览器缓存和服务端缓存，本文主要描述的是浏览器缓存中的 HTTP 缓存">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浏览器缓存">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2019&#x2F;12&#x2F;29&#x2F;Web%E6%8A%80%E6%9C%AF&#x2F;%E6%B5%8F%E8%A7%88%E5%99%A8%E7%BC%93%E5%AD%98&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言Web 缓存分为浏览器缓存和服务端缓存，本文主要描述的是浏览器缓存中的 HTTP 缓存">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http:&#x2F;&#x2F;www.alloyteam.com&#x2F;wp-content&#x2F;uploads&#x2F;2016&#x2F;03&#x2F;%E5%9B%BE%E7%89%8761.png">
+<meta property="article:published_time" content="2019-12-28T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.177Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="缓存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;www.alloyteam.com&#x2F;wp-content&#x2F;uploads&#x2F;2016&#x2F;03&#x2F;%E5%9B%BE%E7%89%8761.png">
+
+<link rel="canonical" href="https://gahing.top/2019/12/29/Web%E6%8A%80%E6%9C%AF/%E6%B5%8F%E8%A7%88%E5%99%A8%E7%BC%93%E5%AD%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>浏览器缓存 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2019/12/29/Web%E6%8A%80%E6%9C%AF/%E6%B5%8F%E8%A7%88%E5%99%A8%E7%BC%93%E5%AD%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浏览器缓存
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-29 00:00:00" itemprop="dateCreated datePublished" datetime="2019-12-29T00:00:00+08:00">2019-12-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Web 缓存分为浏览器缓存和服务端缓存，本文主要描述的是浏览器缓存中的 HTTP 缓存</p>
+<a id="more"></a>
+
+<h1 id="查看缓存文件"><a href="#查看缓存文件" class="headerlink" title="查看缓存文件"></a>查看缓存文件</h1><p>chrome 可以通过 <code>chrome://view-http-cache</code> 查看浏览器的缓存文件</p>
+<blockquote>
+<p>chrome 66 后就用不了了</p>
+</blockquote>
+<p>pc 上的实际存储位置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">\User\&#123;user&#125;\AppData\Local\google\Chrome\User Data\Default\Cache\index 的文件内容</span><br></pre></td></tr></table></figure>
+
+<p>火狐可以通过 <code>about:cache</code> 查看缓存文件列表</p>
+<p>进入缓存文件详情页，可以看到缓存文件内容由三部分组成</p>
+<ul>
+<li>资源请求地址</li>
+<li>响应头</li>
+<li>原文件的二进制内容</li>
+</ul>
+<p>而实际的缓存文件也是包含这些部分的，我们可以通过 ChromeCacheView 工具查看内部内容</p>
+<p>通过下面几个问题来学习 pc 上浏览器缓存如何设计的</p>
+<ul>
+<li><p>是不是应该有一个列表文件记录所有缓存文件的基本信息？</p>
+</li>
+<li><p>不能直接拿到缓存源文件，每次命中缓存都需要解码文件？</p>
+</li>
+<li><p>从如果删了缓存文件，是删了什么东西？列表文件内容会相应的修改不？</p>
+</li>
+<li><p>不会出现列表文件内容还在但是对应缓存原文件被删除的情况？</p>
+</li>
+</ul>
+<p>TODO</p>
+<h1 id="强缓存"><a href="#强缓存" class="headerlink" title="强缓存"></a>强缓存</h1><h2 id="Cache-Control-响应头"><a href="#Cache-Control-响应头" class="headerlink" title="Cache-Control 响应头"></a>Cache-Control 响应头</h2><p>优先级比 <code>Expires</code> 高，且用的是相对时间，不需要担心客户端与服务端时间不一致带来的缓存失效问题</p>
+<h3 id="max-age"><a href="#max-age" class="headerlink" title="max-age"></a>max-age</h3><p>指定缓存的有效期</p>
+<h3 id="s-maxage"><a href="#s-maxage" class="headerlink" title="s-maxage"></a>s-maxage</h3><p>指定代理缓存（如cdn缓存）的有效期，优先级比 max-age 高</p>
+<h3 id="no-cache"><a href="#no-cache" class="headerlink" title="no-cache"></a>no-cache</h3><p>不使用本地缓存和代理缓存</p>
+<h3 id="no-store"><a href="#no-store" class="headerlink" title="no-store"></a>no-store</h3><p>禁用缓存</p>
+<h3 id="public"><a href="#public" class="headerlink" title="public"></a>public</h3><p>可以被所有用户缓存，包括终端用户以及 CDN 等中间代理服务器</p>
+<p>默认值</p>
+<h3 id="private"><a href="#private" class="headerlink" title="private"></a>private</h3><p>仅能被终端用户缓存</p>
+<h2 id="Expires-响应头"><a href="#Expires-响应头" class="headerlink" title="Expires 响应头"></a>Expires 响应头</h2><p>表示资源过期时间，以服务端时间为准</p>
+<h1 id="协商缓存"><a href="#协商缓存" class="headerlink" title="协商缓存"></a>协商缓存</h1><h2 id="Last-modified-响应头"><a href="#Last-modified-响应头" class="headerlink" title="Last-modified 响应头"></a>Last-modified 响应头</h2><p>表示服务端文件的最后修改时间</p>
+<p>当缓存过期时，再次发起请求，会带个 <code>If-Modified-Since</code> 请求头，其值为之前返回的 <code>Last-modified</code> 响应头的值</p>
+<p>服务端会去查询在该时间点后文件是否被修改，若被修改，返回新的资源, 200 响应以及 <code>Last-modified</code> 的新值；否则返回 304 响应，根据 Cache-Control 或 Expires 重新设置过期时间</p>
+<h2 id="ETag-响应头"><a href="#ETag-响应头" class="headerlink" title="ETag 响应头"></a>ETag 响应头</h2><p>由于 <code>Last-modified</code> 只精确到秒，且如果内容没变但是最后修改时间变了，还是会当新资源请求</p>
+<p>于是 http1.1 加了一个 <code>ETag</code> 响应头</p>
+<p>其值为根据文件内容生成的 hash</p>
+<p>当缓存过期时，再次发起请求，会带上 <code>If-None-Match</code> 请求头，其值为之前返回的 <code>ETag</code> 响应头的值</p>
+<p>服务器会去该值和服务器文件的 hash 进行比对，若不同，返回新的资源和 200 响应以及 <code>ETag</code> 的新值；否则返回 304 响应，根据 Cache-Control 或 Expires 重新设置过期时间</p>
+<p><strong>优先级比 <code>Last-modified</code> 高</strong></p>
+<p>当两个同时存在时，先判断 ETag ，如果 hash 值没有变化，再去判断 <code>Last-modified</code> ，最终决定是否返回 304</p>
+<h1 id="总流程"><a href="#总流程" class="headerlink" title="总流程"></a>总流程</h1><p>借用 [浅谈 Web 缓存] 中的图</p>
+<p><img src="http://www.alloyteam.com/wp-content/uploads/2016/03/%E5%9B%BE%E7%89%8761.png" alt="alloyteam"></p>
+<h1 id="用户行为"><a href="#用户行为" class="headerlink" title="用户行为"></a>用户行为</h1><table>
+<thead>
+<tr>
+<th>用户操作</th>
+<th>强缓存</th>
+<th>协商缓存</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>前进后退</td>
+<td>有效</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>地址栏回车</td>
+<td>?</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>按刷新按钮</td>
+<td>无效</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>F5</td>
+<td>无效</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>ctrl + F5</td>
+<td>无效</td>
+<td>无效</td>
+</tr>
+<tr>
+<td>Disable cache</td>
+<td>无效</td>
+<td>无效</td>
+</tr>
+</tbody></table>
+<p>前四种针对的是文档请求，后两者针对的是所有资源的请求</p>
+<p>强缓存失效的原因在于浏览器会在请求中带上<code>cache-control: max-age=0</code></p>
+<p>协商缓存失效的原因在于本该带上 <code>If-Modified-Since</code> 或 <code>If-None-Match</code> 请求头，但是浏览器没有带上，并带上以下两个请求头避免强缓存，因此会重新加载资源</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Cache-Control: no-cache</span><br><span class="line">Pragma: no-cache</span><br></pre></td></tr></table></figure>
+
+<p>前进后退是浏览器直接拿缓存页面，即使强缓存已经过期，所以即使断网了，后退还是能访问原来页面文档，参考自：<a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.13" target="_blank" rel="noopener">https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.13</a></p>
+<blockquote>
+<p>会发现此时网络请求头显示 Provisional headers are shown</p>
+</blockquote>
+<p>地址栏回车之所以不固定，在于当前文档链接与要回车的链接是否相同。如果相同，浏览器会认为这是打算 f5 刷新，强缓存无效，否则强缓存有效</p>
+<p>最后两种的区别在于，前者会走内存缓存（相同请求命中内存缓存，不会再发一条请求），后者什么缓存都不走；</p>
+<blockquote>
+<p>放入内存缓存的是页面扫描加载的，脚步异步请求的不放内存中（没做完整的测试，不确定）</p>
+</blockquote>
+<h1 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h1><h2 id="请求头出现-Provisional-headers-are-shown-的原因"><a href="#请求头出现-Provisional-headers-are-shown-的原因" class="headerlink" title="请求头出现 Provisional headers are shown 的原因"></a>请求头出现 Provisional headers are shown 的原因</h2><ol>
+<li>插件拦截</li>
+<li>命中本地缓存</li>
+<li>服务器超时</li>
+<li><strong>跨域拦截</strong>，最经常出现的情况，非同源的资源请求都会显示这个</li>
+</ol>
+<h2 id="响应头未设置-cache-control-和-expires-还会命中强缓存么？"><a href="#响应头未设置-cache-control-和-expires-还会命中强缓存么？" class="headerlink" title="响应头未设置 cache-control 和 expires 还会命中强缓存么？"></a>响应头未设置 cache-control 和 expires 还会命中强缓存么？</h2><p>对于前进后退的场景来说，有没有这些响应头，都会命中强缓存</p>
+<p>其他场景则不会命中</p>
+<h2 id="如何设置才能不缓存资源"><a href="#如何设置才能不缓存资源" class="headerlink" title="如何设置才能不缓存资源"></a>如何设置才能不缓存资源</h2><h2 id="通过-Expires-判断缓存过期，而本地时间比服务器时间快的话，会出现什么问题？"><a href="#通过-Expires-判断缓存过期，而本地时间比服务器时间快的话，会出现什么问题？" class="headerlink" title="通过 Expires 判断缓存过期，而本地时间比服务器时间快的话，会出现什么问题？"></a>通过 Expires 判断缓存过期，而本地时间比服务器时间快的话，会出现什么问题？</h2><p>如果通过 Expires 判断缓存过期，而本地时间又比服务端快资源有效期以上，就会出现始终不能命中强缓存的情况</p>
+<h1 id="浏览器缓存中的其他缓存"><a href="#浏览器缓存中的其他缓存" class="headerlink" title="浏览器缓存中的其他缓存"></a>浏览器缓存中的其他缓存</h1><p>读取某个 url 的资源，按照下面的过程 </p>
+<p>（需要做个试验）</p>
+<p>内存缓存</p>
+<blockquote>
+<p>preload 预加载的资源会存储在此处<br>当前页面已经加载过的资源会放在内存中，方便读取<br>但注意一点，如果资源设置了 no-store ，前面即使加载过这个资源，还是会继续加载（待确定）</p>
+</blockquote>
+<p>Service Worker 缓存</p>
+<blockquote>
+<p>有一套自己的缓存API，更加可控，不受浏览器影响</p>
+</blockquote>
+<p>HTTP 缓存</p>
+<blockquote>
+<p>上文提到的那个，根据请求响应等头部信息确定是否走缓存</p>
+</blockquote>
+<p>HTTP2 Push 缓存</p>
+<blockquote>
+<p>有一定的时效，chromium 中是五分钟<br>在命中缓存后，可能会在 HTTP 缓存中增加拷贝以及内存缓存增加引用</p>
+</blockquote>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li><a href="http://www.alloyteam.com/2016/03/discussion-on-web-caching/" target="_blank" rel="noopener">浅谈 Web 缓存</a></li>
+<li><a href="https://www.cnblogs.com/wonyun/p/5524617.html" target="_blank" rel="noopener">http协商缓存VS强缓存</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Cache-Control" target="_blank" rel="noopener">Cache-Control</a></li>
+<li><a href="https://juejin.im/post/5aa5ddd4f265da23906ba592" target="_blank" rel="noopener">【译】关于四种缓存的故事</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%BC%93%E5%AD%98/" rel="tag"># 缓存</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/14/2019Q4/HTML%E6%96%87%E6%A1%A3%E7%9A%84%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/" rel="prev" title="从输入url后浏览器发生了什么">
+      <i class="fa fa-chevron-left"></i> 从输入url后浏览器发生了什么
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/31/2019Q4/%E9%87%8D%E5%AD%A6%20JS%20%E5%8E%9F%E5%9E%8B%E9%93%BE/" rel="next" title="重学 JS 原型链">
+      重学 JS 原型链 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#查看缓存文件"><span class="nav-number">2.</span> <span class="nav-text">查看缓存文件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#强缓存"><span class="nav-number">3.</span> <span class="nav-text">强缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Cache-Control-响应头"><span class="nav-number">3.1.</span> <span class="nav-text">Cache-Control 响应头</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#max-age"><span class="nav-number">3.1.1.</span> <span class="nav-text">max-age</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#s-maxage"><span class="nav-number">3.1.2.</span> <span class="nav-text">s-maxage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#no-cache"><span class="nav-number">3.1.3.</span> <span class="nav-text">no-cache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#no-store"><span class="nav-number">3.1.4.</span> <span class="nav-text">no-store</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#public"><span class="nav-number">3.1.5.</span> <span class="nav-text">public</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#private"><span class="nav-number">3.1.6.</span> <span class="nav-text">private</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Expires-响应头"><span class="nav-number">3.2.</span> <span class="nav-text">Expires 响应头</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#协商缓存"><span class="nav-number">4.</span> <span class="nav-text">协商缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Last-modified-响应头"><span class="nav-number">4.1.</span> <span class="nav-text">Last-modified 响应头</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ETag-响应头"><span class="nav-number">4.2.</span> <span class="nav-text">ETag 响应头</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总流程"><span class="nav-number">5.</span> <span class="nav-text">总流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#用户行为"><span class="nav-number">6.</span> <span class="nav-text">用户行为</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#常见问题"><span class="nav-number">7.</span> <span class="nav-text">常见问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#请求头出现-Provisional-headers-are-shown-的原因"><span class="nav-number">7.1.</span> <span class="nav-text">请求头出现 Provisional headers are shown 的原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#响应头未设置-cache-control-和-expires-还会命中强缓存么？"><span class="nav-number">7.2.</span> <span class="nav-text">响应头未设置 cache-control 和 expires 还会命中强缓存么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何设置才能不缓存资源"><span class="nav-number">7.3.</span> <span class="nav-text">如何设置才能不缓存资源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过-Expires-判断缓存过期，而本地时间比服务器时间快的话，会出现什么问题？"><span class="nav-number">7.4.</span> <span class="nav-text">通过 Expires 判断缓存过期，而本地时间比服务器时间快的话，会出现什么问题？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#浏览器缓存中的其他缓存"><span class="nav-number">8.</span> <span class="nav-text">浏览器缓存中的其他缓存</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">9.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

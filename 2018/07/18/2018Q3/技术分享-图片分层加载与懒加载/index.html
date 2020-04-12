@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="技术介绍一、 图片懒加载按需加载，即用户滚动页面到一定位置（可视区域）时才触发图片的加载； 常用于图片较多的网页，可以延迟网络请求，页面更快load">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈图片分层加载与懒加载">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;07&#x2F;18&#x2F;2018Q3&#x2F;%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB-%E5%9B%BE%E7%89%87%E5%88%86%E5%B1%82%E5%8A%A0%E8%BD%BD%E4%B8%8E%E6%87%92%E5%8A%A0%E8%BD%BD&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="技术介绍一、 图片懒加载按需加载，即用户滚动页面到一定位置（可视区域）时才触发图片的加载； 常用于图片较多的网页，可以延迟网络请求，页面更快load">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;images2015.cnblogs.com&#x2F;blog&#x2F;604527&#x2F;201610&#x2F;604527-20161021180737935-494667792.gif">
+<meta property="article:published_time" content="2018-07-18T02:18:32.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.157Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="前端优化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;images2015.cnblogs.com&#x2F;blog&#x2F;604527&#x2F;201610&#x2F;604527-20161021180737935-494667792.gif">
+
+<link rel="canonical" href="https://gahing.top/2018/07/18/2018Q3/%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB-%E5%9B%BE%E7%89%87%E5%88%86%E5%B1%82%E5%8A%A0%E8%BD%BD%E4%B8%8E%E6%87%92%E5%8A%A0%E8%BD%BD/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>浅谈图片分层加载与懒加载 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/07/18/2018Q3/%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB-%E5%9B%BE%E7%89%87%E5%88%86%E5%B1%82%E5%8A%A0%E8%BD%BD%E4%B8%8E%E6%87%92%E5%8A%A0%E8%BD%BD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浅谈图片分层加载与懒加载
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-07-18 10:18:32" itemprop="dateCreated datePublished" datetime="2018-07-18T10:18:32+08:00">2018-07-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="技术介绍"><a href="#技术介绍" class="headerlink" title="技术介绍"></a>技术介绍</h1><h2 id="一、-图片懒加载"><a href="#一、-图片懒加载" class="headerlink" title="一、 图片懒加载"></a>一、 图片懒加载</h2><p>按需加载，即用户滚动页面到一定位置（可视区域）时才触发图片的加载；</p>
+<p>常用于图片较多的网页，可以延迟网络请求，页面更快load</p>
+<a id="more"></a>
+<h3 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h3><p><a href="https://www.jd.com/" target="_blank" rel="noopener">京东首页效果</a></p>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><ol>
+<li><code>&lt;img&gt;</code>节点不使用src属性，将图片地址放在其他自定义属性上</li>
+<li>当页面滚动到一定位置，将自定义属性上的图片地址赋值给src</li>
+</ol>
+<p>主要有两种方案</p>
+<h4 id="IntersectionObserver"><a href="#IntersectionObserver" class="headerlink" title="IntersectionObserver"></a>IntersectionObserver</h4><p>一个用于判断 dom 节点是否处于视口的API</p>
+<p><img src="https://images2015.cnblogs.com/blog/604527/201610/604527-20161021180737935-494667792.gif"></img><br>      <em>(引用网上图片)</em></p>
+<p>  <strong>简单代码：</strong><br>  <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intersectionObserver = <span class="keyword">new</span> IntersectionObserver(<span class="function"><span class="keyword">function</span>(<span class="params">entries</span>) </span>&#123;</span><br><span class="line">  entries.forEach(<span class="function"><span class="keyword">function</span> (<span class="params">entry</span>) </span>&#123;</span><br><span class="line">    <span class="comment">//intersectionRatio：该元素的可见性比例</span></span><br><span class="line">    <span class="keyword">if</span> (entry.intersectionRatio &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="comment">//对其dom节点（entry.target）进行下一步操作</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;,&#123;</span><br><span class="line">  <span class="comment">// 用于计算相交区域的根元素，默认document顶层文档的视口</span></span><br><span class="line">  root：<span class="literal">null</span>,</span><br><span class="line">  <span class="comment">// 指定到root的距离，用于扩大或缩小交叉区域面积,一般用于提前/延迟懒加载</span></span><br><span class="line">  <span class="comment">// 与margin一样跨域用4个值，允许负值</span></span><br><span class="line">  <span class="comment">// 显示指定root时才可使用百分比值</span></span><br><span class="line">  rootMargin:<span class="string">"0px"</span>,</span><br><span class="line">  <span class="comment">// 触发回调函数的临界值，用 0 ~ 1 的比率指定，也可以是一个数组。</span></span><br><span class="line">  <span class="comment">// 其值是被观测元素可视面积 / 总面积</span></span><br><span class="line">  <span class="comment">// 当可视比率经过这个值的时候，回调函数就会被调用。</span></span><br><span class="line">  thresholds:[<span class="number">0</span>]</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">document</span>.querySelectorAll(<span class="string">'img'</span>).forEach(<span class="function"><span class="params">v</span>=&gt;</span>intersectionObserver.observe(v))</span><br></pre></td></tr></table></figure><br>  兼容性：<a href="https://caniuse.com/#search=intersectionObserver" target="_blank" rel="noopener">较差，caniuse</a></p>
+<h4 id="scroll-requestAnimationFrame-getBoundingClientRect"><a href="#scroll-requestAnimationFrame-getBoundingClientRect" class="headerlink" title="scroll+requestAnimationFrame+getBoundingClientRect"></a>scroll+requestAnimationFrame+getBoundingClientRect</h4><p>监听窗口滚动和大小变化事件，利用 requestAnimationFrame 进行节流</p>
+<p>判断元素是否在视区中代码：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">inViewport</span>(<span class="params">node</span>) </span>&#123;</span><br><span class="line">  <span class="comment">//文档滚动距离</span></span><br><span class="line">  <span class="keyword">var</span> viewTop = getScrollY()</span><br><span class="line">  <span class="keyword">var</span> viewBot = viewTop + windowHeight</span><br><span class="line">  <span class="comment">//节点距离文档顶部的距离</span></span><br><span class="line">  <span class="keyword">var</span> nodeTop = getNodeTop(node)</span><br><span class="line">  <span class="keyword">var</span> nodeBot = nodeTop + getNodeOffsetHeight(wsnode)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> offset = (settings.lazyLoadStrategy.threshold / <span class="number">100</span>) * windowHeight</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (nodeBot &gt;= viewTop - offset) &amp;&amp; (nodeTop &lt;= viewBot + offset)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>兼容性：IE7+测试通过</p>
+<h2 id="二、-分层加载"><a href="#二、-分层加载" class="headerlink" title="二、 分层加载"></a>二、 分层加载</h2><p>先显示一张模糊的图片，后面再换成原图</p>
+<h3 id="效果-1"><a href="#效果-1" class="headerlink" title="效果"></a>效果</h3><p><a href="https://www.zhihu.com/question/20958648/answer/74805876" target="_blank" rel="noopener">知乎（为观察测试效果请限制带宽）</a></p>
+<h3 id="实现原理-1"><a href="#实现原理-1" class="headerlink" title="实现原理"></a>实现原理</h3><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">id</span>=<span class="string">"img"</span> <span class="attr">src</span>=<span class="string">"small.jpg"</span> <span class="attr">data-original</span>=<span class="string">"big.jpg"</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> smallImage = <span class="built_in">document</span>.getElementById(<span class="string">'img'</span>)</span><br><span class="line"><span class="keyword">let</span> imgLarge = <span class="keyword">new</span> Image();</span><br><span class="line">imgLarge.src = smallImage.getAttribute(<span class="string">"data-original"</span>)</span><br><span class="line">imgLarge.onload = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  smallImage.src = imgLarge.src</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-懒加载-分层加载"><a href="#3-懒加载-分层加载" class="headerlink" title="3. 懒加载+分层加载"></a>3. 懒加载+分层加载</h2><p><code>&lt;img src=&quot;small.jpg&quot;&gt;</code></p>
+<p>然后按懒加载的做法，在图片节点进入视区时，进行src的替换</p>
+<h1 id="技术架构"><a href="#技术架构" class="headerlink" title="技术架构"></a>技术架构</h1><h2 id="时序图"><a href="#时序图" class="headerlink" title="时序图"></a>时序图</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">participant 浏览器</span><br><span class="line">participant 代理服务器</span><br><span class="line">participant 源站</span><br><span class="line">浏览器 -&gt;&gt; 代理服务器:请求模糊图</span><br><span class="line">Note right of 代理服务器:没有缓存，请求源站</span><br><span class="line">代理服务器 -&gt;&gt; 源站:请求原始图像资源</span><br><span class="line">Note right of 代理服务器:缓存图像</span><br><span class="line">代理服务器 -&gt;&gt; 代理服务器:图像模糊化</span><br><span class="line">代理服务器 --&gt;&gt; 浏览器:返回模糊图</span><br><span class="line">Note right of 浏览器:dom解析完毕&lt;br&#x2F;&gt;扫描文档</span><br><span class="line">浏览器 -&gt;&gt; 代理服务器:请求图片质量标识wsq对应图像</span><br><span class="line">代理服务器 -&gt;&gt; 代理服务器:根据wsq对原图做相应的压缩</span><br><span class="line">代理服务器 --&gt;&gt;浏览器:返回wsq对应图片</span><br></pre></td></tr></table></figure>
+<h2 id="总流程"><a href="#总流程" class="headerlink" title="总流程"></a>总流程</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">  st(开始)--&gt;init((初始化))</span><br><span class="line">  init--&gt;obs[添加DOMContentLoaded,Load事件监听器]</span><br><span class="line">  obs--&gt;DOMContentLoaded[DOMContentLoaded事件触发]</span><br><span class="line">  DOMContentLoaded--&gt;cal[利用html文档下载速度来进行简单测速]</span><br><span class="line">  cal--&gt;firstScreenPicSpeed[参照网速压缩比对照表得到首屏图片压缩比]</span><br><span class="line">  firstScreenPicSpeed--&gt;firstScreen((扫描文档,获取图片节点))</span><br><span class="line">  firstScreen--&gt;quicksort[按视距快排图片节点]</span><br><span class="line">  quicksort--&gt;judgeCache[任取一模糊图的name,通过transferSize是否为0来判断本次加载是否为无缓存加载]</span><br><span class="line">  judgeCache--&gt;firstScreenCal[获取视距处于首屏的图片节点]</span><br><span class="line">  firstScreenCal--&gt;oripicload((进行原图加载))</span><br><span class="line">  oripicload--&gt;load[Load事件触发]</span><br><span class="line">  load--&gt;speedtest[采用测速算法测速,得到相应图像压缩比]</span><br><span class="line">  speedtest--&gt;islazyLoad&#123;是否懒加载&#125;</span><br><span class="line">  islazyLoad--是--&gt;lazyload[启动懒加载策略]</span><br><span class="line">  islazyLoad--否--&gt;replaceOther[找到其他未进行原图加载的节点]</span><br><span class="line">  replaceOther--&gt;oripicload1((进行原图加载))</span><br><span class="line">  lazyload--&gt;islazycompleted&#123;懒加载完毕?&#125;</span><br><span class="line">  islazycompleted--是--&gt;ed(结束)</span><br><span class="line">  islazycompleted--否--&gt;scall&#123;是否进行窗口滚动&#125;</span><br><span class="line">  scall--是--&gt;debounceCul[节流处理,获取满足视距条件的未进行原图加载的节点]</span><br><span class="line">  debounceCul--&gt;oripicload2((进行原图加载))</span><br><span class="line">  oripicload2--&gt;islazycompleted</span><br><span class="line">  scall--否--&gt;mousetimeout&#123;鼠标事件10s未触发&#125;</span><br><span class="line">  mousetimeout--是--&gt;replaceOther</span><br><span class="line">  mousetimeout--否--&gt;scall</span><br><span class="line">  oripicload1--&gt;ed</span><br></pre></td></tr></table></figure>
+<h2 id="初始化具体流程"><a href="#初始化具体流程" class="headerlink" title="初始化具体流程"></a>初始化具体流程</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">  init(初始化开始)--&gt;evalElement(解析script标签中自定义属性)</span><br><span class="line">  evalElement--&gt;getHost[获取可替换图片域名]</span><br><span class="line">  evalElement--&gt;getHashHost[获取散列域名]</span><br><span class="line">  evalElement--&gt;getLazy[获取懒加载策略]</span><br><span class="line">  evalElement--&gt;getSpeedZip[获取网速压缩比参照表]</span><br><span class="line">  evalElement--&gt;getTTL[获取图片缓存时间]</span><br><span class="line">  getHost--&gt;initStop(初始化结束)</span><br><span class="line">  getHashHost--&gt;initStop</span><br><span class="line">  getLazy--&gt;initStop</span><br><span class="line">  getSpeedZip--&gt;initStop</span><br><span class="line">  getTTL--&gt;initStop</span><br></pre></td></tr></table></figure>
+
+<h2 id="原图加载具体流程"><a href="#原图加载具体流程" class="headerlink" title="原图加载具体流程"></a>原图加载具体流程</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">oripicstart(原图加载开始)--&gt;judgeEle&#123;判断节点类型&#125;</span><br><span class="line">judgeEle--picture节点--&gt;getpic[获取其子节点中source节点和img节点中src和srcset属性中的图片url]</span><br><span class="line">judgeEle--img节点--&gt;getsrcset[获取节点的src和srcset属性中的图片url]</span><br><span class="line">judgeEle--video节点--&gt;getposter[获取节点的poster属性中的图片url]</span><br><span class="line">judgeEle--其他节点--&gt;getother[获取节点background-image的图片url]</span><br><span class="line">getpic--&gt;getfinalurl((url替换))</span><br><span class="line"></span><br><span class="line">getsrcset--&gt;getfinalurl1((url替换))</span><br><span class="line">getposter--&gt;getfinalurl1((url替换))</span><br><span class="line">getother--&gt;getfinalurl1((url替换))</span><br><span class="line"></span><br><span class="line">getfinalurl1--&gt;newImg[new Image的方式加载资源,其url为替换后的url,可能需要设置srcset属性]</span><br><span class="line">newImg--&gt;onload[Image的onload触发]</span><br><span class="line">onload--&gt;updateEle</span><br><span class="line"></span><br><span class="line">getfinalurl-.-hashurl[将模糊图url地址通过一定算法映射到固定的散列域名,得到新的图片url-newUrl]</span><br><span class="line">hashurl--&gt;findstorage&#123;localstorage中是否有newUrl且压缩比一样或更低的记录&#125;</span><br><span class="line">findstorage--是--&gt;isExpired&#123;是否过期&#125;</span><br><span class="line">findstorage--否--&gt;carrycur</span><br><span class="line">isExpired--否--&gt;carryhigh[取未过期的压缩比最低的记录,newUrl后带上压缩比参数]</span><br><span class="line">isExpired--是--&gt;carrycur[图片url后带上当前的压缩比]</span><br><span class="line">carryhigh--&gt;replaceEnd(url替换完毕)</span><br><span class="line">carrycur--&gt;replaceEnd</span><br><span class="line">getfinalurl--&gt;updateEle[将节点属性的图片url进行替换]</span><br><span class="line">updateEle--&gt;updatelocal[更新localstorage]</span><br><span class="line">updatelocal--&gt;isnocache&#123;无缓存加载或localstorage中没有命中缓存?&#125;</span><br><span class="line">isnocache--否--&gt;oripicstop[原图加载完毕]</span><br><span class="line">isnocache--是--&gt;update[更新 url-压缩比-ttl 记录]</span><br><span class="line">update--&gt;oripicstop</span><br></pre></td></tr></table></figure>
+
+<h2 id="扫描文档，获取图片节点具体流程"><a href="#扫描文档，获取图片节点具体流程" class="headerlink" title="扫描文档，获取图片节点具体流程"></a>扫描文档，获取图片节点具体流程</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">init(初始化节点列表)--&gt;scanOver&#123;文档扫描完毕?&#125;</span><br><span class="line">scanOver--否--&gt;scan[扫描文档]</span><br><span class="line">scan--&gt;getPicEle[获取picture节点]</span><br><span class="line">getPicEle--&gt;getchild[获取子节点的src和srcset中所有图片的url]</span><br><span class="line">getchild--&gt;ishost&#123;节点图片url的域名存在可替换图片域名?&#125;</span><br><span class="line">ishost--否--&gt;skip[跳过该节点]</span><br><span class="line">ishost--是--&gt;addList[节点列表加入该节点]</span><br><span class="line">scan--&gt;getImgEle[获取父节点非picture的img节点]</span><br><span class="line">getImgEle--&gt;getsrc[获取节点的src或srcset属性]</span><br><span class="line">getsrc--&gt;ishost</span><br><span class="line">scan--&gt;getstyleEle[获取style中含有background-image属性且值为图片url的节点]</span><br><span class="line">getstyleEle--&gt;ishost</span><br><span class="line">scan--&gt;getcss[扫描css文档,获取含有background-image属性且值为图片url的css规则]</span><br><span class="line">getcss--&gt;getcssDom[匹配css规则得到相应节点]</span><br><span class="line">getcssDom--&gt;ishost</span><br><span class="line">scan--&gt;getvideo[获取含poster属性且值为图片url的video节点]</span><br><span class="line">getvideo--&gt;ishost</span><br><span class="line">skip--&gt;scanOver</span><br><span class="line">addList--&gt;scanOver</span><br><span class="line">scanOver--是--&gt;scanEnd(节点获取完毕)</span><br></pre></td></tr></table></figure>
+
+<h1 id="问题与解决"><a href="#问题与解决" class="headerlink" title="问题与解决"></a>问题与解决</h1><h2 id="1-响应式图片处理"><a href="#1-响应式图片处理" class="headerlink" title="1. 响应式图片处理"></a>1. 响应式图片处理</h2><ul>
+<li><code>&lt;img&gt;</code>的 srcset 属性和 <del>css的image-set()</del></li>
+<li><code>&lt;picture&gt;</code> source、img子节点</li>
+</ul>
+<p>(1) 拿到srcset值，并获取srcset中的图片地址列表<br>(2) 将图片地址变成带质量标识的地址<br>(3) 将处理过的图片地址列表替换为原来的srcset值</p>
+<h2 id="2-带宽估算"><a href="#2-带宽估算" class="headerlink" title="2. 带宽估算"></a>2. 带宽估算</h2><p>利用 WebPerformanceApi 获取已加载资源的网络请求时间耗费</p>
+<h3 id="算法流程"><a href="#算法流程" class="headerlink" title="算法流程"></a>算法流程</h3><ol start="0">
+<li><p>数据结构体</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  name: v.name,<span class="comment">//标识而已</span></span><br><span class="line">  start: v.responseStart,</span><br><span class="line">  end: v.responseEnd,</span><br><span class="line">  size: v.transferSize,</span><br><span class="line">  <span class="comment">//KB/S 新算法中不用该参数</span></span><br><span class="line">  speed: v.transferSize / (v.responseEnd - v.responseStart || <span class="number">1</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>过滤、按start值升序排序</p>
+<blockquote>
+<p>剔除小数据,保留满足以下条件数据–》小数据会导致出现过大的网速计算结果，剔除小数据后对总体结果影响小，<br><code>v.transferSize &gt; 100 &amp;&amp; (v.responseEnd - v.responseStart) &gt; 10 &amp;&amp; v.responseStart &lt; loadTime</code></p>
+</blockquote>
+</li>
+<li><p>分组，将响应时间无连续的分组</p>
+</li>
+<li><p>计算每组的每条响应的速度（具体计算见如下），并计算整组均值、方差、最大值</p>
+<ul>
+<li>3.1 将每条响应的start,end放入numArr</li>
+<li>3.2 numArr去重，升序排序</li>
+<li>3.3 将每条响应的时间区间按numArr值分割，当其他响应有重复的区间，该条响应的该时间区间会乘以重复的数量(包括自己)</li>
+<li>3.4 将每段时间区间相加，形成该响应的实际响应时间，用size处于该时间则为该响应的实际速度</li>
+<li>3.5 计算每条响应的速度</li>
+</ul>
+</li>
+<li><p>根据size做加权平均，得到每组带宽估算值。</p>
+</li>
+<li><p>比较每组数据的结果，取最大值</p>
+</li>
+</ol>
+<h2 id="3-多版本缓存命中策略"><a href="#3-多版本缓存命中策略" class="headerlink" title="3. 多版本缓存命中策略"></a>3. 多版本缓存命中策略</h2><p>Q: 带网络参数，不会命中原图已有本地缓存 </p>
+<p>详细描述：本地已缓存高质量图片<code>a.jpg?q=80</code>，本地通过网络计算需要去请求低清图片<code>a.jpg?q=50</code>,这样就浪费了原来的原图缓存了。</p>
+<p><strong>解法：引入localStorage的缓存控制策略</strong></p>
+<p>不同比例图片load后，将<code>url-TTL-q</code>放到 localstorage 中。<br>每次网络计算完后，先查询缓存中有没有更高清的且未过期的图片，有的话选更高清的进行请求，不对localstorage做处理 ；<br>否则请求相应网络状态的图片，onload后保存或更新localstorage。</p>
+<blockquote>
+<p>注1：每种清晰度图片的TTL可配置，通过script节点自定义属性设置。</p>
+</blockquote>
+<p><strong>注意：强刷页面或者<code>disable cache</code>，请求图片得到响应后，<code>cache-control</code>本地缓存时间会重新计算。</strong></p>
+<p>相应的我们localstorage的TTL也要进行修改</p>
+<p>这边我们主要就是判断图片是否为无缓存请求，当为无缓存请求，img.onload后需要对localstorage进行更新。</p>
+<p>至于怎么判断是否为无缓存，就用<code>performance.getEntriesByName(&#39;当前加载图片的url&#39;)</code>结果是否满足某些规则来判断</p>
+<h3 id="transferSize-比-encodedBodySize-小的情况："><a href="#transferSize-比-encodedBodySize-小的情况：" class="headerlink" title="transferSize 比 encodedBodySize 小的情况："></a>transferSize 比 encodedBodySize 小的情况：</h3><blockquote>
+<p> It is possible for transferSize value to be lower than encodedBodySize: when a cached response is successfully revalidated the transferSize reports the size of the response HTTP headers incurred during the revalidation, and encodedBodySize reports the size of the previously retrieved payload body.</p>
+</blockquote>
+<p>缓存生效，transferSize 为响应HTTP头的大小，而encodedBodySize 为先前检索到的有效内容主体的大小。</p>
+<p>200 from cache. 且 transferSize 一般为0</p>
+<h3 id="encodedBodySize-为0-的情况："><a href="#encodedBodySize-为0-的情况：" class="headerlink" title="encodedBodySize 为0 的情况："></a>encodedBodySize 为0 的情况：</h3><blockquote>
+<p>The encodedBodySize may be zero depending on the response code - e.g. HTTP 204 (No Content), 3XX, etc.</p>
+</blockquote>
+<p>204,3XX 。</p>
+<h2 id="4-动态图片节点扫描"><a href="#4-动态图片节点扫描" class="headerlink" title="4. 动态图片节点扫描"></a>4. 动态图片节点扫描</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">wraptSet</span>(<span class="params">obj, attr, interceptor, callback, useParent</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> desc = <span class="built_in">Object</span>.getOwnPropertyDescriptor(obj, attr);</span><br><span class="line">    <span class="keyword">var</span> original = desc.set;</span><br><span class="line">    desc.set = <span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"inject to attr:"</span>, obj, attr)</span><br><span class="line">        <span class="keyword">var</span> new_value = interceptor(value);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (err) &#123;</span><br><span class="line">        <span class="built_in">console</span>.warn(err);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">          callback(<span class="keyword">this</span>, useParent)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="comment">//说明是元素的图片地址属性设置</span></span><br><span class="line">          <span class="keyword">this</span>.setAttribute(<span class="string">"wsload"</span>, <span class="string">"true"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> original.call(<span class="keyword">this</span>, new_value);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">Object</span>.defineProperty(obj, attr, desc);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">wrapInvoke</span>(<span class="params">obj, method, callback, useParent</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> original = obj[method];</span><br><span class="line">    obj[method] = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"inject to method:"</span>, obj, method)</span><br><span class="line">        <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">          callback(<span class="keyword">this</span>, useParent)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> original.apply(<span class="keyword">this</span>, <span class="built_in">arguments</span>);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (err) &#123;</span><br><span class="line">        <span class="built_in">console</span>.warn(err);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">var</span> callback = <span class="function"><span class="keyword">function</span> (<span class="params">node, useParent</span>) </span>&#123;</span><br><span class="line">    setTimeout(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      nodeList = nodeList.concat(Util.queryImgNodeList(useParent ? node.parentNode : node))</span><br><span class="line">      LazyLoad.check()</span><br><span class="line">    &#125;, <span class="number">5</span>);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>进行处理的属性和方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">NodeWriter.wraptSet(<span class="built_in">window</span>.HTMLImageElement.prototype, <span class="string">'src'</span>, wrapSetSrc);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">window</span>.HTMLSourceElement &amp;&amp; NodeWriter.wraptSet(<span class="built_in">window</span>.HTMLSourceElement.prototype, <span class="string">'src'</span>, wrapSetSrc);</span><br><span class="line">    <span class="comment">// ie8 设置srcset会报错：属性不能同时具有取值函数和值</span></span><br><span class="line">    <span class="keyword">if</span> (!((gBrowser.name === <span class="string">"IE"</span> || gBrowser.name === <span class="string">'MSIE'</span>) &amp;&amp; gBrowser.version === <span class="string">"8"</span>)) &#123;</span><br><span class="line">      NodeWriter.wraptSet(<span class="built_in">window</span>.HTMLImageElement.prototype, <span class="string">'srcset'</span>, wrapSetSrcSet);</span><br><span class="line">      NodeWriter.wraptSet(<span class="built_in">window</span>.HTMLSourceElement.prototype, <span class="string">'srcset'</span>, wrapSetSrcSet);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">window</span>.HTMLVideoElement &amp;&amp; NodeWriter.wraptSet(<span class="built_in">window</span>.HTMLVideoElement.prototype, <span class="string">'poster'</span>, wrapSetSrc);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> EleProto = ((gBrowser.name === <span class="string">"IE"</span> || gBrowser.name === <span class="string">'MSIE'</span>) &amp;&amp; <span class="built_in">window</span>.HTMLElement) ? <span class="built_in">window</span>.HTMLElement.prototype : <span class="built_in">window</span>.Element.prototype</span><br><span class="line"></span><br><span class="line">    NodeWriter.wrapInvoke(EleProto, <span class="string">'insertAdjacentHTML'</span>, callback, <span class="literal">true</span>);</span><br><span class="line">    NodeWriter.wraptSet(EleProto, <span class="string">'innerHTML'</span>, wrapSetOrigin, callback);</span><br><span class="line">    NodeWriter.wraptSet(EleProto, <span class="string">'outerHTML'</span>, wrapSetOrigin, callback, <span class="literal">true</span>);</span><br><span class="line">    NodeWriter.wraptSet(EleProto, <span class="string">'className'</span>, wrapSetOrigin, callback);</span><br></pre></td></tr></table></figure>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文介绍了一个带宽估算模型，基于该模型实现分层加载与懒加载功能，有效减少用户流量消耗，提高页面加载速度。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%96/" rel="tag"># 前端优化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/07/15/2018Q3/getElementsByClassName%E9%81%8D%E5%8E%86%E6%97%B6%E5%87%BA%E7%8E%B0%E7%9A%84%E9%97%AE%E9%A2%98/" rel="prev" title="getElementsByClassName遍历时出现的问题">
+      <i class="fa fa-chevron-left"></i> getElementsByClassName遍历时出现的问题
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/08/10/2018Q3/js%E5%BC%82%E6%AD%A5%E5%8A%A0%E8%BD%BD%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C/" rel="next" title="如何实现 script 并行异步加载顺序执行">
+      如何实现 script 并行异步加载顺序执行 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#技术介绍"><span class="nav-number">1.</span> <span class="nav-text">技术介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、-图片懒加载"><span class="nav-number">1.1.</span> <span class="nav-text">一、 图片懒加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#效果"><span class="nav-number">1.1.1.</span> <span class="nav-text">效果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现原理"><span class="nav-number">1.1.2.</span> <span class="nav-text">实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#IntersectionObserver"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">IntersectionObserver</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#scroll-requestAnimationFrame-getBoundingClientRect"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">scroll+requestAnimationFrame+getBoundingClientRect</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二、-分层加载"><span class="nav-number">1.2.</span> <span class="nav-text">二、 分层加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#效果-1"><span class="nav-number">1.2.1.</span> <span class="nav-text">效果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现原理-1"><span class="nav-number">1.2.2.</span> <span class="nav-text">实现原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-懒加载-分层加载"><span class="nav-number">1.3.</span> <span class="nav-text">3. 懒加载+分层加载</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#技术架构"><span class="nav-number">2.</span> <span class="nav-text">技术架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#时序图"><span class="nav-number">2.1.</span> <span class="nav-text">时序图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总流程"><span class="nav-number">2.2.</span> <span class="nav-text">总流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初始化具体流程"><span class="nav-number">2.3.</span> <span class="nav-text">初始化具体流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原图加载具体流程"><span class="nav-number">2.4.</span> <span class="nav-text">原图加载具体流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#扫描文档，获取图片节点具体流程"><span class="nav-number">2.5.</span> <span class="nav-text">扫描文档，获取图片节点具体流程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#问题与解决"><span class="nav-number">3.</span> <span class="nav-text">问题与解决</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-响应式图片处理"><span class="nav-number">3.1.</span> <span class="nav-text">1. 响应式图片处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-带宽估算"><span class="nav-number">3.2.</span> <span class="nav-text">2. 带宽估算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#算法流程"><span class="nav-number">3.2.1.</span> <span class="nav-text">算法流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-多版本缓存命中策略"><span class="nav-number">3.3.</span> <span class="nav-text">3. 多版本缓存命中策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#transferSize-比-encodedBodySize-小的情况："><span class="nav-number">3.3.1.</span> <span class="nav-text">transferSize 比 encodedBodySize 小的情况：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#encodedBodySize-为0-的情况："><span class="nav-number">3.3.2.</span> <span class="nav-text">encodedBodySize 为0 的情况：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-动态图片节点扫描"><span class="nav-number">3.4.</span> <span class="nav-text">4. 动态图片节点扫描</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

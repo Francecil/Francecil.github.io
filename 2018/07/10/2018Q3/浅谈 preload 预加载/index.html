@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="preload简介一种资源预加载的方式。用于提高性能，方便开发人员控制资源加载。 preload 指示浏览器预先请求当前页面接下来会需要用到的资源。 在chrome中，采用 preload 预加载资源后，后续没有在对资源进行请求(3s)，控制台会提示说是否有必要预加载该资源。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈 preload 预加载">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;07&#x2F;10&#x2F;2018Q3&#x2F;%E6%B5%85%E8%B0%88%20preload%20%E9%A2%84%E5%8A%A0%E8%BD%BD&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="preload简介一种资源预加载的方式。用于提高性能，方便开发人员控制资源加载。 preload 指示浏览器预先请求当前页面接下来会需要用到的资源。 在chrome中，采用 preload 预加载资源后，后续没有在对资源进行请求(3s)，控制台会提示说是否有必要预加载该资源。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;www.w3cplus.com&#x2F;sites&#x2F;default&#x2F;files&#x2F;blogs&#x2F;2017&#x2F;1708&#x2F;preload-6.jpeg">
+<meta property="article:published_time" content="2018-07-10T02:18:32.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.157Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="前端优化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;www.w3cplus.com&#x2F;sites&#x2F;default&#x2F;files&#x2F;blogs&#x2F;2017&#x2F;1708&#x2F;preload-6.jpeg">
+
+<link rel="canonical" href="https://gahing.top/2018/07/10/2018Q3/%E6%B5%85%E8%B0%88%20preload%20%E9%A2%84%E5%8A%A0%E8%BD%BD/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>浅谈 preload 预加载 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/07/10/2018Q3/%E6%B5%85%E8%B0%88%20preload%20%E9%A2%84%E5%8A%A0%E8%BD%BD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浅谈 preload 预加载
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-07-10 10:18:32" itemprop="dateCreated datePublished" datetime="2018-07-10T10:18:32+08:00">2018-07-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="preload简介"><a href="#preload简介" class="headerlink" title="preload简介"></a>preload简介</h1><p>一种资源预加载的方式。用于提高性能，方便开发人员控制资源加载。</p>
+<p>preload 指示浏览器预先请求当前页面接下来会需要用到的资源。</p>
+<p>在chrome中，采用 preload 预加载资源后，后续没有在对资源进行请求(3s)，控制台会提示说是否有必要预加载该资源。</p>
+<a id="more"></a>
+
+
+<h1 id="使用preload的几种方式"><a href="#使用preload的几种方式" class="headerlink" title="使用preload的几种方式"></a>使用preload的几种方式</h1><h2 id="方式1：html页面书写link标签"><a href="#方式1：html页面书写link标签" class="headerlink" title="方式1：html页面书写link标签"></a>方式1：html页面书写link标签</h2><p><code>&lt;link rel=&quot;preload&quot; href=&quot;资源地址&quot; as=&quot;script&quot;&gt;</code> </p>
+<p>as 属性告诉浏览器加载的是什么资源，<a href="https://link.jianshu.com/?t=https://fetch.spec.whatwg.org/#concept-request-destination" target="_blank" rel="noopener">常见取值有：”script”,”style”,”image”,”media”,”document”</a></p>
+<p>不加as参数，资源请求优先级和异步xhr一样，非常低。(新版chrome无as或错误值将不会进行preload)</p>
+<p>对于字体文件<code>as=&quot;font&quot;</code>，需要加上<code>crossorigin</code>属性: <a href="https://drafts.csswg.org/css-fonts/#font-fetching-requirements" target="_blank" rel="noopener">fonts were fetched using anonymous mode CORS </a>,<br>否则接下来的字体资源请求会重新获取（二次获取）。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"preload"</span> <span class="attr">href</span>=<span class="string">"font.woff2"</span> <span class="attr">as</span>=<span class="string">"font"</span> <span class="attr">type</span>=<span class="string">"font/woff2"</span> <span class="attr">crossorigin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>type和as有一样的作用，取值不一样</p>
+<blockquote>
+<p>一行代码实现css懒加载</p>
+</blockquote>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"preload"</span> <span class="attr">as</span>=<span class="string">"style"</span> <span class="attr">href</span>=<span class="string">"asyncstyle.css"</span> <span class="attr">onload</span>=<span class="string">"this.rel='stylesheet'"</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>响应式加载</p>
+</blockquote>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"preload"</span> <span class="attr">as</span>=<span class="string">"image"</span> <span class="attr">href</span>=<span class="string">"map.png"</span> <span class="attr">media</span>=<span class="string">"(max-width: 600px)"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"preload"</span> <span class="attr">as</span>=<span class="string">"script"</span> <span class="attr">href</span>=<span class="string">"map.js"</span> <span class="attr">media</span>=<span class="string">"(min-width: 601px)"</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="方式2：js创建link标签"><a href="#方式2：js创建link标签" class="headerlink" title="方式2：js创建link标签"></a>方式2：js创建link标签</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> elem = <span class="built_in">document</span>.createElement(<span class="string">"link"</span>);</span><br><span class="line">elem.setAttribute(<span class="string">"href"</span>, url);</span><br><span class="line">elem.setAttribute(<span class="string">"as"</span>, <span class="string">"script"</span>);</span><br><span class="line">elem.setAttribute(<span class="string">"rel"</span>, <span class="string">"preload"</span>);</span><br><span class="line"><span class="built_in">document</span>.head.appendChild(elem);</span><br></pre></td></tr></table></figure>
+
+<h2 id="利用http响应头预加载"><a href="#利用http响应头预加载" class="headerlink" title="利用http响应头预加载"></a>利用http响应头预加载</h2><p>在html页面的响应头中增加 Link 响应头，其内容为<code>&lt;./js/image-optimizer.js&gt;; rel=preload; as=script</code></p>
+<p>在html文档下载完毕时，则会进行<code>./js/image-optimizer.js</code>的预加载</p>
+<blockquote>
+<p>本地利用 fiddler4做个测试</p>
+</blockquote>
+<ol>
+<li>输入bpu localhost/test.html命令 拦截测试页面html请求，此时可以进行请求头和内容的修改</li>
+<li>点击 <em>Break on Response</em> 按钮 发起请求，并拦截响应，此处我们对响应头进行内容添加</li>
+<li>点击 <em>Run to Completino</em> 按钮,返回响应。</li>
+</ol>
+<h1 id="浏览器兼容性"><a href="#浏览器兼容性" class="headerlink" title="浏览器兼容性"></a>浏览器兼容性</h1><p><a href="https://caniuse.com/#search=preload" target="_blank" rel="noopener">chrome 50+,safari 11+等</a></p>
+<blockquote>
+<p>检测<code>&lt;link rel=&quot;preload&quot;&gt;</code>是否被支持</p>
+</blockquote>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> preloadSupported = <span class="function"><span class="params">()</span> =&gt;</span> &#123; </span><br><span class="line">  <span class="keyword">const</span> link = <span class="built_in">document</span>.createElement(<span class="string">'link'</span>); </span><br><span class="line">  <span class="keyword">const</span> relList = link.relList; </span><br><span class="line">  <span class="keyword">if</span> (!relList || !relList.supports) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>; </span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> relList.supports(<span class="string">'preload'</span>); </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="与-prefetch-的异同点"><a href="#与-prefetch-的异同点" class="headerlink" title="与 prefetch 的异同点"></a>与 prefetch 的异同点</h1><h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><p>当前页面必要资源则采用<code>preload</code>,将来页面使用的资源采用<code>prefetch</code></p>
+<p>A页面发起 a.js 的 prefetch 预加载，在请求过程中此时调转到B页面，a.js 请求不会中断，而换成 preload预加载则请求会中断。</p>
+<h2 id="共通点"><a href="#共通点" class="headerlink" title="共通点"></a>共通点</h2><blockquote>
+<p>Chrome 有四种缓存: HTTP 缓存，内存缓存，Service Worker 缓存和 Push 缓存。preload 和 prefetch 都被存储在 HTTP 缓存中。</p>
+<p>当一个资源被 preload 或者 prefetch 获取后，它可以从 HTTP 缓存移动至渲染器的内存缓存中。如果资源可以被缓存（比如说存在有效的cache-control 和 max-age），它被存储在 HTTP 缓存中可以被现在或将来的任务使用，如果资源不能被&gt;缓存在 HTTP 缓存中，作为代替，它被放在内存缓存中直到被使用。</p>
+</blockquote>
+<h2 id="注意点"><a href="#注意点" class="headerlink" title="注意点"></a>注意点</h2><ol>
+<li>当prefetch和preload预加载同一个资源时，实际会产生两次下载</li>
+</ol>
+<h2 id="Chrome-对于-preload-和-prefetch-的网络优先级？"><a href="#Chrome-对于-preload-和-prefetch-的网络优先级？" class="headerlink" title="Chrome 对于 preload 和 prefetch 的网络优先级？"></a>Chrome 对于 preload 和 prefetch 的网络优先级？</h2><p><img src="https://www.w3cplus.com/sites/default/files/blogs/2017/1708/preload-6.jpeg"></img><br>(来源：<a href="https://docs.google.com/document/d/1bCDuq9H1ih9iNjgzyAL0gpwNFiEP4TZS-YLRp_RuMlc/edit#" target="_blank" rel="noopener">https://docs.google.com/document/d/1bCDuq9H1ih9iNjgzyAL0gpwNFiEP4TZS-YLRp_RuMlc/edit#</a>)</p>
+<blockquote>
+<p>perload利用as或type来表示请求资源的优先级。</p>
+</blockquote>
+<p>按DevTools的标准，as取值对应的优先级如下：</p>
+<ul>
+<li>style–&gt;Highest</li>
+<li>script,font–&gt;High </li>
+<li>image–&gt;Low</li>
+</ul>
+<p>Prefetch的优先级为 Lowest</p>
+<p>从该表得到的其他信息：</p>
+<ol>
+<li>第一张图片预加载之前发起的脚本请求优先级为 High</li>
+<li>第一张图片预加载之后发起的脚本请求优先级为 Medium</li>
+<li>异步脚本请求优先级为 Low</li>
+<li>视口图片比非视口图片的请求优先级高</li>
+</ol>
+<p>图片预加载之前：<code>script节点</code>在dom解析时处于图片节点之前</p>
+<h1 id="DNS-prefetch"><a href="#DNS-prefetch" class="headerlink" title="DNS prefetch"></a>DNS prefetch</h1><p>预解析 DNS</p>
+<p>默认情况下 <code>dns prefetch</code> 只对href属性的url地址进行dns预解析，但若当该网站处于https时则不会进行处理</p>
+<p>可以通过<code>&lt;meta http-equiv=&quot;x-dns-prefetch-control&quot; content=&quot;on&quot;&gt;</code>手动开启，此时https也可正常处理，可通过设置off来进行关闭，当设置off关闭后，再设置on就没有效果了。</p>
+<p>利用 <code>&lt;link rel=&quot;dns-prefetch&quot; href=&quot;//host_name_to_prefetch.com&quot;&gt;</code>手动预解析，一般用来预解析以下场景：请求重定向后的地址，js代码中的异步请求地址，图片请求地址，较晚被dom解析的script节点地址</p>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ol>
+<li><a href="https://www.w3.org/TR/preload/" target="_blank" rel="noopener">W3C preload 文档</a></li>
+<li><a href="https://www.smashingmagazine.com/2016/02/preload-what-is-it-good-for/" target="_blank" rel="noopener">Preload: What is it Good For?</a></li>
+<li><a href="http://dev.chromium.org/developers/design-documents/dns-prefetching" target="_blank" rel="noopener">chromium DNS Prefetching</a></li>
+<li><a href="https://www.w3cplus.com/performance/reloading/preload-prefetch-and-priorities-in-chrome.html" target="_blank" rel="noopener">Preload，Prefetch 和它们在 Chrome 之中的优先级</a> </li>
+<li><a href="http://dev.chromium.org/developers/design-documents/dns-prefetching" target="_blank" rel="noopener">DNS Prefetching</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%96/" rel="tag"># 前端优化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/07/05/2018Q3/%E5%89%8D%E7%AB%AF%E7%9B%91%E5%90%AC%E8%B5%84%E6%BA%90%E5%8A%A0%E8%BD%BD%E9%94%99%E8%AF%AF/" rel="prev" title="前端监听资源加载错误">
+      <i class="fa fa-chevron-left"></i> 前端监听资源加载错误
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/07/12/2018Q3/%E5%89%8D%E7%AB%AF%E5%B0%8F%E7%9F%A5%E8%AF%86-%E6%A0%BC%E5%BC%8F%E5%8C%96%E6%A0%87%E7%AD%BE/" rel="next" title="前端小知识-格式化标签">
+      前端小知识-格式化标签 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#preload简介"><span class="nav-number">1.</span> <span class="nav-text">preload简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用preload的几种方式"><span class="nav-number">2.</span> <span class="nav-text">使用preload的几种方式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#方式1：html页面书写link标签"><span class="nav-number">2.1.</span> <span class="nav-text">方式1：html页面书写link标签</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方式2：js创建link标签"><span class="nav-number">2.2.</span> <span class="nav-text">方式2：js创建link标签</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用http响应头预加载"><span class="nav-number">2.3.</span> <span class="nav-text">利用http响应头预加载</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#浏览器兼容性"><span class="nav-number">3.</span> <span class="nav-text">浏览器兼容性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#与-prefetch-的异同点"><span class="nav-number">4.</span> <span class="nav-text">与 prefetch 的异同点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#区别"><span class="nav-number">4.1.</span> <span class="nav-text">区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#共通点"><span class="nav-number">4.2.</span> <span class="nav-text">共通点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#注意点"><span class="nav-number">4.3.</span> <span class="nav-text">注意点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Chrome-对于-preload-和-prefetch-的网络优先级？"><span class="nav-number">4.4.</span> <span class="nav-text">Chrome 对于 preload 和 prefetch 的网络优先级？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DNS-prefetch"><span class="nav-number">5.</span> <span class="nav-text">DNS prefetch</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">6.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

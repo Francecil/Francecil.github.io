@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言大学的时候研究了一段时间的 OpenCV ，当时做了一个这样的小工具 RunFace：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于 opencv.js 实现图像内矩形物品的自动提取">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;01&#x2F;17&#x2F;2020&#x2F;%E5%9F%BA%E4%BA%8E%20opencv.js%20%E5%AE%9E%E7%8E%B0%E5%9B%BE%E5%83%8F%E5%86%85%E7%9F%A9%E5%BD%A2%E7%89%A9%E5%93%81%E7%9A%84%E8%87%AA%E5%8A%A8%E6%8F%90%E5%8F%96&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言大学的时候研究了一段时间的 OpenCV ，当时做了一个这样的小工具 RunFace：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-f4c330edac89029a.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-a65795c8ec1f9735.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-7f8c188b0b79fbdf.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;user-gold-cdn.xitu.io&#x2F;2020&#x2F;1&#x2F;21&#x2F;16fc6b8a3bef2cb0?w&#x3D;1334&amp;h&#x3D;1000&amp;f&#x3D;jpeg&amp;s&#x3D;156315">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-996a1fdd15be6a67.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-b168ca6699ab95a5.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-38ac88389cd3472e.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-367c71d9b042722b.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-31257448062a25fa.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-8142299b4497fc4f.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-a1ebc28e8965fd62.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="article:published_time" content="2020-01-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.167Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="OpenCV">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-f4c330edac89029a.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+
+<link rel="canonical" href="https://gahing.top/2020/01/17/2020/%E5%9F%BA%E4%BA%8E%20opencv.js%20%E5%AE%9E%E7%8E%B0%E5%9B%BE%E5%83%8F%E5%86%85%E7%9F%A9%E5%BD%A2%E7%89%A9%E5%93%81%E7%9A%84%E8%87%AA%E5%8A%A8%E6%8F%90%E5%8F%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>基于 opencv.js 实现图像内矩形物品的自动提取 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/01/17/2020/%E5%9F%BA%E4%BA%8E%20opencv.js%20%E5%AE%9E%E7%8E%B0%E5%9B%BE%E5%83%8F%E5%86%85%E7%9F%A9%E5%BD%A2%E7%89%A9%E5%93%81%E7%9A%84%E8%87%AA%E5%8A%A8%E6%8F%90%E5%8F%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          基于 opencv.js 实现图像内矩形物品的自动提取
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-17 00:00:00" itemprop="dateCreated datePublished" datetime="2020-01-17T00:00:00+08:00">2020-01-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>大学的时候研究了一段时间的 OpenCV ，当时做了一个这样的小工具 <a href="https://github.com/francecil/RunFace" target="_blank" rel="noopener">RunFace</a>：</p>
+<a id="more"></a>
+
+<p>有两张照片，第一张照片带白纸，通过合成会将第二张照片转换到第一张照片的白纸处</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-f4c330edac89029a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="物品替换"></p>
+<p>正好最近看到 OpenCV 在前端有对应的实现库，就想着做个纯前端版本，这次我们实现反向效果，将合成图中的矩形图像提取出来</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-a65795c8ec1f9735.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="rectangle-extract"></p>
+<p>已开源，详见 <a href="https://github.com/francecil/rectangle-extract-opencvjs" target="_blank" rel="noopener">rectangle-extract-opencvjs</a> </p>
+<p><a href="https://francecil.github.io/rectangle-extract-opencvjs/" target="_blank" rel="noopener">在线地址</a></p>
+<p>主要的应用场景有：去除身份证照背景得到扫描件</p>
+<blockquote>
+<p>当然，这些用 ps 很容易实现</p>
+</blockquote>
+<h2 id="实现要点"><a href="#实现要点" class="headerlink" title="实现要点"></a>实现要点</h2><h3 id="一、生成-opencv-js"><a href="#一、生成-opencv-js" class="headerlink" title="一、生成 opencv.js"></a>一、生成 opencv.js</h3><p>可以选择自己编译，用的是 LLVM 那套工具链</p>
+<p>详见 <a href="https://docs.opencv.org/4.2.0/d4/da1/tutorial_js_setup.html" target="_blank" rel="noopener">Build OpenCV.js</a></p>
+<p>我是直接用的现成的 js 文件，大概 8M </p>
+<p>有个疑问，自己编译的话不知是否可以选择仅编译某些模块，这样生成的包就比较小了</p>
+<h3 id="二、算法流程"><a href="#二、算法流程" class="headerlink" title="二、算法流程"></a>二、算法流程</h3><p><img src="https://upload-images.jianshu.io/upload_images/9277731-7f8c188b0b79fbdf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="矩形抽离流程图"></p>
+<p>我们以下面原图为例</p>
+<p><img src="https://user-gold-cdn.xitu.io/2020/1/21/16fc6b8a3bef2cb0?w=1334&h=1000&f=jpeg&s=156315" alt="原图"></p>
+<h4 id="预处理"><a href="#预处理" class="headerlink" title="预处理"></a>预处理</h4><p>分为尺寸调整和滤波</p>
+<p>尺寸调整是将图片宽高等比例缩小到 200px 以内，目的是为了提高处理效率，且让滤波效果更好</p>
+<p>滤波的作用是保边（边缘锐化）去噪（去除纹理），方便后续目标图像的提取</p>
+<p>滤波可以用 双边滤波 或者 meanshift 滤波</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-996a1fdd15be6a67.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="预处理"></p>
+<h4 id="提取前景图"><a href="#提取前景图" class="headerlink" title="提取前景图"></a>提取前景图</h4><p>在当前应用场景，目标矩形图像占比较大，我们可以直接取中点进行漫水填充</p>
+<p>即通过应用 floodFill 算法得到灰度图</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-b168ca6699ab95a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="漫水填充"></p>
+<p>应用中值滤波去噪</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-38ac88389cd3472e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="中值去噪"></p>
+<p>这样我们就得到一个二值图像了</p>
+<p>后续考虑更通用的场景，可以引入用户交互：以用户触碰点进行漫水填充</p>
+<h4 id="直线检测"><a href="#直线检测" class="headerlink" title="直线检测"></a>直线检测</h4><p>先利用 Canny 算子进行边缘检测</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-367c71d9b042722b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="边缘检测"></p>
+<p>然后通过 HoughLines 变换得到直线</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-31257448062a25fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="直线检测"></p>
+<p>这里不选用 HoughLinesP 检测线段，主要原因是得到的线段都是短线段且方向变化较大，不利于后续的计算；还有一个原因是不能处理图像部分缺失的情况</p>
+<p>当然这里的场景也不需要考虑目标图像部分缺失的情况。</p>
+<h4 id="顶点坐标计算"><a href="#顶点坐标计算" class="headerlink" title="顶点坐标计算"></a>顶点坐标计算</h4><p>计算所有直线的交点</p>
+<p>过滤掉坐标不在范围的</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-8142299b4497fc4f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="交点.png"></p>
+<p>本来打算打算通过 kmeans 进行聚类，发现 opencv 自带的不太好用(也可能是我姿势不对)</p>
+<p>取巧，先计算中点，然后根据极坐标对所有交点进行排序，欧式距离在一定范围内的属于同一类</p>
+<p>我们得到了多个聚类，取元素最多的四个分类，并得到四个均值坐标</p>
+<p>最后以左上角（横纵坐标均小于中点）为第一个点，进行顺时针排序</p>
+<h4 id="矩阵变换"><a href="#矩阵变换" class="headerlink" title="矩阵变换"></a>矩阵变换</h4><p>将原图的四个坐标变换到目标图片的四个新的点</p>
+<p>这里存在一个问题，就是新的目标图片的宽高应该是多少，这里我们直接取原图的宽高</p>
+<p>后续有时间的话再研究下自动识别目标图宽高的算法</p>
+<p>最后再横纵缩放一半（压缩），得到最后的结果</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-a1ebc28e8965fd62.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="结果"></p>
+<h3 id="三、界面布局"><a href="#三、界面布局" class="headerlink" title="三、界面布局"></a>三、界面布局</h3><p>借鉴了该文章的代码 <a href="https://blog.theodo.com/2019/02/computer-vision-web-opencv-js/" target="_blank" rel="noopener">[OpenCV Web] Should You Use OpenCV JS?</a> </p>
+<p>用的 bootstrap 进行布局</p>
+<h3 id="四、代码实现"><a href="#四、代码实现" class="headerlink" title="四、代码实现"></a>四、代码实现</h3><p>接口的使用方式基本上和其他语言相同</p>
+<p>不清楚的话可以查看 <a href="https://docs.opencv.org/4.2.0/" target="_blank" rel="noopener">api 文档</a></p>
+<p>或者先玩玩这些<a href="https://docs.opencv.org/4.2.0/d2/df0/tutorial_js_table_of_contents_imgproc.html" target="_blank" rel="noopener">图像处理相关demo</a> </p>
+<p>总的来说，文档较为匮乏，很多接口没有说明，只能通过其他语言的 api 进行类推</p>
+<p>代码如下，更多的请查看 github 仓库</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> g_nLowDifference = <span class="number">35</span></span><br><span class="line"><span class="keyword">const</span> g_nUpDifference = <span class="number">35</span>; <span class="comment">//负差最大值、正差最大值 </span></span><br><span class="line"><span class="keyword">const</span> UNCAL_THETA = <span class="number">0.5</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Line</span> </span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>(rho, theta) &#123;</span><br><span class="line">    <span class="keyword">this</span>.rho = rho</span><br><span class="line">    <span class="keyword">this</span>.theta = theta</span><br><span class="line">    <span class="keyword">let</span> a = <span class="built_in">Math</span>.cos(theta);</span><br><span class="line">    <span class="keyword">let</span> b = <span class="built_in">Math</span>.sin(theta);</span><br><span class="line">    <span class="keyword">let</span> x0 = a * rho;</span><br><span class="line">    <span class="keyword">let</span> y0 = b * rho;</span><br><span class="line">    <span class="keyword">this</span>.startPoint = &#123; <span class="attr">x</span>: x0 - <span class="number">400</span> * b, <span class="attr">y</span>: y0 + <span class="number">400</span> * a &#125;;</span><br><span class="line">    <span class="keyword">this</span>.endPoint = &#123; <span class="attr">x</span>: x0 + <span class="number">400</span> * b, <span class="attr">y</span>: y0 - <span class="number">400</span> * a &#125;;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;Object&#125;</span> <span class="variable">srcMat</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">itemExtract</span> (<span class="params">srcMat, name</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> scale = getScale(<span class="built_in">Math</span>.max(srcMat.rows, srcMat.cols))</span><br><span class="line">  <span class="keyword">let</span> preMat = preProcess(srcMat, scale)</span><br><span class="line">  <span class="keyword">let</span> grayMat = getSegmentImage(preMat)</span><br><span class="line">  <span class="keyword">let</span> lines = getLinesWithDetect(grayMat)</span><br><span class="line">  <span class="keyword">let</span> points = getFourVertex(lines, scale, &#123; <span class="attr">height</span>: srcMat.rows, <span class="attr">width</span>: srcMat.cols &#125;)</span><br><span class="line">  <span class="keyword">let</span> result = getResultWithMap(srcMat, points)</span><br><span class="line">  cv.imshow(name, result);</span><br><span class="line">  preMat.delete()</span><br><span class="line">  grayMat.delete()</span><br><span class="line">  srcMat.delete()</span><br><span class="line">  result.delete()</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取缩放比例</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>len </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getScale</span> (<span class="params">len</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> scale = <span class="number">1</span></span><br><span class="line">  <span class="keyword">while</span> (len &gt; <span class="number">200</span>) &#123;</span><br><span class="line">    scale /= <span class="number">2</span></span><br><span class="line">    len &gt;&gt;= <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> scale</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 预处理</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>src </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">preProcess</span> (<span class="params">src, scale</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> smallMat = resize(src, scale)</span><br><span class="line">  <span class="keyword">let</span> result = filter(smallMat)</span><br><span class="line">  smallMat.delete()</span><br><span class="line">  <span class="keyword">return</span> result</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 调整至指定宽高</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>src </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>scale 缩放比例 </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">resize</span> (<span class="params">src, scale = <span class="number">1</span></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> smallMat = <span class="keyword">new</span> cv.Mat();</span><br><span class="line">  <span class="keyword">let</span> dsize = <span class="keyword">new</span> cv.Size(<span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">  cv.resize(src, smallMat, dsize, scale, scale, cv.INTER_AREA)</span><br><span class="line">  <span class="keyword">return</span> smallMat</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 滤波：保边去噪</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>mat </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">filter</span> (<span class="params">src</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> dst = <span class="keyword">new</span> cv.Mat();</span><br><span class="line">  cv.cvtColor(src, src, cv.COLOR_RGBA2RGB, <span class="number">0</span>);</span><br><span class="line">  <span class="comment">// 双边滤波</span></span><br><span class="line">  cv.bilateralFilter(src, dst, <span class="number">9</span>, <span class="number">75</span>, <span class="number">75</span>, cv.BORDER_DEFAULT);</span><br><span class="line">  <span class="keyword">return</span> dst</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 通过分割图像获取前景灰度图</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>src </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getSegmentImage</span> (<span class="params">src</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> mask = <span class="keyword">new</span> cv.Mat(src.rows + <span class="number">2</span>, src.cols + <span class="number">2</span>, cv.CV_8U, [<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>])</span><br><span class="line">  <span class="keyword">const</span> seed = <span class="keyword">new</span> cv.Point(src.cols &gt;&gt; <span class="number">1</span>, src.rows &gt;&gt; <span class="number">1</span>)</span><br><span class="line">  <span class="keyword">let</span> flags = <span class="number">4</span> + (<span class="number">255</span> &lt;&lt; <span class="number">8</span>) + cv.FLOODFILL_FIXED_RANGE</span><br><span class="line">  <span class="keyword">let</span> ccomp = <span class="keyword">new</span> cv.Rect()</span><br><span class="line">  <span class="keyword">let</span> newVal = <span class="keyword">new</span> cv.Scalar(<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>)</span><br><span class="line">  <span class="comment">// 选取中点，采用floodFill漫水填充</span></span><br><span class="line">  cv.threshold(mask, mask, <span class="number">1</span>, <span class="number">128</span>, cv.THRESH_BINARY);</span><br><span class="line">  cv.floodFill(src, mask, seed, newVal, ccomp, <span class="keyword">new</span> cv.Scalar(g_nLowDifference, g_nLowDifference, g_nLowDifference), <span class="keyword">new</span> cv.Scalar(g_nUpDifference, g_nUpDifference, g_nUpDifference), flags);</span><br><span class="line">  <span class="comment">// 再次执行一次滤波去除噪点</span></span><br><span class="line">  cv.medianBlur(mask, mask, <span class="number">9</span>);</span><br><span class="line">  <span class="keyword">return</span> mask</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getLinesFromData32F</span> (<span class="params">data32F</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> lines = []</span><br><span class="line">  <span class="keyword">let</span> len = data32F.length / <span class="number">2</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; len; ++i) &#123;</span><br><span class="line">    <span class="keyword">let</span> rho = data32F[i * <span class="number">2</span>];</span><br><span class="line">    <span class="keyword">let</span> theta = data32F[i * <span class="number">2</span> + <span class="number">1</span>];</span><br><span class="line">    lines.push(<span class="keyword">new</span> Line(rho, theta))</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> lines</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 直线检测</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>mat </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getLinesWithDetect</span> (<span class="params">src</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> dst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC3);</span><br><span class="line">  <span class="keyword">let</span> lines = <span class="keyword">new</span> cv.Mat();</span><br><span class="line">  <span class="comment">// Canny 算子进行边缘检测</span></span><br><span class="line">  cv.Canny(src, src, <span class="number">50</span>, <span class="number">200</span>, <span class="number">3</span>);</span><br><span class="line">  cv.HoughLines(src, lines, <span class="number">1</span>, <span class="built_in">Math</span>.PI / <span class="number">180</span>,</span><br><span class="line">    <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="built_in">Math</span>.PI);</span><br><span class="line">  <span class="comment">// draw lines</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; lines.rows; ++i) &#123;</span><br><span class="line">    <span class="keyword">let</span> rho = lines.data32F[i * <span class="number">2</span>];</span><br><span class="line">    <span class="keyword">let</span> theta = lines.data32F[i * <span class="number">2</span> + <span class="number">1</span>];</span><br><span class="line">    <span class="keyword">let</span> a = <span class="built_in">Math</span>.cos(theta);</span><br><span class="line">    <span class="keyword">let</span> b = <span class="built_in">Math</span>.sin(theta);</span><br><span class="line">    <span class="keyword">let</span> x0 = a * rho;</span><br><span class="line">    <span class="keyword">let</span> y0 = b * rho;</span><br><span class="line">    <span class="keyword">let</span> startPoint = &#123; <span class="attr">x</span>: x0 - <span class="number">400</span> * b, <span class="attr">y</span>: y0 + <span class="number">400</span> * a &#125;;</span><br><span class="line">    <span class="keyword">let</span> endPoint = &#123; <span class="attr">x</span>: x0 + <span class="number">400</span> * b, <span class="attr">y</span>: y0 - <span class="number">400</span> * a &#125;;</span><br><span class="line">    cv.line(dst, startPoint, endPoint, [<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">let</span> lineArray = getLinesFromData32F(lines.data32F)</span><br><span class="line">  <span class="comment">// drawLineMat(src.rows, src.cols, lineArray)</span></span><br><span class="line">  <span class="keyword">return</span> lineArray</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 计算两直线间的交点</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>l1 </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>l2 </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getIntersection</span> (<span class="params">l1, l2</span>) </span>&#123;</span><br><span class="line">  <span class="comment">//角度差太小 不算，</span></span><br><span class="line">  <span class="keyword">let</span> minTheta = <span class="built_in">Math</span>.min(l1.theta, l2.theta)</span><br><span class="line">  <span class="keyword">let</span> maxTheta = <span class="built_in">Math</span>.max(l1.theta, l2.theta)</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">Math</span>.abs(l1.theta - l2.theta) &lt; UNCAL_THETA || <span class="built_in">Math</span>.abs(minTheta + <span class="built_in">Math</span>.PI - maxTheta) &lt; UNCAL_THETA) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//计算两条直线的交点</span></span><br><span class="line">  <span class="keyword">let</span> intersection;</span><br><span class="line">  <span class="comment">//y = a * x + b;</span></span><br><span class="line">  <span class="keyword">let</span> a1 = <span class="built_in">Math</span>.abs(l1.startPoint.x - l1.endPoint.x) &lt; <span class="built_in">Number</span>.EPSILON ? <span class="number">0</span> : (l1.startPoint.y - l1.endPoint.y) / (l1.startPoint.x - l1.endPoint.x);</span><br><span class="line">  <span class="keyword">let</span> b1 = l1.startPoint.y - a1 * (l1.startPoint.x);</span><br><span class="line">  <span class="keyword">let</span> a2 = <span class="built_in">Math</span>.abs((l2.startPoint.x - l2.endPoint.x)) &lt; <span class="built_in">Number</span>.EPSILON ? <span class="number">0</span> : (l2.startPoint.y - l2.endPoint.y) / (l2.startPoint.x - l2.endPoint.x);</span><br><span class="line">  <span class="keyword">let</span> b2 = l2.startPoint.y - a2 * (l2.startPoint.x);</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">Math</span>.abs(a2 - a1) &gt; <span class="built_in">Number</span>.EPSILON) &#123;</span><br><span class="line">    <span class="keyword">let</span> x = (b1 - b2) / (a2 - a1)</span><br><span class="line">    <span class="keyword">let</span> y = a1 * x + b1</span><br><span class="line">    intersection = &#123; x, y &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> intersection</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 计算所有交点</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>lines </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getAllIntersections</span> (<span class="params">lines</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> points = []</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; lines.length; i++) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> j = i + <span class="number">1</span>; j &lt; lines.length; j++) &#123;</span><br><span class="line">      <span class="keyword">let</span> point = getIntersection(lines[i], lines[j])</span><br><span class="line">      <span class="keyword">if</span> (point) &#123;</span><br><span class="line">        points.push(point)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> points</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 聚类取均值</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>points </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>param1 </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getClusterPoints</span> (<span class="params">points, &#123; width, height &#125;</span>) </span>&#123;</span><br><span class="line">  points.sort(<span class="function">(<span class="params">p1, p2</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (p1.x !== p2.x) &#123;</span><br><span class="line">      <span class="keyword">return</span> p1.x - p2.x</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> p1.y - p2.y</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">const</span> distance = <span class="built_in">Math</span>.max(<span class="number">40</span>, (width + height) / <span class="number">20</span>)</span><br><span class="line">  <span class="keyword">const</span> isNear = <span class="function">(<span class="params">p1, p2</span>) =&gt;</span> <span class="built_in">Math</span>.abs(p1.x - p2.x) + <span class="built_in">Math</span>.abs(p1.y - p2.y) &lt; distance</span><br><span class="line">  <span class="keyword">let</span> clusters = [[points[<span class="number">0</span>]]]</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; points.length; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (isNear(points[i], points[i - <span class="number">1</span>])) &#123;</span><br><span class="line">      clusters[clusters.length - <span class="number">1</span>].push(points[i])</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      clusters.push([points[i]])</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 除去量最少的，仅保留四个聚类</span></span><br><span class="line">  clusters = clusters.sort(<span class="function">(<span class="params">c1, c2</span>) =&gt;</span> c2.length - c1.length).slice(<span class="number">0</span>, <span class="number">4</span>)</span><br><span class="line">  <span class="keyword">const</span> result = clusters.map(<span class="function"><span class="params">cluster</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> x = ~~<span class="function">(<span class="params">cluster.reduce((sum, cur</span>) =&gt;</span> sum + cur.x, <span class="number">0</span>) / cluster.length)</span><br><span class="line">    <span class="keyword">const</span> y = ~~<span class="function">(<span class="params">cluster.reduce((sum, cur</span>) =&gt;</span> sum + cur.y, <span class="number">0</span>) / cluster.length)</span><br><span class="line">    <span class="keyword">return</span> &#123; x, y &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> result</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 顺时针排序，以中心点左上角为第一个点</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>points </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getSortedVertex</span> (<span class="params">points</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> center = &#123;</span><br><span class="line">    x: points.reduce(<span class="function">(<span class="params">sum, p</span>) =&gt;</span> sum + p.x, <span class="number">0</span>) / <span class="number">4</span>,</span><br><span class="line">    y: points.reduce(<span class="function">(<span class="params">sum, p</span>) =&gt;</span> sum + p.y, <span class="number">0</span>) / <span class="number">4</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">let</span> sortedPoints = []</span><br><span class="line">  sortedPoints.push(points.find(<span class="function"><span class="params">p</span> =&gt;</span> p.x &lt; center.x &amp;&amp; p.y &lt; center.y))</span><br><span class="line">  sortedPoints.push(points.find(<span class="function"><span class="params">p</span> =&gt;</span> p.x &gt; center.x &amp;&amp; p.y &lt; center.y))</span><br><span class="line">  sortedPoints.push(points.find(<span class="function"><span class="params">p</span> =&gt;</span> p.x &gt; center.x &amp;&amp; p.y &gt; center.y))</span><br><span class="line">  sortedPoints.push(points.find(<span class="function"><span class="params">p</span> =&gt;</span> p.x &lt; center.x &amp;&amp; p.y &gt; center.y))</span><br><span class="line">  <span class="keyword">return</span> sortedPoints</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 根据聚类获得四个顶点的坐标</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getFourVertex</span> (<span class="params">lines, scale, &#123; width, height &#125;</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 缩放 + 过滤</span></span><br><span class="line">  <span class="keyword">let</span> allPoints = getAllIntersections(lines).map(<span class="function"><span class="params">point</span> =&gt;</span> (&#123;</span><br><span class="line">    x: ~~(point.x / scale), <span class="attr">y</span>: ~~(point.y / scale)</span><br><span class="line">  &#125;)).filter(<span class="function">(<span class="params">&#123; x, y &#125;</span>) =&gt;</span> !(x &lt; <span class="number">0</span> || x &gt; width || y &lt; <span class="number">0</span> || y &gt; height))</span><br><span class="line">  <span class="keyword">const</span> points = getClusterPoints(allPoints, &#123; width, height &#125;)</span><br><span class="line">  <span class="keyword">const</span> sortedPoints = getSortedVertex(points)</span><br><span class="line">  <span class="keyword">return</span> sortedPoints</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 抠图，映射</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>src </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>points </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getResultWithMap</span> (<span class="params">src, points</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> array = []</span><br><span class="line">  points.forEach(<span class="function"><span class="params">point</span> =&gt;</span> &#123;</span><br><span class="line">    array.push(point.x)</span><br><span class="line">    array.push(point.y)</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="built_in">console</span>.log(points, array)</span><br><span class="line">  <span class="keyword">let</span> dst = <span class="keyword">new</span> cv.Mat();</span><br><span class="line">  <span class="keyword">let</span> dsize = <span class="keyword">new</span> cv.Size(<span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="keyword">let</span> dstWidth = src.cols</span><br><span class="line">  <span class="keyword">let</span> dstHeight = src.rows</span><br><span class="line">  <span class="keyword">let</span> srcTri = cv.matFromArray(<span class="number">4</span>, <span class="number">1</span>, cv.CV_32FC2, array);</span><br><span class="line">  <span class="keyword">let</span> dstTri = cv.matFromArray(<span class="number">4</span>, <span class="number">1</span>, cv.CV_32FC2, [<span class="number">0</span>, <span class="number">0</span>, dstWidth, <span class="number">0</span>, dstWidth, dstHeight, <span class="number">0</span>, dstHeight]);</span><br><span class="line">  <span class="keyword">let</span> M = cv.getPerspectiveTransform(srcTri, dstTri);</span><br><span class="line">  cv.warpPerspective(src, dst, M, dsize);</span><br><span class="line">  <span class="keyword">let</span> resizeDst = resize(dst, <span class="number">0.5</span>)</span><br><span class="line">  M.delete(); srcTri.delete(); dstTri.delete(); dst.delete()</span><br><span class="line">  <span class="keyword">return</span> resizeDst</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">drawLineMat</span> (<span class="params">rows, cols, lines</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> dst = cv.Mat.zeros(rows, cols, cv.CV_8UC3);</span><br><span class="line">  <span class="keyword">let</span> color = <span class="keyword">new</span> cv.Scalar(<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> line <span class="keyword">of</span> lines) &#123;</span><br><span class="line">    cv.line(dst, line.startPoint, line.endPoint, color);</span><br><span class="line">  &#125;</span><br><span class="line">  cv.imshow(<span class="string">"canvasOutput"</span>, dst);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong> 使用完的 Mat 对象记得手动清空，否则会耗尽 WebAssembly 的内存</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过一个简单的例子，接触了 opencv.js 的使用</p>
+<p>opencv 提供了很多接口，使得在前端进行图像处理变得很方便，未来或许有更多的应用场景</p>
+<h2 id="未来展望"><a href="#未来展望" class="headerlink" title="未来展望"></a>未来展望</h2><p>性能上：尝试使用 AssemblyScript 编写相关的算法模块，生成 wasm 并替换掉这个 8M 的 opencv.js 文件</p>
+<p>功能上：增加触控交互，更智能的识别目标矩形；目标图片宽高校正；</p>
+<p>编码上：借鉴中间件的思想进行重构</p>
+<p>后续优化完再写一篇文章</p>
+<p>也欢迎试用，以及提 pr</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ol>
+<li><a href="https://docs.opencv.org/4.2.0/d5/d10/tutorial_js_root.html" target="_blank" rel="noopener">官方 demo</a></li>
+<li><a href="https://www.cnblogs.com/frombeijingwithlove/p/4226489.html" target="_blank" rel="noopener">利用OpenCV检测图像中的长方形画布或纸张并提取图像内容</a></li>
+<li><a href="https://answers.opencv.org/question/206557/how-can-you-use-k-means-clustering-to-posterize-an-image-using-opencv-javascript/" target="_blank" rel="noopener">How can you use K-Means clustering to posterize an image using opencv javascript?</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OpenCV/" rel="tag"># OpenCV</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/01/10/WebAssembly/WebAssembly%20%E5%88%9D%E6%8E%A2/" rel="prev" title="WebAssembly 初探">
+      <i class="fa fa-chevron-left"></i> WebAssembly 初探
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/02/16/2020/%E5%89%8D%E7%AB%AF%E9%A1%B9%E7%9B%AE%E4%B8%AD%E5%B8%B8%E7%94%A8%E7%9A%84%E4%BD%8D%E6%93%8D%E4%BD%9C%E6%8A%80%E5%B7%A7/" rel="next" title="前端项目中常用的位操作技巧">
+      前端项目中常用的位操作技巧 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现要点"><span class="nav-number">2.</span> <span class="nav-text">实现要点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、生成-opencv-js"><span class="nav-number">2.1.</span> <span class="nav-text">一、生成 opencv.js</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、算法流程"><span class="nav-number">2.2.</span> <span class="nav-text">二、算法流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#预处理"><span class="nav-number">2.2.1.</span> <span class="nav-text">预处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#提取前景图"><span class="nav-number">2.2.2.</span> <span class="nav-text">提取前景图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#直线检测"><span class="nav-number">2.2.3.</span> <span class="nav-text">直线检测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#顶点坐标计算"><span class="nav-number">2.2.4.</span> <span class="nav-text">顶点坐标计算</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#矩阵变换"><span class="nav-number">2.2.5.</span> <span class="nav-text">矩阵变换</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三、界面布局"><span class="nav-number">2.3.</span> <span class="nav-text">三、界面布局</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#四、代码实现"><span class="nav-number">2.4.</span> <span class="nav-text">四、代码实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#未来展望"><span class="nav-number">4.</span> <span class="nav-text">未来展望</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">5.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

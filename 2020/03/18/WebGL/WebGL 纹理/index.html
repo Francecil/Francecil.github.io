@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言对一个几何图形进行贴图，所贴的图就叫纹理(texture)，或纹理图像(texture image) 贴图的过程叫做纹理映射 组成纹理图像的像素成为 纹素(texels, texture elements)  光栅化时每个片元会涂上纹素 纹理和光照一样，都是作用于世界坐标系的，不受投影和视图矩阵的影响">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebGL 纹理">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;03&#x2F;18&#x2F;WebGL&#x2F;WebGL%20%E7%BA%B9%E7%90%86&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言对一个几何图形进行贴图，所贴的图就叫纹理(texture)，或纹理图像(texture image) 贴图的过程叫做纹理映射 组成纹理图像的像素成为 纹素(texels, texture elements)  光栅化时每个片元会涂上纹素 纹理和光照一样，都是作用于世界坐标系的，不受投影和视图矩阵的影响">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-fda445428710a7b7.jpg?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-79378db006dfc180.jpg?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-44fac941dee56f32.jpg?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="article:published_time" content="2020-03-18T03:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.175Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="WebGL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-fda445428710a7b7.jpg?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+
+<link rel="canonical" href="https://gahing.top/2020/03/18/WebGL/WebGL%20%E7%BA%B9%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>WebGL 纹理 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/03/18/WebGL/WebGL%20%E7%BA%B9%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          WebGL 纹理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-18 11:00:00" itemprop="dateCreated datePublished" datetime="2020-03-18T11:00:00+08:00">2020-03-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>对一个几何图形进行贴图，所贴的图就叫<strong>纹理</strong>(texture)，或<strong>纹理图像</strong>(texture image)</p>
+<p>贴图的过程叫做<strong>纹理映射</strong></p>
+<p>组成纹理图像的像素成为 <strong>纹素</strong>(texels, texture elements) </p>
+<p>光栅化时每个片元会涂上纹素</p>
+<p>纹理和光照一样，都是作用于世界坐标系的，不受投影和视图矩阵的影响</p>
+<a id="more"></a>
+
+<p>下面说说纹理映射的具体过程</p>
+<h1 id="纹理映射"><a href="#纹理映射" class="headerlink" title="纹理映射"></a>纹理映射</h1><p>主要分为 4 步：</p>
+<ol>
+<li>初始化纹理信息</li>
+<li>加载纹理图像</li>
+<li>配置并使用纹理</li>
+<li>着色器处理</li>
+</ol>
+<h2 id="1-初始化纹理信息"><a href="#1-初始化纹理信息" class="headerlink" title="1. 初始化纹理信息"></a>1. 初始化纹理信息</h2><p>这一步主要是设置纹理坐标，通过 buffer 绑定属性</p>
+<p>首先需要确定纹理的坐标系，采用 s-t 坐标系，见下图查看映射关系</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-fda445428710a7b7.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="texture_coord"></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initVertexBuffers</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">const</span> verticesTexCoords = <span class="keyword">new</span> <span class="built_in">Float32Array</span>([</span><br><span class="line">    <span class="comment">// 顶点坐标,    纹理坐标</span></span><br><span class="line">    <span class="number">-0.5</span>,  <span class="number">0.5</span>,   <span class="number">0.0</span>, <span class="number">1.0</span>,</span><br><span class="line">    <span class="number">-0.5</span>, <span class="number">-0.5</span>,   <span class="number">0.0</span>, <span class="number">0.0</span>,</span><br><span class="line">     <span class="number">0.5</span>,  <span class="number">0.5</span>,   <span class="number">1.0</span>, <span class="number">1.0</span>,</span><br><span class="line">     <span class="number">0.5</span>, <span class="number">-0.5</span>,   <span class="number">1.0</span>, <span class="number">0.0</span>,</span><br><span class="line">  ]);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// ... 省略顶点坐标的处理</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;</span><br><span class="line">  <span class="keyword">var</span> a_TexCoord = gl.getAttribLocation(program, <span class="string">"a_texCoord"</span>);</span><br><span class="line">  <span class="keyword">var</span> texcoordBuffer = gl.createBuffer();</span><br><span class="line">  gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);</span><br><span class="line">  gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW);</span><br><span class="line">  <span class="comment">// 每次迭代运行运动 4 FSIZE 内存到下一个数据开始点</span></span><br><span class="line">  <span class="comment">// 初始读取的偏移量为 2 FSIZE</span></span><br><span class="line">  gl.vertexAttribPointer(a_TexCoord, <span class="number">2</span>, gl.FLOAT, <span class="literal">false</span>, FSIZE * <span class="number">4</span>, FSIZE * <span class="number">2</span>);</span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-加载纹理图像"><a href="#2-加载纹理图像" class="headerlink" title="2. 加载纹理图像"></a>2. 加载纹理图像</h2><p>加载的纹理图像不能对 canvas 造成污染。也就是说，对纹理的加载同样需要遵循跨域访问规则</p>
+<blockquote>
+<p>具体原因请看 <a href="https://juejin.im/post/5e64f811e51d4526e807fefa" target="_blank" rel="noopener">面试官问：什么是 canvas 污染</a></p>
+</blockquote>
+<p>本文采用的纹理图片地址为 <code>https://webglfundamentals.org/webgl/resources/leaves.jpg</code></p>
+<p>为了进行跨域访问，还需要设置 <code>crossOrigin = &quot;Anonymous&quot;</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">loadImage</span> (<span class="params">url, callback</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> img = <span class="keyword">new</span> Image();</span><br><span class="line">  img.crossOrigin = <span class="string">"Anonymous"</span></span><br><span class="line">  img.src = url;</span><br><span class="line">  img.onload = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    callback(img)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">loadImage(<span class="string">"https://webglfundamentals.org/webgl/resources/leaves.jpg"</span>, (img) =&gt; &#123;</span><br><span class="line">  <span class="comment">// 对 img 进行下一步处理</span></span><br><span class="line">  loadTexture(img)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="3-配置并使用纹理"><a href="#3-配置并使用纹理" class="headerlink" title="3. 配置并使用纹理"></a>3. 配置并使用纹理</h2><h3 id="处理图像（可选）"><a href="#处理图像（可选）" class="headerlink" title="处理图像（可选）"></a>处理图像（可选）</h3><p>有以下用法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对图像进行 Y 轴反转，第二个参数未 0 值表示 true ，下同</span></span><br><span class="line">gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, <span class="number">1</span>);</span><br><span class="line"><span class="comment">// 对图像的 RGB 每个分量都乘以 A</span></span><br><span class="line">gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建纹理对象"><a href="#创建纹理对象" class="headerlink" title="创建纹理对象"></a>创建纹理对象</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> texture = gl.createTexture();</span><br></pre></td></tr></table></figure>
+
+<h3 id="激活并绑定纹理单元"><a href="#激活并绑定纹理单元" class="headerlink" title="激活并绑定纹理单元"></a>激活并绑定纹理单元</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 默认绑定到 0 号单元，如果只有一张纹理，无需进行 activeTexture</span></span><br><span class="line">gl.activeTexture(gl.TEXTURE0);</span><br><span class="line">gl.bindTexture(gl.TEXTURE_2D, texture);</span><br></pre></td></tr></table></figure>
+<p><code>gl.TEXTURE_2D</code> 表示二维纹理，<code>gl.TEXTURE_CUBE_MAP</code> 为立方体纹理，后面会提到</p>
+<h3 id="配置纹理对象参数"><a href="#配置纹理对象参数" class="headerlink" title="配置纹理对象参数"></a>配置纹理对象参数</h3><p>利用 texParameter 设置纹理图像映射到图形上的具体方式，包括放大、缩小、水平填充、垂直填充</p>
+<p>具体用法详见 <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/texParameter" target="_blank" rel="noopener">texParameter</a></p>
+<p>举例</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用 LINEAR 缩小纹理图像</span></span><br><span class="line">gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是，如果纹理宽高有一个非 2 的幂，则显示纹理失败，通常进行以下处理</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 检查每个维度是否是 2 的幂</span></span><br><span class="line"><span class="keyword">if</span> (isPowerOf2(image.width) &amp;&amp; isPowerOf2(image.height)) &#123;</span><br><span class="line">  <span class="comment">// 是 2 的幂，一般用贴图</span></span><br><span class="line">  gl.generateMipmap(gl.TEXTURE_2D);</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// 不是 2 的幂，关闭贴图并设置包裹模式（不需要重复）为到边缘</span></span><br><span class="line">  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);</span><br><span class="line">  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);</span><br><span class="line">  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置纹理图像"><a href="#配置纹理图像" class="headerlink" title="配置纹理图像"></a>配置纹理图像</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gl.texImage2D(gl.TEXTURE_2D, <span class="number">0</span>, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);</span><br></pre></td></tr></table></figure>
+
+<p>更多用法详见 <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/texImage2D" target="_blank" rel="noopener">WebGLRenderingContext.texImage2D()</a></p>
+<h3 id="将纹理单元传递给片段着色器"><a href="#将纹理单元传递给片段着色器" class="headerlink" title="将纹理单元传递给片段着色器"></a>将纹理单元传递给片段着色器</h3><p>获取取样器索引，取样器用于从纹理图像中获取纹素（该步骤也可以在初始化时进行）</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> u_Sampler = gl.getUniformLocation(program, <span class="string">'u_Sampler'</span>);</span><br></pre></td></tr></table></figure>
+<p>为取样器指定纹理单元(gl.TEXTUREn)编号，GL 最多可同时注册 32 张纹理</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 未指定 u_Sampler 的值时默认设置为 0</span></span><br><span class="line"><span class="comment">// 因此单张纹理也可以不进行 u_Sampler 的赋值</span></span><br><span class="line">gl.uniform1i(u_Sampler, <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-着色器处理"><a href="#4-着色器处理" class="headerlink" title="4. 着色器处理"></a>4. 着色器处理</h2><p>执行绘制时，着色器的运行过程如下：</p>
+<p>首先是顶点着色器向片段着色器传输纹理坐标，该纹理坐标是可变量，在片段着色器中会进行插值</p>
+<p>然后在片段着色器中获取纹素，并将其颜色赋予片元</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> VSHADER_SOURCE = <span class="string">`</span></span><br><span class="line"><span class="string">  attribute vec4 a_Position;</span></span><br><span class="line"><span class="string">  attribute vec2 a_TexCoord;</span></span><br><span class="line"><span class="string">  varying vec2 v_TexCoord;</span></span><br><span class="line"><span class="string">  void main() &#123;</span></span><br><span class="line"><span class="string">    gl_Position = a_Position;</span></span><br><span class="line"><span class="string">    v_TexCoord = a_TexCoord;</span></span><br><span class="line"><span class="string">  &#125;`</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Fragment shader program</span></span><br><span class="line"><span class="keyword">var</span> FSHADER_SOURCE = <span class="string">`</span></span><br><span class="line"><span class="string">  precision mediump float;</span></span><br><span class="line"><span class="string">  uniform sampler2D u_Sampler;</span></span><br><span class="line"><span class="string">  // 纹理坐标插值</span></span><br><span class="line"><span class="string">  varying vec2 v_TexCoord;</span></span><br><span class="line"><span class="string">  void main() &#123;</span></span><br><span class="line"><span class="string">    // 获取纹素</span></span><br><span class="line"><span class="string">    gl_FragColor = texture2D(u_Sampler, v_TexCoord);</span></span><br><span class="line"><span class="string">  &#125;`</span></span><br></pre></td></tr></table></figure>
+<p>其中采用了 GLSL ES 内置函数 texture2D 来抽取纹素</p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><p>绘制一个 400x400 的正方形，并将 240x180 的图像作为纹理渲染在上面，采用包裹模式</p>
+<p>完整代码如下：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">HTML</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">canvas</span> <span class="attr">id</span>=<span class="string">"canvas"</span> <span class="attr">width</span>=<span class="string">"400"</span> <span class="attr">height</span>=<span class="string">"400"</span>&gt;</span><span class="tag">&lt;/<span class="name">canvas</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript">    <span class="comment">// 工具方法</span></span></span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">isPowerOf2</span><span class="params">(value)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> (value &amp; (value - <span class="number">1</span>)) === <span class="number">0</span>;</span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">createShader</span><span class="params">(gl, type, source)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> shader = gl.createShader(type); <span class="comment">// 创建着色器对象</span></span></span><br><span class="line"><span class="actionscript">      gl.shaderSource(shader, source); <span class="comment">// 提供数据源</span></span></span><br><span class="line"><span class="actionscript">      gl.compileShader(shader); <span class="comment">// 编译 -&gt; 生成着色器</span></span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);</span></span><br><span class="line">      if (success) &#123;</span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> shader;</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line"><span class="javascript">      <span class="built_in">console</span>.log(gl.getShaderInfoLog(shader));</span></span><br><span class="line">      gl.deleteShader(shader);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="actionscript">    <span class="comment">// 创建着色器程序</span></span></span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">createProgramFromSources</span><span class="params">(gl, vertexShader, fragmentShader)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> program = gl.createProgram();</span></span><br><span class="line">      gl.attachShader(program, vertexShader);</span><br><span class="line">      gl.attachShader(program, fragmentShader);</span><br><span class="line">      gl.linkProgram(program);</span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> success = gl.getProgramParameter(program, gl.LINK_STATUS);</span></span><br><span class="line">      if (success) &#123;</span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> program;</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="javascript">      <span class="built_in">console</span>.log(gl.getProgramInfoLog(program));</span></span><br><span class="line">      gl.deleteProgram(program);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">    <span class="comment">// 初始化顶点和纹理数据，并绑定 buffer</span></span></span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">initVertexBuffers</span><span class="params">(gl, program)</span> </span>&#123;</span></span><br><span class="line"><span class="javascript">      <span class="keyword">var</span> verticesTexCoords = <span class="keyword">new</span> <span class="built_in">Float32Array</span>([</span></span><br><span class="line"><span class="actionscript">        <span class="comment">// 顶点坐标, 纹理坐标</span></span></span><br><span class="line">        -1.0, 1.0, 0.0, 1.0,</span><br><span class="line">        -1.0, -1.0, 0.0, 0.0,</span><br><span class="line">        1.0, 1.0, 1.0, 1.0,</span><br><span class="line">        1.0, -1.0, 1.0, 0.0,</span><br><span class="line">      ]);</span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> n = <span class="number">4</span>; <span class="comment">// The number of vertices</span></span></span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="comment">// 为 WebGL 指定着色程序</span></span></span><br><span class="line">      gl.useProgram(program);</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="comment">// Create the buffer object</span></span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> vertexTexCoordBuffer = gl.createBuffer();</span></span><br><span class="line">      if (!vertexTexCoordBuffer) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to create the buffer object'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> <span class="number">-1</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      gl.bindBuffer(gl.ARRAY_BUFFER, vertexTexCoordBuffer);</span><br><span class="line">      gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW);</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> a_Position = gl.getAttribLocation(program, <span class="string">'a_Position'</span>);</span></span><br><span class="line">      if (a_Position &lt; 0) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to get the storage location of a_Position'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> <span class="number">-1</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="actionscript">      gl.vertexAttribPointer(a_Position, <span class="number">2</span>, gl.FLOAT, <span class="literal">false</span>, FSIZE * <span class="number">4</span>, <span class="number">0</span>);</span></span><br><span class="line">      gl.enableVertexAttribArray(a_Position);</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> a_TexCoord = gl.getAttribLocation(program, <span class="string">'a_TexCoord'</span>);</span></span><br><span class="line">      if (a_TexCoord &lt; 0) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to get the storage location of a_TexCoord'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> <span class="number">-1</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="actionscript">      gl.vertexAttribPointer(a_TexCoord, <span class="number">2</span>, gl.FLOAT, <span class="literal">false</span>, FSIZE * <span class="number">4</span>, FSIZE * <span class="number">2</span>);</span></span><br><span class="line">      gl.enableVertexAttribArray(a_TexCoord);</span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> n;</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">    <span class="comment">// 初始化纹理，加载图像</span></span></span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">initTextures</span><span class="params">(gl, program, url, callback)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> texture = gl.createTexture();   <span class="comment">// Create a texture object</span></span></span><br><span class="line">      if (!texture) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to create the texture object'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> <span class="literal">false</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="comment">// Get the storage location of u_Sampler</span></span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> u_Sampler = gl.getUniformLocation(program, <span class="string">'u_Sampler'</span>);</span></span><br><span class="line">      if (!u_Sampler) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to get the storage location of u_Sampler'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> <span class="literal">false</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="javascript">      <span class="keyword">let</span> image = <span class="keyword">new</span> Image();</span></span><br><span class="line"><span class="actionscript">      image.crossOrigin = <span class="string">"Anonymous"</span></span></span><br><span class="line">      image.src = url;</span><br><span class="line"><span class="javascript">      image.onload = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span></span><br><span class="line">        callback(image, texture, u_Sampler)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">    <span class="comment">// 配置并使用纹理</span></span></span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">loadTexture</span><span class="params">(gl, image, texture, u_Sampler, n)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, <span class="number">1</span>); <span class="comment">// Flip the image's y axis</span></span></span><br><span class="line">      gl.activeTexture(gl.TEXTURE0);</span><br><span class="line">      gl.bindTexture(gl.TEXTURE_2D, texture);</span><br><span class="line"></span><br><span class="line">      if (isPowerOf2(image.width) &amp;&amp; isPowerOf2(image.height)) &#123;</span><br><span class="line"><span class="actionscript">        <span class="comment">// 是 2 的幂，一般用贴图</span></span></span><br><span class="line">        gl.generateMipmap(gl.TEXTURE_2D);</span><br><span class="line"><span class="actionscript">      &#125; <span class="keyword">else</span> &#123;</span></span><br><span class="line"><span class="actionscript">        <span class="comment">// 不是 2 的幂，关闭贴图并设置包裹模式（不需要重复）为到边缘</span></span></span><br><span class="line">        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);</span><br><span class="line">        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);</span><br><span class="line">        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);</span><br><span class="line">      &#125;</span><br><span class="line"><span class="actionscript">      <span class="comment">// Set the texture image</span></span></span><br><span class="line">      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="comment">// Set the texture unit 0 to the sampler</span></span></span><br><span class="line">      gl.uniform1i(u_Sampler, 0);</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      gl.clear(gl.COLOR_BUFFER_BIT);   <span class="comment">// Clear &lt;canvas&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="actionscript">      gl.drawArrays(gl.TRIANGLE_STRIP, <span class="number">0</span>, n); <span class="comment">// Draw the rectangle</span></span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">    <span class="function"><span class="keyword">function</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">      <span class="comment">// Get A WebGL context</span></span></span><br><span class="line"><span class="actionscript">      <span class="comment">/** @type &#123;HTMLCanvasElement&#125; */</span></span></span><br><span class="line"><span class="javascript">      <span class="keyword">var</span> canvas = <span class="built_in">document</span>.getElementById(<span class="string">"canvas"</span>);</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> gl = canvas.getContext(<span class="string">"webgl"</span>);</span></span><br><span class="line">      if (!gl) &#123;</span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="actionscript">      <span class="keyword">const</span> VSHADER_SOURCE = `</span></span><br><span class="line">        attribute vec4 a_Position;</span><br><span class="line">        attribute vec2 a_TexCoord;</span><br><span class="line">        varying vec2 v_TexCoord;</span><br><span class="line"><span class="actionscript">        <span class="keyword">void</span> main() &#123;</span></span><br><span class="line">          gl_Position = a_Position;</span><br><span class="line">          v_TexCoord = a_TexCoord;</span><br><span class="line">        &#125;`</span><br><span class="line"></span><br><span class="line"><span class="actionscript">      <span class="comment">// Fragment shader program</span></span></span><br><span class="line"><span class="actionscript">      <span class="keyword">const</span> FSHADER_SOURCE = `</span></span><br><span class="line">        precision mediump float;</span><br><span class="line">        uniform sampler2D u_Sampler;</span><br><span class="line"><span class="actionscript">        <span class="comment">// 纹理坐标插值</span></span></span><br><span class="line">        varying vec2 v_TexCoord;</span><br><span class="line"><span class="actionscript">        <span class="keyword">void</span> main() &#123;</span></span><br><span class="line"><span class="actionscript">          <span class="comment">// 获取纹素</span></span></span><br><span class="line">          gl_FragColor = texture2D(u_Sampler, v_TexCoord);</span><br><span class="line">        &#125;`</span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> vertexShader = createShader(gl, gl.VERTEX_SHADER, VSHADER_SOURCE);</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, FSHADER_SOURCE);</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> program = createProgramFromSources(gl, vertexShader, fragmentShader)</span></span><br><span class="line">      if (!program) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to intialize shaders.'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="actionscript">      <span class="keyword">var</span> n = initVertexBuffers(gl, program);</span></span><br><span class="line">      if (n &lt; 0) &#123;</span><br><span class="line"><span class="javascript">        <span class="built_in">console</span>.log(<span class="string">'Failed to set the vertex information'</span>);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span>;</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      gl.clearColor(0.0, 0.0, 0.0, 1.0);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="actionscript">      initTextures(gl, program, <span class="string">"https://webglfundamentals.org/webgl/resources/leaves.jpg"</span>, (image, texture, u_Sampler) =&gt; &#123;</span></span><br><span class="line"><span class="actionscript">        <span class="comment">// 对 image 进行下一步处理</span></span></span><br><span class="line">        loadTexture(gl, image, texture, u_Sampler, n)</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    main();</span><br><span class="line">  <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>效果以及原图</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-79378db006dfc180.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="leaves-canvas.jpg"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-44fac941dee56f32.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="leaves.jpg"></p>
+<h1 id="加载多个纹理"><a href="#加载多个纹理" class="headerlink" title="加载多个纹理"></a>加载多个纹理</h1><p>有些场景需要加载多个纹理，并共同作用于同一个片元</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">precision mediump <span class="keyword">float</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// our textures</span></span><br><span class="line">uniform sampler2D u_image0;</span><br><span class="line">uniform sampler2D u_image1;</span><br><span class="line"></span><br><span class="line"><span class="comment">// the texCoords passed in from the vertex shader.</span></span><br><span class="line">varying vec2 v_texCoord;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">   vec4 color0 = texture2D(u_image0, v_texCoord);</span><br><span class="line">   vec4 color1 = texture2D(u_image1, v_texCoord);</span><br><span class="line">   gl_FragColor = color0 * color1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>和处理单个纹理类似，我们需要为每个纹理单元进行配置，设置纹理单元对应的纹理</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 设置每个纹理单元对应一个纹理</span></span><br><span class="line">gl.activeTexture(gl.TEXTURE0);</span><br><span class="line">gl.bindTexture(gl.TEXTURE_2D, textures[<span class="number">0</span>]);</span><br><span class="line">gl.activeTexture(gl.TEXTURE1);</span><br><span class="line">gl.bindTexture(gl.TEXTURE_2D, textures[<span class="number">1</span>]);</span><br></pre></td></tr></table></figure>
+
+<p>限于篇幅，详细例子可以参考 <a href="https://webglfundamentals.org/webgl/lessons/zh_cn/webgl-2-textures.html" target="_blank" rel="noopener">WebGL 使用多个纹理</a></p>
+<h1 id="分次绘制"><a href="#分次绘制" class="headerlink" title="分次绘制"></a>分次绘制</h1><p>纹理资源通常为网络资源，如果需要等所有纹理都加载完毕才开始绘制，用户需要等待非常久的时间才能看到渲染的模型，有时候分次绘制是一个更好的选择</p>
+<p>实现的方式也很简单，我们增加一个全局变量，通过纹理加载状态确定是否绘制纹理</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> FSHADER_SOURCE = <span class="string">`</span></span><br><span class="line"><span class="string">  precision mediump float;</span></span><br><span class="line"><span class="string">  uniform bool textureLoaded;</span></span><br><span class="line"><span class="string">  uniform sampler2D u_Sampler;</span></span><br><span class="line"><span class="string">  // 纹理坐标插值</span></span><br><span class="line"><span class="string">  varying vec2 v_TexCoord;</span></span><br><span class="line"><span class="string">  void main() &#123;</span></span><br><span class="line"><span class="string">    if(textureLoaded)&#123;</span></span><br><span class="line"><span class="string">      // 获取纹素</span></span><br><span class="line"><span class="string">      gl_FragColor = texture2D(u_Sampler, v_TexCoord);</span></span><br><span class="line"><span class="string">    &#125; else &#123;</span></span><br><span class="line"><span class="string">      // 使用默认颜色，这里也可以使用颜色可变量</span></span><br><span class="line"><span class="string">      gl_FragColor = vec4(1, 0, 0.5, 1);</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;`</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">render</span>(<span class="params">gl, program, state, n</span>) </span>&#123;</span><br><span class="line">  gl.uniform1i(gl.getUniformLocation(program, <span class="string">'textureLoaded'</span>), state)</span><br><span class="line">  gl.clear(gl.COLOR_BUFFER_BIT);   <span class="comment">// Clear &lt;canvas&gt;</span></span><br><span class="line">  gl.drawArrays(gl.TRIANGLE_STRIP, <span class="number">0</span>, n); <span class="comment">// Draw the rectangle</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 初始执行</span></span><br><span class="line">render(gl, program, <span class="literal">false</span>, n)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 图片加载完再次执行</span></span><br><span class="line">render(gl, program, <span class="literal">true</span>, n)</span><br></pre></td></tr></table></figure>
+
+<p>不过这种方法控制台一开始会输出警告</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RENDER WARNING: there is no texture bound to the unit 0</span><br></pre></td></tr></table></figure>
+
+<p>不知道还有其他方式没，欢迎探讨~</p>
+<h1 id="立方体纹理-gl-TEXTURE-CUBE-MAP"><a href="#立方体纹理-gl-TEXTURE-CUBE-MAP" class="headerlink" title="立方体纹理(gl.TEXTURE_CUBE_MAP)"></a>立方体纹理(gl.TEXTURE_CUBE_MAP)</h1><p>立方体纹理并不是说单一纹理图像是立体的（想想也知道不是，图像只能是二维的），而是说将多个面的纹理共同组成一个立方体</p>
+<p>片段着色器通过法向量去获取纹素</p>
+<p>首先为立方体的每个面配置纹理图像</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">gl.texImage2D(target, level, internalFormat, format, type, img[i]);</span><br><span class="line"><span class="comment">// target 的取值有</span></span><br><span class="line">gl.TEXTURE_CUBE_MAP_POSITIVE_X</span><br><span class="line">gl.TEXTURE_CUBE_MAP_NEGATIVE_X</span><br><span class="line">gl.TEXTURE_CUBE_MAP_POSITIVE_Y</span><br><span class="line">gl.TEXTURE_CUBE_MAP_NEGATIVE_Y</span><br><span class="line">gl.TEXTURE_CUBE_MAP_POSITIVE_Z</span><br><span class="line">gl.TEXTURE_CUBE_MAP_NEGATIVE_Z</span><br></pre></td></tr></table></figure>
+
+
+<p>片段着色器中，根据每个片元对应的法向量（可变量）确定应该使用的面</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gl_FragColor = textureCube(u_texture, normalize(v_normal));</span><br></pre></td></tr></table></figure>
+
+<p>内部通过片元像素坐标自己去确定纹理图像的纹素</p>
+<p>常用来做 <a href="https://webglfundamentals.org/webgl/lessons/zh_cn/webgl-environment-maps.html" target="_blank" rel="noopener">环境贴图</a></p>
+<p>本文不做拓展，更多信息请参考 <a href="https://webglfundamentals.org/webgl/lessons/zh_cn/webgl-cube-maps.html" target="_blank" rel="noopener">WebGL 立方体贴图</a></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文探讨了绘制纹理的基本流程，并简单提及多纹理的处理以及立方体纹理的概念，最后给出了一些例子的链接，感兴趣的可以点击查看</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/WebGL/" rel="tag"># WebGL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/17/WebGL/WebGL%20%E5%85%89%E7%85%A7/" rel="prev" title="WebGL 光照">
+      <i class="fa fa-chevron-left"></i> WebGL 光照
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/19/2020/%E5%89%8D%E7%AB%AF%E4%B8%A4%E5%B9%B4%E5%8D%8A%E9%9D%A2%E7%BB%8F%E6%B5%81%E6%B0%B4%E8%B4%A6/" rel="next" title="前端两年半面经流水账">
+      前端两年半面经流水账 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#纹理映射"><span class="nav-number">2.</span> <span class="nav-text">纹理映射</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-初始化纹理信息"><span class="nav-number">2.1.</span> <span class="nav-text">1. 初始化纹理信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-加载纹理图像"><span class="nav-number">2.2.</span> <span class="nav-text">2. 加载纹理图像</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-配置并使用纹理"><span class="nav-number">2.3.</span> <span class="nav-text">3. 配置并使用纹理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#处理图像（可选）"><span class="nav-number">2.3.1.</span> <span class="nav-text">处理图像（可选）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建纹理对象"><span class="nav-number">2.3.2.</span> <span class="nav-text">创建纹理对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#激活并绑定纹理单元"><span class="nav-number">2.3.3.</span> <span class="nav-text">激活并绑定纹理单元</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置纹理对象参数"><span class="nav-number">2.3.4.</span> <span class="nav-text">配置纹理对象参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置纹理图像"><span class="nav-number">2.3.5.</span> <span class="nav-text">配置纹理图像</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将纹理单元传递给片段着色器"><span class="nav-number">2.3.6.</span> <span class="nav-text">将纹理单元传递给片段着色器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-着色器处理"><span class="nav-number">2.4.</span> <span class="nav-text">4. 着色器处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例"><span class="nav-number">2.5.</span> <span class="nav-text">实例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#加载多个纹理"><span class="nav-number">3.</span> <span class="nav-text">加载多个纹理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分次绘制"><span class="nav-number">4.</span> <span class="nav-text">分次绘制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#立方体纹理-gl-TEXTURE-CUBE-MAP"><span class="nav-number">5.</span> <span class="nav-text">立方体纹理(gl.TEXTURE_CUBE_MAP)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

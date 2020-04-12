@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言前端优化有个原则，叫资源懒加载。 对于某些js资源，我们在页面load前并不需要用到，加载反而会影响到首屏速度。 把这些js放到 load 后进行加载，我们称之为js异步加载。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何实现 script 并行异步加载顺序执行">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;08&#x2F;10&#x2F;2018Q3&#x2F;js%E5%BC%82%E6%AD%A5%E5%8A%A0%E8%BD%BD%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言前端优化有个原则，叫资源懒加载。 对于某些js资源，我们在页面load前并不需要用到，加载反而会影响到首屏速度。 把这些js放到 load 后进行加载，我们称之为js异步加载。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-08-10T02:18:32.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.156Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="前端优化">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2018/08/10/2018Q3/js%E5%BC%82%E6%AD%A5%E5%8A%A0%E8%BD%BD%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>如何实现 script 并行异步加载顺序执行 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/08/10/2018Q3/js%E5%BC%82%E6%AD%A5%E5%8A%A0%E8%BD%BD%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          如何实现 script 并行异步加载顺序执行
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-08-10 10:18:32" itemprop="dateCreated datePublished" datetime="2018-08-10T10:18:32+08:00">2018-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>前端优化有个原则，叫资源懒加载。</p>
+<p>对于某些js资源，我们在页面load前并不需要用到，加载反而会影响到首屏速度。</p>
+<p>把这些js放到 load 后进行加载，我们称之为js异步加载。</p>
+<a id="more"></a>
+
+<h1 id="异步加载的手段"><a href="#异步加载的手段" class="headerlink" title="异步加载的手段"></a>异步加载的手段</h1><h2 id="1-最简单的做法：Script-Dom"><a href="#1-最简单的做法：Script-Dom" class="headerlink" title="1. 最简单的做法：Script Dom"></a>1. 最简单的做法：Script Dom</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">"script"</span>)</span><br><span class="line">script.src=<span class="string">"xxx.js"</span></span><br><span class="line"><span class="built_in">document</span>.head.appendChild(script)</span><br></pre></td></tr></table></figure>
+<p>多个js我们进行循环即可</p>
+<h3 id="存在的问题："><a href="#存在的问题：" class="headerlink" title="存在的问题："></a>存在的问题：</h3><ol>
+<li>大部分浏览器不会顺序执行script,(firefox、opera某些版本可以)，对于有依赖的脚本会出现各种未定义错误和逻辑错误</li>
+</ol>
+<h2 id="2-script-onload后再发起请求，按序下载-执行"><a href="#2-script-onload后再发起请求，按序下载-执行" class="headerlink" title="2. script onload后再发起请求，按序下载-执行"></a>2. script onload后再发起请求，按序下载-执行</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 顺序下载和执行</span></span><br><span class="line">AsyncLoad.sync = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 加载js并放入执行队列中</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>url </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[type="normal"] script类型，normal为普通js此外还有async、defer</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;function&#125;</span> </span>callback </span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">var</span> normalQueue = []</span><br><span class="line">  <span class="keyword">var</span> deferQueue = []</span><br><span class="line">  <span class="keyword">var</span> processedNum = <span class="number">0</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">loadScript</span>(<span class="params">url, type, callback</span>) </span>&#123;</span><br><span class="line">    type = type || <span class="string">'normal'</span></span><br><span class="line">    <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'defer'</span>:</span><br><span class="line">        <span class="keyword">var</span> dqId = deferQueue.length</span><br><span class="line">        <span class="comment">//cached: &lt;object&gt;缓存成功 done: 是否执行script成功</span></span><br><span class="line">        deferQueue[dqId] = &#123; <span class="attr">url</span>: url, <span class="attr">cached</span>: <span class="literal">false</span>, <span class="attr">done</span>: <span class="literal">false</span>, <span class="attr">onload</span>: callback &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'async'</span>:</span><br><span class="line">        <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">'script'</span>)</span><br><span class="line">        script.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">            callback();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        script.src = url</span><br><span class="line">        <span class="built_in">document</span>.head.appendChild(script)</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">var</span> nqId = normalQueue.length</span><br><span class="line">        normalQueue[nqId] = &#123; <span class="attr">url</span>: url, <span class="attr">cached</span>: <span class="literal">false</span>, <span class="attr">done</span>: <span class="literal">false</span>, <span class="attr">onload</span>: callback &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//顺序执行</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">processScripts</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (deferQueue.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      normalQueue = normalQueue.concat(deferQueue)</span><br><span class="line">      deferQueue = []</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 遇到有src的就中断执行</span></span><br><span class="line">    <span class="keyword">if</span> (processedNum &lt; normalQueue.length) &#123;</span><br><span class="line">      <span class="keyword">var</span> head = <span class="built_in">document</span>.head;</span><br><span class="line">      <span class="keyword">var</span> newScript = <span class="built_in">document</span>.createElement(<span class="string">'script'</span>);</span><br><span class="line">      newScript.type = <span class="string">'text/javascript'</span>;</span><br><span class="line">      newScript.src = normalQueue[processedNum].url;</span><br><span class="line">      newScript.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        processScripts();</span><br><span class="line">      &#125;</span><br><span class="line">      newScript.onerror=newScript.onload</span><br><span class="line">      processedNum++;</span><br><span class="line">      head.appendChild(newScript);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    loadScript: loadScript,</span><br><span class="line">    processScripts: processScripts</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)()</span><br></pre></td></tr></table></figure>
+
+<p>用法(后面的方法就把 sync 换成各自方法名)：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> AL = AsyncLoad.sync</span><br><span class="line">AL.loadScript(<span class="string">'./js/d.js'</span>, <span class="string">'defer'</span>, () =&gt; <span class="built_in">console</span>.log(<span class="string">"defer 1 加载完毕"</span>))</span><br><span class="line">AL.loadScript(<span class="string">'./js/a.js'</span>, <span class="string">'normal'</span>, () =&gt; <span class="built_in">console</span>.log(<span class="string">"a.js加载完毕"</span>))</span><br><span class="line">AL.loadScript(<span class="string">'./js/b.js'</span>, <span class="string">''</span>, () =&gt; <span class="built_in">console</span>.log(<span class="string">"async 1 加载完毕"</span>))</span><br></pre></td></tr></table></figure>
+<h3 id="存在的问题：-1"><a href="#存在的问题：-1" class="headerlink" title="存在的问题："></a>存在的问题：</h3><ol>
+<li>与浏览器页面解析时的并发下载顺序执行逻辑不同，不能充分利用IO/CPU的并行操作，耗时会较久。且当出现某个资源请求较久时会影响会更严重。</li>
+</ol>
+<h2 id="3-XHR-eval"><a href="#3-XHR-eval" class="headerlink" title="3. XHR+eval"></a>3. XHR+eval</h2><p>利用ajax请求js数据，保存响应内容，并按序eval。可以做到并行下载，按序执行</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">AsyncLoad.xhr = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> queuedScripts = []</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">loadScript</span>(<span class="params">url, type, onload</span>) </span>&#123;</span><br><span class="line">    type = type || <span class="string">'normal'</span></span><br><span class="line">    <span class="keyword">var</span> iQ = queuedScripts.length;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//如果需要按顺序执行，并将脚本对象放入数组</span></span><br><span class="line">    <span class="keyword">if</span> (type !== <span class="string">'async'</span>) &#123;</span><br><span class="line">      <span class="keyword">var</span> qScript = &#123; <span class="attr">response</span>: <span class="literal">null</span>, <span class="attr">onload</span>: onload, <span class="attr">done</span>: <span class="literal">false</span> &#125;;</span><br><span class="line">      queuedScripts[iQ] = qScript;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//调用AJAX</span></span><br><span class="line">    <span class="keyword">var</span> xhrObj = getXHRObject();</span><br><span class="line">    xhrObj.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (xhrObj.readyState == <span class="number">4</span>) &#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (type !== <span class="string">'async'</span>) &#123;</span><br><span class="line">          queuedScripts[iQ].response = xhrObj.responseText;</span><br><span class="line">          injectScripts();</span><br><span class="line"></span><br><span class="line">          <span class="comment">//如果不需要按顺序执行，即立即加载脚本</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="built_in">eval</span>(xhrObj.responseText);</span><br><span class="line">          <span class="keyword">if</span> (onload) &#123;</span><br><span class="line">            onload();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    xhrObj.open(<span class="string">'GET'</span>, url, <span class="literal">true</span>);</span><br><span class="line">    xhrObj.send(<span class="string">''</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">injectScripts</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> len = queuedScripts.length;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; len; i++) &#123;</span><br><span class="line">      <span class="keyword">var</span> qScript = queuedScripts[i];</span><br><span class="line"></span><br><span class="line">      <span class="comment">//已加载的脚本</span></span><br><span class="line">      <span class="keyword">if</span> (!qScript.done) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//如果响应未返回 立即停止</span></span><br><span class="line">        <span class="keyword">if</span> (!qScript.response) &#123;</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">          <span class="comment">//执行脚本</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="built_in">eval</span>(qScript.response);</span><br><span class="line">          <span class="keyword">if</span> (qScript.onload) &#123;</span><br><span class="line">            qScript.onload();</span><br><span class="line">          &#125;</span><br><span class="line">          qScript.done = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//AJAX对象</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">getXHRObject</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> xhrObj = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      xhrObj = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">      <span class="keyword">var</span> aTypes = [<span class="string">"Msxm12.XMLHTTP6.0"</span>,</span><br><span class="line">        <span class="string">"Msxm12.XMLHTTP3.0"</span>,</span><br><span class="line">        <span class="string">"Msxm12.XMLHTTP"</span>,</span><br><span class="line">        <span class="string">"Microsoft.XMLHTTP"</span>];</span><br><span class="line">      <span class="keyword">var</span> len = aTypes.length;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; len; i++) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          xhrObj = <span class="keyword">new</span> ActiveXObject(aTypes[i]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">          <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> xhrObj;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    loadScript: loadScript,</span><br><span class="line">    processScripts:<span class="function"><span class="params">()</span>=&gt;</span>&#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)()</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="存在的问题：-2"><a href="#存在的问题：-2" class="headerlink" title="存在的问题："></a>存在的问题：</h3><ol>
+<li>跨域问题</li>
+</ol>
+<h2 id="4-object-tag-预加载资源，script-onload-按序下载-命中缓存-执行"><a href="#4-object-tag-预加载资源，script-onload-按序下载-命中缓存-执行" class="headerlink" title="4. object tag 预加载资源，script onload 按序下载(命中缓存)-执行"></a>4. object tag 预加载资源，script onload 按序下载(命中缓存)-执行</h2><p><a href="https://github.com/stevesouders/controljs/blob/master/control.js" target="_blank" rel="noopener">contorl.js二次命中缓存实现并行下载顺序执行，但是它通过setTimeout查询是否执行完毕，比我的实现差点</a></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line">AsyncLoad.object = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 加载js并放入执行队列中</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>url </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[type="normal"] script类型，normal为普通js此外还有async、defer</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;function&#125;</span> </span>callback </span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">var</span> normalQueue = []</span><br><span class="line">  <span class="keyword">var</span> deferQueue = []</span><br><span class="line">  <span class="keyword">var</span> isExecuting = <span class="literal">false</span> <span class="comment">//dom插入script到script执行完毕这段过程 取值为true</span></span><br><span class="line">  <span class="keyword">var</span> waitNum = <span class="number">0</span> <span class="comment">// 待执行injectScripts的个数</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">loadScript</span>(<span class="params">url, type, callback</span>) </span>&#123;</span><br><span class="line">    type = type || <span class="string">'normal'</span></span><br><span class="line">    <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'defer'</span>:</span><br><span class="line">        <span class="keyword">var</span> dqId = deferQueue.length</span><br><span class="line">        <span class="comment">//cached: &lt;object&gt;缓存成功 done: 是否执行script成功</span></span><br><span class="line">        deferQueue[dqId] = &#123; <span class="attr">url</span>: url, <span class="attr">cached</span>: <span class="literal">false</span>, <span class="attr">done</span>: <span class="literal">false</span>, <span class="attr">onload</span>: callback &#125;</span><br><span class="line">        preload(deferQueue[dqId])</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'async'</span>:</span><br><span class="line">        <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">'script'</span>)</span><br><span class="line">        script.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">            callback();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        script.src = url</span><br><span class="line">        <span class="built_in">document</span>.head.appendChild(script)</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">var</span> nqId = normalQueue.length</span><br><span class="line">        normalQueue[nqId] = &#123; <span class="attr">url</span>: url, <span class="attr">cached</span>: <span class="literal">false</span>, <span class="attr">done</span>: <span class="literal">false</span>, <span class="attr">onload</span>: callback &#125;</span><br><span class="line">        preload(normalQueue[nqId])</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;any&#125;</span> </span>item 队列元素</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">preload</span>(<span class="params">item</span>) </span>&#123;</span><br><span class="line">    <span class="comment">//chrome会出现Resource interpreted as Document but transferred with MIME type application/javascript警告</span></span><br><span class="line">    <span class="keyword">var</span> obj = <span class="built_in">document</span>.createElement(<span class="string">'object'</span>);</span><br><span class="line">    <span class="comment">// console.log(item.url, 'preload...')</span></span><br><span class="line">    obj.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="comment">// console.log(item.url, 'object cached...', isExecuting, waitNum)</span></span><br><span class="line">      <span class="comment">//触发script标签插入</span></span><br><span class="line">      item.cached = <span class="literal">true</span></span><br><span class="line">      obj.onload = <span class="literal">null</span></span><br><span class="line">      <span class="keyword">if</span> (isExecuting) &#123;</span><br><span class="line">        waitNum++</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        waitNum += injectScripts()</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    obj.onerrot = obj.onload</span><br><span class="line">    obj.data = item.url</span><br><span class="line">    obj.width = <span class="number">1</span>;</span><br><span class="line">    obj.height = <span class="number">1</span>;</span><br><span class="line">    obj.style.visibility = <span class="string">"hidden"</span>;</span><br><span class="line">    obj.type = <span class="string">"text/plain"</span>;</span><br><span class="line">    <span class="built_in">document</span>.body.appendChild(obj)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">injectScripts</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (deferQueue.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      normalQueue = normalQueue.concat(deferQueue)</span><br><span class="line">      deferQueue = []</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> num = <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; normalQueue.length; i++) &#123;</span><br><span class="line">      <span class="keyword">var</span> normal = normalQueue[i];</span><br><span class="line">      <span class="keyword">if</span> (!normal.done) &#123;</span><br><span class="line">        <span class="keyword">if</span> (normal.cached) &#123;</span><br><span class="line">          num = <span class="number">0</span></span><br><span class="line">          syncExcuteScript(normal)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> num</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">syncExcuteScript</span>(<span class="params">item</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// console.log(item.url, 'pre insertScript...', isExecuting, waitNum)</span></span><br><span class="line">    isExecuting = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">"script"</span>)</span><br><span class="line">    script.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      isExecuting = <span class="literal">false</span></span><br><span class="line">      <span class="comment">// console.log(item.url, 'completed', isExecuting, waitNum)</span></span><br><span class="line">      script.onload = <span class="literal">null</span></span><br><span class="line">      item.done = <span class="literal">true</span></span><br><span class="line">      <span class="keyword">if</span> (item.onload) &#123;</span><br><span class="line">        item.onload();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (waitNum) &#123;</span><br><span class="line">        waitNum--</span><br><span class="line">        waitNum += injectScripts()</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    script.onerror = script.onload</span><br><span class="line">    script.src = item.url</span><br><span class="line">    <span class="built_in">document</span>.head.appendChild(script)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    loadScript: loadScript,</span><br><span class="line">    processScripts:<span class="function"><span class="params">()</span>=&gt;</span>&#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)()</span><br></pre></td></tr></table></figure>
+<h3 id="存在的问题：-3"><a href="#存在的问题：-3" class="headerlink" title="存在的问题："></a>存在的问题：</h3><ol>
+<li>创建<code>&lt;object/&gt;</code>后，需要插入文档才会发起请求（dom操作耗时），浏览器还会构建一个blob对象（挺耗时的），且即使命中本地缓存也有些许耗时，总体并没有方法2 顺序下载执行来的快</li>
+<li>不论是否有缓存，都会发起两次请求，当js全被缓存的时候，该做法比方法2慢的多</li>
+</ol>
+<h2 id="5-new-Image-src-预加载资源，script-onload-按序下载-命中缓存-执行"><a href="#5-new-Image-src-预加载资源，script-onload-按序下载-命中缓存-执行" class="headerlink" title="5. new Image().src 预加载资源，script onload 按序下载(命中缓存)-执行"></a>5. new Image().src 预加载资源，script onload 按序下载(命中缓存)-执行</h2><p>相比object tag的一个好处是不需要进行dom操作，不用构建blob对象，总体速度比前几种方法都快</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line">AsyncLoad.img = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 加载js并放入执行队列中</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>url </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[type="normal"] script类型，normal为普通js此外还有async、defer</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;function&#125;</span> </span>callback </span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">var</span> normalQueue = []</span><br><span class="line">  <span class="keyword">var</span> deferQueue = []</span><br><span class="line">  <span class="keyword">var</span> isExecuting = <span class="literal">false</span> <span class="comment">//dom插入script到script执行完毕这段过程 取值为true</span></span><br><span class="line">  <span class="keyword">var</span> waitNum = <span class="number">0</span> <span class="comment">// 待执行injectScripts的个数</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">loadScript</span>(<span class="params">url, type, callback</span>) </span>&#123;</span><br><span class="line">    type = type || <span class="string">'normal'</span></span><br><span class="line">    <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'defer'</span>:</span><br><span class="line">        <span class="keyword">var</span> dqId = deferQueue.length</span><br><span class="line">        <span class="comment">//cached: &lt;object&gt;缓存成功 done: 是否执行script成功</span></span><br><span class="line">        deferQueue[dqId] = &#123; <span class="attr">url</span>: url, <span class="attr">cached</span>: <span class="literal">false</span>, <span class="attr">done</span>: <span class="literal">false</span>, <span class="attr">onload</span>: callback &#125;</span><br><span class="line">        preload(deferQueue[dqId])</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'async'</span>:</span><br><span class="line">        <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">'script'</span>)</span><br><span class="line">        script.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">            callback();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        script.src = url</span><br><span class="line">        <span class="built_in">document</span>.head.appendChild(script)</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">var</span> nqId = normalQueue.length</span><br><span class="line">        normalQueue[nqId] = &#123; <span class="attr">url</span>: url, <span class="attr">cached</span>: <span class="literal">false</span>, <span class="attr">done</span>: <span class="literal">false</span>, <span class="attr">onload</span>: callback &#125;</span><br><span class="line">        preload(normalQueue[nqId])</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;any&#125;</span> </span>item 队列元素</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">preload</span>(<span class="params">item</span>) </span>&#123;</span><br><span class="line">    <span class="comment">//chrome会出现Resource interpreted as Document but transferred with MIME type application/javascript警告</span></span><br><span class="line">    <span class="keyword">var</span> img = <span class="keyword">new</span> Image();</span><br><span class="line">    <span class="built_in">console</span>.log(item.url, <span class="string">'预加载'</span>)</span><br><span class="line">    img.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(item.url, <span class="string">'img cached 结束'</span>, isExecuting, waitNum)</span><br><span class="line">      <span class="comment">//触发script标签插入</span></span><br><span class="line">      item.cached = <span class="literal">true</span></span><br><span class="line">      img.onload = <span class="literal">null</span></span><br><span class="line">      <span class="keyword">if</span> (isExecuting) &#123;</span><br><span class="line">        waitNum++</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        waitNum += injectScripts()</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    img.onerror = img.onload</span><br><span class="line">    img.src = item.url</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">injectScripts</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (deferQueue.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'normalQueue.concat(deferQueue)'</span>,<span class="built_in">JSON</span>.stringify(deferQueue))</span><br><span class="line">      normalQueue = normalQueue.concat(deferQueue)</span><br><span class="line">      deferQueue = []</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> num = <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; normalQueue.length; i++) &#123;</span><br><span class="line">      <span class="keyword">var</span> normal = normalQueue[i];</span><br><span class="line">      <span class="keyword">if</span> (!normal.done) &#123;</span><br><span class="line">        <span class="keyword">if</span> (normal.cached) &#123;</span><br><span class="line">          num = <span class="number">0</span></span><br><span class="line">          syncExcuteScript(normal)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> num</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">syncExcuteScript</span>(<span class="params">item</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(item.url, <span class="string">'预插入&lt;script&gt;'</span>, isExecuting, waitNum)</span><br><span class="line">    isExecuting = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">"script"</span>)</span><br><span class="line">    script.onload = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      isExecuting = <span class="literal">false</span></span><br><span class="line">      <span class="built_in">console</span>.log(item.url, <span class="string">'js 执行完毕'</span>, isExecuting, waitNum)</span><br><span class="line">      script.onload = <span class="literal">null</span></span><br><span class="line">      item.done = <span class="literal">true</span></span><br><span class="line">      <span class="keyword">if</span> (item.onload) &#123;</span><br><span class="line">        item.onload();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (waitNum) &#123;</span><br><span class="line">        waitNum--</span><br><span class="line">        waitNum += injectScripts()</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    script.onerror = script.onload</span><br><span class="line">    script.src = item.url</span><br><span class="line">    <span class="built_in">document</span>.head.appendChild(script)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    loadScript: loadScript,</span><br><span class="line">    processScripts:<span class="function"><span class="params">()</span>=&gt;</span>&#123;<span class="built_in">console</span>.log(normalQueue)&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)()</span><br></pre></td></tr></table></figure>
+<h3 id="存在的问题：-4"><a href="#存在的问题：-4" class="headerlink" title="存在的问题："></a>存在的问题：</h3><ol>
+<li>不论是否有缓存，都会发起两次请求（尽管第二次是命中本地缓存），当js全被缓存的时候，该做法比方法2稍慢；</li>
+<li>浏览器设置禁用缓存时该方案更慢</li>
+<li><del>出现过img请求某些js时响应不完整，导致第二次请求不走缓存仍是完整请求 （留个坑，具体原因待分析）</del> <blockquote>
+<p>第二次其实不是完整请求，响应码为206表示返回部分内容，应该是和第一次请求进行合并处理。具体技术细节还不清楚，但目前来看走的流量并不会多。</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="补充："><a href="#补充：" class="headerlink" title="补充："></a><strong>补充：</strong></h4><blockquote>
+<p>浏览器开发者工具开启 <strong>Disable cache</strong>后，任何请求都不会走本地强缓存，但是会走304协商缓存（强制刷新除外）<br>未开启<strong>Disable cache</strong>的状态下，ctrl+F5强制刷新，对于<code>page load</code>前的请求，都是不走缓存(强缓存和协商缓存<code>cache-control:no-cache</code>)的，但是<code>page load</code>后的请求不受限制可以走缓存</p>
+</blockquote>
+<h2 id="6-最终方案"><a href="#6-最终方案" class="headerlink" title="6. 最终方案"></a>6. 最终方案</h2><h3 id="LABjs-v3-0的方案："><a href="#LABjs-v3-0的方案：" class="headerlink" title="LABjs v3.0的方案："></a><strong>LABjs v3.0</strong>的方案：</h3><ol>
+<li>对于支持<code>&lt;link rel=&quot;preload&quot; href=&quot;xxx.js&quot; as=&quot;script&quot;&gt;</code>的浏览器【chrome50+、safari 11+】，则用preload进行预加载（请求会复用，不用担心与script.src同时发起会发两个请求），只要支持就加上</li>
+<li>对于支持async的，即<code>document.createElement(&quot;script&quot;).async === true</code>【IE&gt;=10 ,其他浏览器大部分版本】,在方案1的基础上设置一个<code>script.async=false</code>即可</li>
+<li>对于其他浏览器，采用方案2做法</li>
+</ol>
+<p>PS: preload 和 prefetch 的区别可以参考：<a href="https://www.w3cplus.com/performance/reloading/preload-prefetch-and-priorities-in-chrome.html" target="_blank" rel="noopener">Preload，Prefetch 和它们在 Chrome 之中的优先级</a></p>
+<p>PS2: <strong>preload预加载后，插入script节点不会发起请求，不是命中本地缓存的方式（200 from cache）。也就是说即使禁用缓存，后续也不会进行重复请求！</strong></p>
+<h3 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h3><p>正常来说，<code>async=false</code>即可解决大部分浏览器，剩下的就是IE9版本及以下，以及其他浏览器的某些版本</p>
+<p>本方案会利用IE的特性优化方案2做法，实现并行下载按序执行：IE系列 设置script.src 后即发起请求，插入dom才执行</p>
+<p>对于不支持<code>async属性</code>、<code>async=false</code>不会按序执行的(如Safari 5.0)，则利用方案5做法。</p>
+<p>从产品层面考虑，若担心方案5用户禁用缓存导致的双倍流量，则采用xhr预加载同域js eval+方案2。</p>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ol>
+<li><a href="https://www.cnblogs.com/Darlietoothpaste/p/6518631.html" target="_blank" rel="noopener">异步加载脚本保持执行顺序</a></li>
+<li><a href="https://www.html5rocks.com/en/tutorials/speed/script-loading/" target="_blank" rel="noopener">Deep dive into the murky waters of script loading</a></li>
+<li><a href="https://github.com/getify/LABjs/tree/v3.0" target="_blank" rel="noopener">github LABjs3.0源码</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%89%8D%E7%AB%AF%E4%BC%98%E5%8C%96/" rel="tag"># 前端优化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/07/18/2018Q3/%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB-%E5%9B%BE%E7%89%87%E5%88%86%E5%B1%82%E5%8A%A0%E8%BD%BD%E4%B8%8E%E6%87%92%E5%8A%A0%E8%BD%BD/" rel="prev" title="浅谈图片分层加载与懒加载">
+      <i class="fa fa-chevron-left"></i> 浅谈图片分层加载与懒加载
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/08/16/2018Q3/js_%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E8%BD%AC%E7%BB%9D%E5%AF%B9%E8%B7%AF%E5%BE%84/" rel="next" title="前端实现相对路径转绝对路径的几种方法">
+      前端实现相对路径转绝对路径的几种方法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#异步加载的手段"><span class="nav-number">2.</span> <span class="nav-text">异步加载的手段</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-最简单的做法：Script-Dom"><span class="nav-number">2.1.</span> <span class="nav-text">1. 最简单的做法：Script Dom</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#存在的问题："><span class="nav-number">2.1.1.</span> <span class="nav-text">存在的问题：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-script-onload后再发起请求，按序下载-执行"><span class="nav-number">2.2.</span> <span class="nav-text">2. script onload后再发起请求，按序下载-执行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#存在的问题：-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">存在的问题：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-XHR-eval"><span class="nav-number">2.3.</span> <span class="nav-text">3. XHR+eval</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#存在的问题：-2"><span class="nav-number">2.3.1.</span> <span class="nav-text">存在的问题：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-object-tag-预加载资源，script-onload-按序下载-命中缓存-执行"><span class="nav-number">2.4.</span> <span class="nav-text">4. object tag 预加载资源，script onload 按序下载(命中缓存)-执行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#存在的问题：-3"><span class="nav-number">2.4.1.</span> <span class="nav-text">存在的问题：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-new-Image-src-预加载资源，script-onload-按序下载-命中缓存-执行"><span class="nav-number">2.5.</span> <span class="nav-text">5. new Image().src 预加载资源，script onload 按序下载(命中缓存)-执行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#存在的问题：-4"><span class="nav-number">2.5.1.</span> <span class="nav-text">存在的问题：</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#补充："><span class="nav-number">2.5.1.1.</span> <span class="nav-text">补充：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-最终方案"><span class="nav-number">2.6.</span> <span class="nav-text">6. 最终方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LABjs-v3-0的方案："><span class="nav-number">2.6.1.</span> <span class="nav-text">LABjs v3.0的方案：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优化"><span class="nav-number">2.6.2.</span> <span class="nav-text">优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">3.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

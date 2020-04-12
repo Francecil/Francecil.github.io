@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="简介ng-app 指令告诉 AngularJS，&lt;div&gt; 元素是 AngularJS 应用程序 的”所有者”。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Angular1.x学习">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;11&#x2F;10&#x2F;2018Q4&#x2F;Angular1.x%E5%AD%A6%E4%B9%A0&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="简介ng-app 指令告诉 AngularJS，&lt;div&gt; 元素是 AngularJS 应用程序 的”所有者”。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-11-10T02:18:32.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.157Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="Angular1.x">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2018/11/10/2018Q4/Angular1.x%E5%AD%A6%E4%B9%A0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Angular1.x学习 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/11/10/2018Q4/Angular1.x%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Angular1.x学习
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-11-10 10:18:32" itemprop="dateCreated datePublished" datetime="2018-11-10T10:18:32+08:00">2018-11-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>ng-app 指令告诉 AngularJS，<code>&lt;div&gt;</code> 元素是 AngularJS 应用程序 的”所有者”。</p>
+<a id="more"></a>
+
+<p>ng-model 指令把输入域的值绑定到应用程序变量 name。</p>
+<p>ng-bind 指令把应用程序变量 name 绑定到某个段落的 innerHTML。</p>
+<p>ng-init 指令初始化 AngularJS 应用程序变量。 <strong>一般不用。使用控制器去初始化</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">""</span> <span class="attr">ng-init</span>=<span class="string">"firstName='John'"</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>姓名为 <span class="tag">&lt;<span class="name">span</span> <span class="attr">ng-bind</span>=<span class="string">"firstName"</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>AngularJS 模块定义应用:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> app = angular.module(<span class="string">'myApp'</span>, []);</span><br></pre></td></tr></table></figure>
+<p>AngularJS 控制器控制应用:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">$scope</span>) </span>&#123;</span><br><span class="line">    $scope.firstName= <span class="string">"John"</span>;</span><br><span class="line">    $scope.lastName= <span class="string">"Doe"</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="指令"><a href="#指令" class="headerlink" title="指令"></a>指令</h2><p>除了上面讲的外，常见的还有：</p>
+<ol>
+<li>ng-show 控制元素的disable值达到显示与隐藏</li>
+<li>ng-repeat 指令会重复一个 HTML 元素：<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">li</span> <span class="attr">ng-repeat</span>=<span class="string">"x in names"</span>&gt;</span></span><br><span class="line">  &#123;&#123; x &#125;&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h3 id="自定义指令-directive"><a href="#自定义指令-directive" class="headerlink" title="自定义指令 directive"></a>自定义指令 directive</h3><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">runoob-directive</span>&gt;</span><span class="tag">&lt;/<span class="name">runoob-directive</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">"myApp"</span>, []);</span></span><br><span class="line"><span class="actionscript">app.directive(<span class="string">"runoobDirective"</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="handlebars"><span class="xml">        template : "<span class="tag">&lt;<span class="name">h1</span>&gt;</span>自定义指令!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span>"</span></span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>使用驼峰法来命名一个指令， runoobDirective, 但在使用它时需要以 - 分割, runoob-directive:</p>
+</blockquote>
+<p>还可以用以下方式去调用该指令</p>
+<ol>
+<li>属性<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">runoob-directive</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li>类名<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"runoob-directive"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">"myApp"</span>, []);</span></span><br><span class="line"><span class="actionscript">app.directive(<span class="string">"runoobDirective"</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="actionscript">        restrict : <span class="string">"C"</span>,</span></span><br><span class="line"><span class="handlebars"><span class="xml">        template : "<span class="tag">&lt;<span class="name">h1</span>&gt;</span>自定义指令!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span>"</span></span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>注意：<span class="tag">&lt;/<span class="name">strong</span>&gt;</span> 你必须设置 <span class="tag">&lt;<span class="name">b</span>&gt;</span>restrict<span class="tag">&lt;/<span class="name">b</span>&gt;</span> 的值为 "C" 才能通过类名来调用指令。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li>注释<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- directive: runoob-directive --&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">"myApp"</span>, []);</span></span><br><span class="line"><span class="actionscript">app.directive(<span class="string">"runoobDirective"</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> &#123;</span></span><br><span class="line"><span class="actionscript">        restrict : <span class="string">"M"</span>,</span></span><br><span class="line"><span class="actionscript">        replace : <span class="literal">true</span>,</span></span><br><span class="line"><span class="handlebars"><span class="xml">        template : "<span class="tag">&lt;<span class="name">h1</span>&gt;</span>自定义指令!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span>"</span></span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>注意：<span class="tag">&lt;/<span class="name">strong</span>&gt;</span> 我们需要在该实例添加 <span class="tag">&lt;<span class="name">strong</span>&gt;</span>replace<span class="tag">&lt;/<span class="name">strong</span>&gt;</span> 属性， 否则评论是不可见的。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>注意：<span class="tag">&lt;/<span class="name">strong</span>&gt;</span> 你必须设置 <span class="tag">&lt;<span class="name">b</span>&gt;</span>restrict<span class="tag">&lt;/<span class="name">b</span>&gt;</span> 的值为 "M" 才能通过注释来调用指令。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>restrict 值可以是以下几种:</p>
+<ol>
+<li>E 作为元素名使用</li>
+<li>A 作为属性使用</li>
+<li>C 作为类名使用</li>
+<li>M 作为注释使用</li>
+</ol>
+<blockquote>
+<p>restrict 默认值为 EA, 即可以通过元素名和属性名来调用指令。</p>
+</blockquote>
+<h2 id="模型-ng-model"><a href="#模型-ng-model" class="headerlink" title="模型 ng-model"></a>模型 ng-model</h2><p>除了上述说的，还有以下需要了解：</p>
+<h3 id="应用状态"><a href="#应用状态" class="headerlink" title="应用状态"></a>应用状态</h3><p>ng-model 指令可以为应用数据提供状态值(invalid, dirty, touched, error):</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">ng-app</span>=<span class="string">""</span> <span class="attr">name</span>=<span class="string">"myForm"</span> <span class="attr">ng-init</span>=<span class="string">"myText = 'test@runoob.com'"</span>&gt;</span></span><br><span class="line">    Email:</span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"email"</span> <span class="attr">name</span>=<span class="string">"myAddress"</span> <span class="attr">ng-model</span>=<span class="string">"myText"</span> <span class="attr">required</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>编辑邮箱地址，查看状态的改变。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>状态<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Valid: &#123;&#123;myForm.myAddress.$valid&#125;&#125; (如果输入的值是合法的则为 true)。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Dirty: &#123;&#123;myForm.myAddress.$dirty&#125;&#125; (如果值改变则为 true)。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Touched: &#123;&#123;myForm.myAddress.$touched&#125;&#125; (如果通过触屏点击则为 true)。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="CSS类"><a href="#CSS类" class="headerlink" title="CSS类"></a>CSS类</h3><p>基于状态为html元素提供了css类</p>
+<p>举例：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="css"><span class="selector-tag">input</span><span class="selector-class">.ng-dirty</span> &#123;</span></span><br><span class="line">    background-color: lightblue;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">ng-app</span>=<span class="string">""</span> <span class="attr">name</span>=<span class="string">"myForm"</span>&gt;</span></span><br><span class="line">    输入你的名字:</span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">name</span>=<span class="string">"myName"</span> <span class="attr">ng-model</span>=<span class="string">"myText"</span> <span class="attr">required</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>当input的值改变时，应用了<code>input.ng-dirty</code> 的样式</p>
+<p>有以下css类：</p>
+<ol>
+<li>ng-valid: 验证通过</li>
+<li>ng-invalid: 验证失败</li>
+<li>ng-valid-[key]: 由$setValidity添加的所有验证通过的值</li>
+<li>ng-invalid-[key]: 由$setValidity添加的所有验证失败的值</li>
+<li>ng-pristine: 控件为初始状态</li>
+<li>ng-dirty: 控件输入值已变更</li>
+<li>ng-touched: 控件已失去焦点</li>
+<li>ng-untouched: 控件未失去焦点</li>
+<li>ng-pending: 任何为满足$asyncValidators的情况</li>
+</ol>
+<h2 id="作用域-scope"><a href="#作用域-scope" class="headerlink" title="作用域 scope"></a>作用域 scope</h2><p>AngularJS 应用组成如下：</p>
+<ul>
+<li>View(视图), 即 HTML。</li>
+<li>Model(模型), 当前视图中可用的数据。</li>
+<li>Controller(控制器), 即 JavaScript 函数，可以添加或修改属性。</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span> <span class="attr">ng-controller</span>=<span class="string">"myCtrl"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">ng-model</span>=<span class="string">"name"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span>&gt;</span>&#123;&#123;greeting&#125;&#125;<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">ng-click</span>=<span class="string">'sayHello()'</span>&gt;</span>点我<span class="tag">&lt;/<span class="name">button</span>&gt;</span>    </span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">'myApp'</span>, []);</span></span><br><span class="line"><span class="actionscript">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span><span class="params">($scope)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    $scope.name = <span class="string">"Runoob"</span>;</span></span><br><span class="line"><span class="actionscript">    $scope.sayHello = <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        $scope.greeting = <span class="string">'Hello '</span> + $scope.name + <span class="string">'!'</span>;</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这里scope的作用域在 整个div中都可以用，如果改成以下，</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span> &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">ng-model</span>=<span class="string">"name"</span> <span class="attr">ng-controller</span>=<span class="string">"myCtrl"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span>&gt;</span>&#123;&#123;name&#125;&#125;<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">'myApp'</span>, []);</span></span><br><span class="line"><span class="actionscript">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span><span class="params">($scope)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    $scope.name = <span class="string">"Runoob"</span>;</span></span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><code>&lt;h1&gt;&lt;/h1&gt;</code> 不在 myCtrl 的作用域下，所以拿不到值</p>
+<h3 id="根作用域-rootScope"><a href="#根作用域-rootScope" class="headerlink" title="根作用域 rootScope"></a>根作用域 rootScope</h3><p>rootscope 定义的值，可以在各个 controller 中使用。</p>
+<p>参数的位置随意 但是参数命名一定要是<code>$rootscope</code></p>
+<p>上面的例子修改如下：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span> &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">ng-model</span>=<span class="string">"name"</span> <span class="attr">ng-controller</span>=<span class="string">"myCtrl"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span>&gt;</span>&#123;&#123;name&#125;&#125;<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">'myApp'</span>, []);</span></span><br><span class="line"><span class="actionscript">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span><span class="params">($scope,$rootScope)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    $scope.name = <span class="string">"Runoob"</span>;</span></span><br><span class="line"><span class="actionscript">    $rootScope.name = <span class="string">"root Runoob"</span>;</span></span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>&lt;h1&gt;&lt;/h1&gt;</code> 在根作用域有name的值，故这边可以显示<code>root Runoob</code> ,而input按照作用域传递原则，先拿到自己控制器作用域的<code>Runoob</code></p>
+<blockquote>
+<p>把 <code>$scope.name = &quot;Runoob&quot;;</code> 注释掉，input中能取到rootScope中的name对应的<code>root Runoob</code>,但input中name值的更新依然不会影响到h1中的name</p>
+</blockquote>
+<h2 id="控制器-controller"><a href="#控制器-controller" class="headerlink" title="控制器 controller"></a>控制器 controller</h2><p>略，看上文</p>
+<h2 id="过滤器"><a href="#过滤器" class="headerlink" title="过滤器"></a>过滤器</h2><p>用于转换数据。</p>
+<p>自带的过滤器有：</p>
+<ul>
+<li>currency 格式化数字为货币格式。</li>
+<li>filter 从数组项中选择一个子集。</li>
+<li>lowercase 格式化字符串为小写。</li>
+<li>orderBy 根据某个表达式排列数组。</li>
+<li>uppercase 格式化字符串为大写。</li>
+</ul>
+<p>在表达式中使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123; 变量 | 过滤器&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在输入中使用</p>
+<p>过滤器后跟一个冒号和一个模型名称(或者一个常量)</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span> <span class="attr">ng-controller</span>=<span class="string">"namesCtrl"</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>输入过滤:<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span> <span class="attr">ng-model</span>=<span class="string">"test"</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">li</span> <span class="attr">ng-repeat</span>=<span class="string">"x in names | filter:test "</span>&gt;</span></span><br><span class="line">    &#123;&#123; (x.name | uppercase) + ', ' + x.country &#125;&#125;</span><br><span class="line">  <span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript">angular.module(<span class="string">'myApp'</span>, []).controller(<span class="string">'namesCtrl'</span>, <span class="function"><span class="keyword">function</span><span class="params">($scope)</span> </span>&#123;</span></span><br><span class="line">    $scope.names = [</span><br><span class="line"><span class="actionscript">        &#123;name:<span class="string">'Jani'</span>,country:<span class="string">'Norway'</span>&#125;,</span></span><br><span class="line"><span class="actionscript">        &#123;name:<span class="string">'Hege'</span>,country:<span class="string">'Sweden'</span>&#125;,</span></span><br><span class="line"><span class="actionscript">        &#123;name:<span class="string">'Kai'</span>,country:<span class="string">'Denmark'</span>&#125;</span></span><br><span class="line">    ];</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>以上例子即，对于names的每一项，过滤出满足 <code>indexOf(test)&gt;=0</code>的项</p>
+<p>再加个orderBy的过滤器：<code>&lt;li ng-repeat=&quot;x in names | filter:test | orderBy:&#39;country&#39;&quot;&gt;</code></p>
+<p>在 <code>indexOf(test)&gt;=0</code>的前提下，按每项的<code>country</code>进行升序排序，若要降序，使用<code>orderBy:&#39;country&#39;:true</code></p>
+<h3 id="自定义过滤器"><a href="#自定义过滤器" class="headerlink" title="自定义过滤器"></a>自定义过滤器</h3><p>自定义一个过滤器 reverse，将字符串反转：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span> <span class="attr">ng-controller</span>=<span class="string">"myCtrl"</span>&gt;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">姓名: &#123;&#123; msg | reverse &#125;&#125;</span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">'myApp'</span>, []);</span></span><br><span class="line"><span class="actionscript">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span><span class="params">($scope)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    $scope.msg = <span class="string">"Runoob"</span>;</span></span><br><span class="line">&#125;);</span><br><span class="line"><span class="actionscript">app.filter(<span class="string">'reverse'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123; <span class="comment">//可以注入依赖</span></span></span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(text)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> text.split(<span class="string">""</span>).reverse().join(<span class="string">""</span>);</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="服务-Service"><a href="#服务-Service" class="headerlink" title="服务 Service"></a>服务 Service</h2><p>服务是一个函数或对象，在 Angular 应用中使用。</p>
+<p>service 是单例对象，在应用生命周期结束才会被清除</p>
+<h3 id="内置服务"><a href="#内置服务" class="headerlink" title="内置服务"></a>内置服务</h3><p>作为参数传递到 controller 中即可使用，例：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">app.controller(<span class="string">'customersCtrl'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">$scope, $location</span>) </span>&#123;</span><br><span class="line">    $scope.myUrl = $location.absUrl();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p> Angular 常用的内置服务</p>
+<ul>
+<li>$location<blockquote>
+<p>返回当前页面的url地址</p>
+</blockquote>
+</li>
+<li>$http 服务<blockquote>
+<p>向服务端发送请求，<code>$http.get</code>等，参见 <a href="http://www.runoob.com/angularjs/angularjs-http.html" target="_blank" rel="noopener">http://www.runoob.com/angularjs/angularjs-http.html</a></p>
+</blockquote>
+</li>
+<li>$injector<blockquote>
+<p>可以用于获取其他对象（服务作用域控制器等）：<code>$injector.get(&quot;userService&quot;)</code></p>
+</blockquote>
+<h3 id="自定义的服务"><a href="#自定义的服务" class="headerlink" title="自定义的服务"></a>自定义的服务</h3></li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建名为hexafy 的服务:</span></span><br><span class="line">app.service(<span class="string">'hexafy'</span>, <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.myFunc = <span class="function"><span class="keyword">function</span> (<span class="params">x</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> x.toString(<span class="number">16</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">//使用自定义的的服务 hexafy 将一个数字转换为16进制数:</span></span><br><span class="line"></span><br><span class="line">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">$scope, hexafy</span>) </span>&#123;</span><br><span class="line">    $scope.hex = hexafy.myFunc(<span class="number">255</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>在过滤器中使用服务,数组前面要传入服务名</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">app.filter(<span class="string">'myFormat'</span>,[<span class="string">'hexafy'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">hexafy</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span>(<span class="params">x</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> hexafy.myFunc(x);</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;]);</span><br></pre></td></tr></table></figure>
+
+<p>综合使用 service、controller、filter</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-app</span>=<span class="string">"myApp"</span> <span class="attr">ng-controller</span>=<span class="string">"myCtrl"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>在获取数组 [255, 251, 200] 值时使用过滤器:<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">li</span> <span class="attr">ng-repeat</span>=<span class="string">"x in counts"</span>&gt;</span>&#123;&#123;x | myFormat&#125;&#125;<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>过滤器使用服务将10进制转换为16进制。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript"><span class="keyword">var</span> app = angular.module(<span class="string">'myApp'</span>, []);</span></span><br><span class="line"><span class="actionscript">app.service(<span class="string">'hexafy'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">	<span class="keyword">this</span>.myFunc = <span class="function"><span class="keyword">function</span> <span class="params">(x)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> x.toString(<span class="number">16</span>);</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="actionscript">app.filter(<span class="string">'myFormat'</span>,[<span class="string">'hexafy'</span>, <span class="function"><span class="keyword">function</span><span class="params">(hexafy)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(x)</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> hexafy.myFunc(x);</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;]);</span><br><span class="line"><span class="actionscript">app.controller(<span class="string">'myCtrl'</span>, <span class="function"><span class="keyword">function</span><span class="params">($scope)</span> </span>&#123;</span></span><br><span class="line">    $scope.counts = [255, 251, 200];</span><br><span class="line">&#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="依赖注入"><a href="#依赖注入" class="headerlink" title="依赖注入"></a>依赖注入</h2><p>有5个核心组件用于依赖注入</p>
+<h3 id="value"><a href="#value" class="headerlink" title="value"></a>value</h3><p>value:一个简单js对象，用于向控制器或其他组件传值</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> mainApp = angular.module(<span class="string">"mainApp"</span>, []);</span><br><span class="line">mainApp.value(<span class="string">"defaultInput"</span>, <span class="number">5</span>);</span><br><span class="line">mainApp.controller(<span class="string">'CalcController'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">$scope, defaultInput</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(defaultInput) <span class="comment">//5</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="factory"><a href="#factory" class="headerlink" title="factory"></a>factory</h3><p>factory: 一个函数，用于计算和返回值。一般用在service和controller</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mainApp.factory(<span class="string">'MathService'</span>, <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">   <span class="keyword">var</span> factory = &#123;&#125;;</span><br><span class="line">   </span><br><span class="line">   factory.multiply = <span class="function"><span class="keyword">function</span>(<span class="params">a, b</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> a * b</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> factory;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="service"><a href="#service" class="headerlink" title="service"></a>service</h2><p>见上一节，service与factory的区别在于：</p>
+<p>service 是用new实例化的，所以属性和方法定义在this上，</p>
+<p>factory 是创建并返回一个对象</p>
+<p>。。 好像就只是写法上的差异，没有核心差异</p>
+<h3 id="provider"><a href="#provider" class="headerlink" title="provider"></a>provider</h3><p>通过 provider 创建一个 service、factory</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用 provider 创建 service 定义一个方法用于计算两数乘积</span></span><br><span class="line">mainApp.config(<span class="function"><span class="keyword">function</span>(<span class="params">$provide</span>) </span>&#123;</span><br><span class="line">   $provide.provider(<span class="string">'MathService'</span>, <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">       <span class="comment">// 用于返回 value/service/factory</span></span><br><span class="line">      <span class="keyword">this</span>.$<span class="keyword">get</span> = function() &#123;</span><br><span class="line">         <span class="keyword">var</span> factory = &#123;&#125;;  </span><br><span class="line">         </span><br><span class="line">         factory.multiply = <span class="function"><span class="keyword">function</span>(<span class="params">a, b</span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a * b; </span><br><span class="line">         &#125;</span><br><span class="line">         <span class="keyword">return</span> factory;</span><br><span class="line">      &#125;;</span><br><span class="line">   &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>具体使用差异 不过多了解</p>
+<h3 id="constant"><a href="#constant" class="headerlink" title="constant"></a>constant</h3><p>配置常量</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mainApp.constant(<span class="string">"configParam"</span>, <span class="string">"constant value"</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="路由"><a href="#路由" class="headerlink" title="路由"></a>路由</h2><ol>
+<li><p>需要引入angular-route</p>
+</li>
+<li><p>在主模块中添加依赖模块——ngRoute</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">angular.module(<span class="string">'routingDemoApp'</span>,[<span class="string">'ngRoute'</span>])</span><br></pre></td></tr></table></figure></li>
+<li><p>使用 ngView 指令</p>
+</li>
+</ol>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">ng-view</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>div 中内容会根据路由变化而变化</p>
+<ol start="4">
+<li>配置$routeProvider</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">module</span>.config([<span class="string">'$routeProvider'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">$routeProvider</span>)</span>&#123;</span><br><span class="line">    $routeProvider</span><br><span class="line">        .when(<span class="string">'/'</span>,&#123;<span class="attr">template</span>:<span class="string">'这是首页页面'</span>&#125;)</span><br><span class="line">        .when(<span class="string">'/computers'</span>,&#123;<span class="attr">template</span>:<span class="string">'这是电脑分类页面'</span>&#125;)</span><br><span class="line">        .when(<span class="string">'/printers'</span>,&#123;<span class="attr">template</span>:<span class="string">'这是打印机页面'</span>&#125;)</span><br><span class="line">        .otherwise(&#123;<span class="attr">redirectTo</span>:<span class="string">'/'</span>&#125;);</span><br><span class="line">&#125;]);</span><br></pre></td></tr></table></figure>
+
+<p>when 表示命中，otherwise表其他，</p>
+<p>里面第一个参数是url或者正则，第二个参数是路由配置对象。</p>
+<p>路由配置对象：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$routeProvider.when(url,&#123;</span><br><span class="line">    template:string, <span class="comment">//在ng-view中插入简单的html内容</span></span><br><span class="line">    templateUrl:string, <span class="comment">//在ng-view中插入html模版文件</span></span><br><span class="line">    controller:string,<span class="function"><span class="keyword">function</span> / <span class="title">array</span>, //在当前模版上执行的<span class="title">controller</span>函数</span></span><br><span class="line"><span class="function">    <span class="title">controllerAs</span>:<span class="title">string</span>, //为<span class="title">controller</span>指定别名</span></span><br><span class="line"><span class="function">    <span class="title">redirectTo</span>:<span class="title">string</span>,<span class="title">function</span>, //重定向的地址</span></span><br><span class="line"><span class="function">    <span class="title">resolve</span>:<span class="title">object</span>&lt;<span class="title">key</span>,<span class="title">function</span>&gt; //指定当前<span class="title">controller</span>所依赖的其他模块</span></span><br><span class="line"><span class="function">&#125;);</span></span><br></pre></td></tr></table></figure>
+
+<p>不想新建html文件时，可以用</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">"text/ng-template"</span> <span class="attr">id</span>=<span class="string">"embedded.about.html"</span>&gt;</span></span><br><span class="line"><span class="handlebars"><span class="xml">      <span class="tag">&lt;<span class="name">h1</span>&gt;</span> About <span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span></span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>templateUrl中指定<code>embedded.about.html</code>即可</p>
+<h3 id="ui-view-angular-ui-router-stateProvider"><a href="#ui-view-angular-ui-router-stateProvider" class="headerlink" title="ui-view + angular-ui-router + $stateProvider"></a>ui-view + angular-ui-router + $stateProvider</h3><h2 id="run"><a href="#run" class="headerlink" title="run"></a>run</h2><pre><code class="js"><span class="built_in">module</span>.run(<span class="function"><span class="keyword">function</span>(<span class="params">...</span>)</span>{
+    <span class="comment">//里面的代码将直接运行，一般用于执行配置</span>
+})</code></pre>
+<h2 id="第三方插件"><a href="#第三方插件" class="headerlink" title="第三方插件"></a>第三方插件</h2><p>略</p>
+<h2 id="vs-Vue2"><a href="#vs-Vue2" class="headerlink" title="vs Vue2"></a>vs Vue2</h2><p>以下的相当，只是说明做技术栈迁移时的考虑方向。肯定有些细节不一样</p>
+<p>directive 相当于 vue 的 props</p>
+<p>controller 相当于 vue 的 method </p>
+<p>数据相当于 vue 的 data 和 prop</p>
+<p>html 相当于 vue 的 template</p>
+<p>directive 中的 link: function(scope, element)</p>
+<p>scope 相当于 vue 的当前作用域 this</p>
+<p>ng1.x 中 element 表示带有类似 jquery 方法的 dom 节点；在 vue 中通过 ref 拿到的是实际 dom 节点</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Angular1-x/" rel="tag"># Angular1.x</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/11/01/2018Q4/document-write%E9%87%8D%E5%86%99/" rel="prev" title="document-write重写">
+      <i class="fa fa-chevron-left"></i> document-write重写
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/12/16/2018Q4/%E5%A6%82%E4%BD%95%E5%87%8F%E5%B0%91%E9%A2%84%E6%A3%80%E8%AF%B7%E6%B1%82OPTIONS/" rel="next" title="如何减少预检请求OPTIONS">
+      如何减少预检请求OPTIONS <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#指令"><span class="nav-number">2.</span> <span class="nav-text">指令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义指令-directive"><span class="nav-number">2.1.</span> <span class="nav-text">自定义指令 directive</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#模型-ng-model"><span class="nav-number">3.</span> <span class="nav-text">模型 ng-model</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#应用状态"><span class="nav-number">3.1.</span> <span class="nav-text">应用状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CSS类"><span class="nav-number">3.2.</span> <span class="nav-text">CSS类</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#作用域-scope"><span class="nav-number">4.</span> <span class="nav-text">作用域 scope</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#根作用域-rootScope"><span class="nav-number">4.1.</span> <span class="nav-text">根作用域 rootScope</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#控制器-controller"><span class="nav-number">5.</span> <span class="nav-text">控制器 controller</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤器"><span class="nav-number">6.</span> <span class="nav-text">过滤器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义过滤器"><span class="nav-number">6.1.</span> <span class="nav-text">自定义过滤器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#服务-Service"><span class="nav-number">7.</span> <span class="nav-text">服务 Service</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#内置服务"><span class="nav-number">7.1.</span> <span class="nav-text">内置服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义的服务"><span class="nav-number">7.2.</span> <span class="nav-text">自定义的服务</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#依赖注入"><span class="nav-number">8.</span> <span class="nav-text">依赖注入</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#value"><span class="nav-number">8.1.</span> <span class="nav-text">value</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#factory"><span class="nav-number">8.2.</span> <span class="nav-text">factory</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#service"><span class="nav-number">9.</span> <span class="nav-text">service</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#provider"><span class="nav-number">9.1.</span> <span class="nav-text">provider</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#constant"><span class="nav-number">9.2.</span> <span class="nav-text">constant</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由"><span class="nav-number">10.</span> <span class="nav-text">路由</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ui-view-angular-ui-router-stateProvider"><span class="nav-number">10.1.</span> <span class="nav-text">ui-view + angular-ui-router + $stateProvider</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#run"><span class="nav-number">11.</span> <span class="nav-text">run</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#第三方插件"><span class="nav-number">12.</span> <span class="nav-text">第三方插件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vs-Vue2"><span class="nav-number">13.</span> <span class="nav-text">vs Vue2</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

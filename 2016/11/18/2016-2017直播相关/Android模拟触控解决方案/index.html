@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言如何捕获用户触控信息？如何模拟？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android模拟触控解决方案">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2016&#x2F;11&#x2F;18&#x2F;2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3&#x2F;Android%E6%A8%A1%E6%8B%9F%E8%A7%A6%E6%8E%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言如何捕获用户触控信息？如何模拟？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-11-18T03:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.119Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="多点触控">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2016/11/18/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E6%A8%A1%E6%8B%9F%E8%A7%A6%E6%8E%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Android模拟触控解决方案 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2016/11/18/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E6%A8%A1%E6%8B%9F%E8%A7%A6%E6%8E%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android模拟触控解决方案
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-11-18 11:00:00" itemprop="dateCreated datePublished" datetime="2016-11-18T11:00:00+08:00">2016-11-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>如何捕获用户触控信息？如何模拟？</p>
+<a id="more"></a>
+
+<h1 id="数据采集"><a href="#数据采集" class="headerlink" title="数据采集"></a>数据采集</h1><h2 id="Android端"><a href="#Android端" class="headerlink" title="Android端"></a>Android端</h2><p>重写 onTouchEvent ,收集 event 数据,以一定的编码传输</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTouchEvent</span><span class="params">(MotionEvent event)</span></span>&#123;</span><br><span class="line">	String rec=<span class="string">""</span>;</span><br><span class="line">    <span class="keyword">int</span> pointerCount = event.getPointerCount();</span><br><span class="line">    <span class="keyword">if</span> (pointerCount &gt; MAX_TOUCHPOINTS) &#123;</span><br><span class="line">        pointerCount = MAX_TOUCHPOINTS;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> opt=event.getAction();</span><br><span class="line">    <span class="keyword">boolean</span> isFirst=<span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">if</span>(opt==<span class="number">2</span>)&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; pointerCount; i++) &#123;</span><br><span class="line">            <span class="keyword">int</span> id = event.getPointerId(i);</span><br><span class="line">            <span class="keyword">int</span> x = (<span class="keyword">int</span>) event.getX(i);</span><br><span class="line">            <span class="keyword">int</span> y = (<span class="keyword">int</span>) event.getY(i);</span><br><span class="line">            <span class="keyword">if</span>(isFirst)&#123;isFirst=<span class="keyword">false</span>;&#125;</span><br><span class="line">            <span class="keyword">else</span> rec+=<span class="string">";"</span>;</span><br><span class="line">            rec+=id+<span class="string">",2,"</span>+x+<span class="string">","</span>+y;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(opt==<span class="number">0</span>||(opt-<span class="number">5</span>)%<span class="number">256</span>==<span class="number">0</span>)&#123;</span><br><span class="line">        <span class="comment">//为了简化，我们假设这过程不会进行MOVE</span></span><br><span class="line">        <span class="keyword">int</span> ind=(event.getAction()-<span class="number">5</span>)/<span class="number">256</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; pointerCount; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(i==ind)&#123;</span><br><span class="line">                <span class="keyword">int</span> id = event.getPointerId(i);</span><br><span class="line">                <span class="keyword">int</span> x = (<span class="keyword">int</span>) event.getX(i);</span><br><span class="line">                <span class="keyword">int</span> y = (<span class="keyword">int</span>) event.getY(i);</span><br><span class="line">                <span class="keyword">if</span>(isFirst)&#123;isFirst=<span class="keyword">false</span>;&#125;</span><br><span class="line">                <span class="keyword">else</span> rec+=<span class="string">";"</span>;</span><br><span class="line">                rec+=id+<span class="string">",0,"</span>+x+<span class="string">","</span>+y;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(opt==<span class="number">1</span>||(opt-<span class="number">6</span>)%<span class="number">256</span>==<span class="number">0</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> ind=(event.getAction()-<span class="number">6</span>)/<span class="number">256</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; pointerCount; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(i==ind)&#123;</span><br><span class="line">                <span class="keyword">int</span> id = event.getPointerId(i);</span><br><span class="line">                <span class="keyword">if</span>(isFirst)&#123;isFirst=<span class="keyword">false</span>;&#125;</span><br><span class="line">                <span class="keyword">else</span> rec+=<span class="string">";"</span>;</span><br><span class="line">                rec+=id+<span class="string">",1"</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Web"><a href="#Web" class="headerlink" title="Web"></a>Web</h2><p>见另一篇文章<a href="http://hongweipeng.com/index.php/archives/838/" target="_blank" rel="noopener">video标签下触摸坐标归一化</a></p>
+<h2 id="嵌入式设备"><a href="#嵌入式设备" class="headerlink" title="嵌入式设备"></a>嵌入式设备</h2><p>待研究</p>
+<h1 id="数据编码"><a href="#数据编码" class="headerlink" title="数据编码"></a>数据编码</h1><p>最后数据以<code>ID,OPTION,X,Y</code>这样的字符串传输,多指操作通过<code>;</code>隔开</p>
+<ul>
+<li><strong>OPTION:</strong> <code>0:DOWN</code>; <code>1:UP</code>;<code>2:MOVE</code></li>
+<li><strong>ID:</strong> 触点ID 通过<code>event.getPointerId</code> 获取， 对应服务器的<code>0x2f</code></li>
+<li><strong>X,Y</strong> 按道理范围应该在<code>[0,1]</code>;即本机分辨率的百分比。服务端再以该系数模拟。这边我们先假设两边机器一样，直接传实际int</li>
+</ul>
+<h1 id="数据传输"><a href="#数据传输" class="headerlink" title="数据传输"></a>数据传输</h1><h2 id="socket"><a href="#socket" class="headerlink" title="socket"></a>socket</h2><h3 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h3><p>1.在子线程中初始化<code>socket</code>和<code>Handler mHandler</code><br>2.UI线程收到编码数据后，执行<code>mHandler.sendMessage(message)</code>操作<br>3.<code>Looper</code>在子线程的<code>mHandler</code>将会回调<code>handleMessage</code>，在这里进行socket传输</p>
+<p>代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">Socket socket = <span class="keyword">null</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> BufferedWriter writer = <span class="keyword">null</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyHandler</span> <span class="keyword">extends</span> <span class="title">Handler</span> </span>&#123;</span><br><span class="line">       <span class="comment">//这边这个looper参数是否应该软引用？</span></span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="title">MyHandler</span><span class="params">(Looper looper)</span> </span>&#123;</span><br><span class="line">           <span class="keyword">super</span>(looper);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="meta">@Override</span></span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line">           <span class="comment">//子线程收到数据，进行socket send data</span></span><br><span class="line">           <span class="keyword">super</span>.handleMessage(msg);</span><br><span class="line">           Log.i(<span class="string">"RECEIVE"</span>, <span class="string">"子线程收到:"</span> + msg.obj);</span><br><span class="line">           <span class="keyword">try</span> &#123;</span><br><span class="line">               writer.write(msg.obj + <span class="string">"\n"</span>);<span class="comment">//必须加上换行</span></span><br><span class="line">               writer.flush();</span><br><span class="line">           &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="class"><span class="keyword">class</span> <span class="title">SockRunnable</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            Log.i(<span class="string">"THREAD"</span>, <span class="string">"START"</span>);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                socket = <span class="keyword">new</span> Socket(<span class="string">"192.168.191.1"</span>, <span class="number">12345</span>);</span><br><span class="line">                writer = <span class="keyword">new</span> BufferedWriter(<span class="keyword">new</span> OutputStreamWriter(</span><br><span class="line">                        socket.getOutputStream(), <span class="string">"utf-8"</span>));</span><br><span class="line">                reader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(</span><br><span class="line">                        socket.getInputStream(), <span class="string">"utf-8"</span>));</span><br><span class="line">                Log.i(<span class="string">"CONNECT"</span>, <span class="string">"连接成功"</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Looper.prepare();</span><br><span class="line">                <span class="comment">//让MyHandle为子线程服务</span></span><br><span class="line">                mHandler = <span class="keyword">new</span> MyHandler(Looper.myLooper());</span><br><span class="line">                Looper.loop();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                Log.e(<span class="string">"zjx"</span>, <span class="string">"error"</span>);</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onDestroy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onDestroy();</span><br><span class="line">        <span class="keyword">if</span> (mHandler != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mHandler.removeCallbacksAndMessages(<span class="keyword">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (writer != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                writer.close();</span><br><span class="line">                reader.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    onCreate&#123;</span><br><span class="line">    	<span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">       <span class="keyword">new</span> Thread(<span class="keyword">new</span> SockRunnable()).start();</span><br><span class="line">       ReceiveData rd=<span class="keyword">new</span> ReceiveData() &#123;</span><br><span class="line">           <span class="meta">@Override</span></span><br><span class="line">           <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">receive</span><span class="params">(String json)</span> </span>&#123;</span><br><span class="line">               Log.i(<span class="string">"SEND"</span>,json);</span><br><span class="line">               <span class="comment">//ADD 时间轴</span></span><br><span class="line">               <span class="comment">//MOVE数据的过滤 平方和&lt;12</span></span><br><span class="line">               <span class="comment">//SOCKET数据发送</span></span><br><span class="line">               Message message=<span class="keyword">new</span> Message();</span><br><span class="line">               message.obj=json;</span><br><span class="line">               <span class="keyword">if</span>(mHandler!=<span class="keyword">null</span>)&#123;</span><br><span class="line">                   mHandler.sendMessage(message);</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;;</span><br><span class="line">    </span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<h3 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ServerListener</span> <span class="keyword">extends</span> <span class="title">Thread</span> </span>&#123;  </span><br><span class="line">   	<span class="meta">@Override</span>  </span><br><span class="line">   	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">       	<span class="keyword">try</span> &#123;  </span><br><span class="line">           	ServerSocket serverSocket = <span class="keyword">new</span> ServerSocket(<span class="number">12345</span>);  </span><br><span class="line">       	    <span class="comment">// 循环的监听  </span></span><br><span class="line">           	<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;  </span><br><span class="line">               	Socket socket = serverSocket.accept();<span class="comment">// 阻塞  </span></span><br><span class="line">               	JOptionPane.showMessageDialog(<span class="keyword">null</span>, <span class="string">"有客户端连接到本机的12345端口！"</span>);  </span><br><span class="line">               	<span class="comment">// 将socket传给新的线程  </span></span><br><span class="line">               	ChatSocket cs = <span class="keyword">new</span> ChatSocket(socket);  </span><br><span class="line">               	cs.start();  </span><br><span class="line">               	<span class="comment">//把socket加入ChatManager  </span></span><br><span class="line">               	ChatManager.getChatManager().add(cs);  </span><br><span class="line">           	&#125;  </span><br><span class="line">       	&#125; <span class="keyword">catch</span> (IOException e) &#123;  </span><br><span class="line">           	e.printStackTrace();  </span><br><span class="line">       	&#125;  </span><br><span class="line">   	&#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="DataChannel"><a href="#DataChannel" class="headerlink" title="DataChannel"></a>DataChannel</h2><p>略</p>
+<h1 id="数据解码"><a href="#数据解码" class="headerlink" title="数据解码"></a>数据解码</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">decodeData</span><span class="params">(String json)</span> </span>&#123;</span><br><span class="line">	String ls[] = json.split(<span class="string">";"</span>);</span><br><span class="line">	<span class="keyword">for</span> (String s : ls) &#123;</span><br><span class="line">		String cs[] = s.split(<span class="string">","</span>);</span><br><span class="line">		<span class="keyword">int</span> id = Integer.valueOf(cs[<span class="number">0</span>]);</span><br><span class="line">		<span class="keyword">int</span> opt = Integer.valueOf(cs[<span class="number">1</span>]);</span><br><span class="line">		<span class="keyword">switch</span> (opt) &#123;</span><br><span class="line">		<span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">			sendDown(id, cs[<span class="number">2</span>], cs[<span class="number">3</span>]);</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		<span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">			sendUp(id);</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		<span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">			sendMove(id, cs[<span class="number">2</span>], cs[<span class="number">3</span>]);</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="数据模拟"><a href="#数据模拟" class="headerlink" title="数据模拟"></a>数据模拟</h1><p>以下方式凡是利用sendevent的，都可以通过getevent回去到对应的指令</p>
+<p>而传入MotionEvent.obtain的，只能通过开启开发者选择的触点显示</p>
+<h2 id="1-adb-shell"><a href="#1-adb-shell" class="headerlink" title="1. adb shell"></a>1. adb shell</h2><p>在 <code>system/core/include/private/android_filesystem_config.h</code> 中定义了Android的用户和组</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#define AID_SHELL 2000 /* adb and debug shell user UID=2000*/</span></span><br><span class="line"><span class="comment">#即</span></span><br><span class="line">root uid 0 gid0 </span><br><span class="line">system uid 1000 gid1000</span><br><span class="line">shell uid 2000 gid2000</span><br><span class="line">app uid &gt;10000 gid &gt;10000</span><br></pre></td></tr></table></figure>
+<p>同时我们执行以下命令（<a href="http://www.linuxidc.com/Linux/2012-09/70492.htm" target="_blank" rel="noopener">ls -l命令详解</a></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">shell@android:/dev/input $ ls -l</span><br><span class="line">crw-rw---- root     	input     	13,  64 2016-11-18 08:17 event0</span><br><span class="line">crw-rw---- root     	input     	13,  65 2016-11-18 08:17 event1</span><br><span class="line">crw-rw---- root     	input     	13,  66 2016-11-18 08:17 event2</span><br><span class="line">crw-rw---- root     	input     	13,  67 2016-11-18 08:17 event3</span><br><span class="line">文件属性	   文件拥有者     拥有者所在主组							    文件名</span><br></pre></td></tr></table></figure>
+
+<p>我们发现input组是拥有 <code>rw-</code> 权限的。</p>
+<p>通过运行id命令得到如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell@android:&#x2F; $ id</span><br><span class="line">uid&#x3D;2000(shell) gid&#x3D;2000(shell) groups&#x3D;1003(graphics),1004(input),1007(log),1009</span><br><span class="line">(mount),1011(adb),1015(sdcard_rw),1028(sdcard_r),3001(net_bt_admin),3002(net_bt)</span><br><span class="line">,3003(inet),3006(net_bw_stats)</span><br></pre></td></tr></table></figure>
+<p>shell属于input组，那么shell也就拥有<code>rw-</code>的权限,意思就是说shell用户(or其运行的程序)可以对eventX文件进行读写</p>
+<p>那么读写的形式就有以下两种了：</p>
+<h3 id="1-1-server端执行shell脚本"><a href="#1-1-server端执行shell脚本" class="headerlink" title="1.1 server端执行shell脚本"></a>1.1 server端执行shell脚本</h3><h4 id="大致流程："><a href="#大致流程：" class="headerlink" title="大致流程："></a><strong>大致流程：</strong></h4><p>Java的话可采用Runtime</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">process = Runtime.getRuntime().exec(<span class="string">"adb shell"</span>);</span><br><span class="line"><span class="comment">// 获取输出流</span></span><br><span class="line">outputStream = process.getOutputStream();</span><br><span class="line">dataOutputStream = <span class="keyword">new</span> DataOutputStream(outputStream);</span><br><span class="line"><span class="comment">// 执行cmd指令，例： cmd="sendevent /dev/input/event3 0 0 0";</span></span><br><span class="line">dataOutputStream.writeBytes(cmd + <span class="string">"\n"</span>);</span><br></pre></td></tr></table></figure>
+
+<h4 id="实现难度：5-5"><a href="#实现难度：5-5" class="headerlink" title="实现难度：5/5"></a><strong>实现难度：5/5</strong></h4><p>实现简单，代码量少。多种语言均支持执行shell命令</p>
+<h4 id="维护拓展：-1-5"><a href="#维护拓展：-1-5" class="headerlink" title="维护拓展： 1/5"></a><strong>维护拓展： 1/5</strong></h4><p>Runtime会间接性出问题(原因未明)</p>
+<p>dataOutputStream操作会堵塞本地IO通道，不适合多开。</p>
+<p>Java执行跨平台，易迁移，给1星。</p>
+<h4 id="需要root？-否"><a href="#需要root？-否" class="headerlink" title="需要root？ 否"></a><strong>需要root？</strong> 否</h4><h4 id="效率延迟：1-5"><a href="#效率延迟：1-5" class="headerlink" title="效率延迟：1/5"></a><strong>效率延迟：1/5</strong></h4><p>效率极差，<strong><code>指令组</code></strong>（单指move,down,up等操作称为指令组，包含多条sendevent基础指令）<strong><code>响应时间</code></strong>(指令执行时间间隔)&gt;200ms</p>
+<h4 id="推荐指数：-1-5"><a href="#推荐指数：-1-5" class="headerlink" title="推荐指数： 1/5"></a><strong>推荐指数：</strong> 1/5</h4><h3 id="1-2-android端执行adb-shell用户启动的程序"><a href="#1-2-android端执行adb-shell用户启动的程序" class="headerlink" title="1.2 android端执行adb shell用户启动的程序"></a>1.2 android端执行adb shell用户启动的程序</h3><h4 id="大致流程：-1"><a href="#大致流程：-1" class="headerlink" title="大致流程："></a><strong>大致流程：</strong></h4><p>1.编写C socket程序<code>minitouch</code>，并放到<code>/data/local/tmp/</code> 目录(<code>user,group=shell</code>)下</p>
+<p>2.chmod 777该文件后，run它</p>
+<p>3.执行以下命令：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">adb forward tcp:1111 localabstract:minitouch</span><br></pre></td></tr></table></figure>
+<p>表示server本地的1111端口会映射到minitouch上</p>
+<p>4.本地利用socket通信发送数据到1111端口，minitouch进一步处理</p>
+<p><em>以上只是大致流程，minitouch还涉及到abi和sdk的版本的处理</em></p>
+<p><a href="https://github.com/openstf/minitouch" target="_blank" rel="noopener">开源实现minitouch</a></p>
+<p><a href="https://testerhome.com/topics/4400" target="_blank" rel="noopener">minitouch使用流程，minitap开源项目类似 也可采用</a></p>
+<h4 id="实现难度：4-5"><a href="#实现难度：4-5" class="headerlink" title="实现难度：4/5"></a><strong>实现难度：4/5</strong></h4><p>需要编写两端程序：放于android的socket程序，本地发送数据程序。</p>
+<p>相对简单，且有开源实现。</p>
+<h4 id="维护拓展：-4-5"><a href="#维护拓展：-4-5" class="headerlink" title="维护拓展： 4/5"></a><strong>维护拓展： 4/5</strong></h4><p>分配本地端口并转发到android socket程序上，端口是足够用的，只要设置规范不会产生冲突</p>
+<h4 id="需要root？-否-1"><a href="#需要root？-否-1" class="headerlink" title="需要root？ 否"></a><strong>需要root？</strong> 否</h4><p><code>sdk 10-21</code> 无需root,<code>21+</code>需要root,<code>sdk 20 Android Wear</code> 需要root</p>
+<h4 id="效率延迟：5-5"><a href="#效率延迟：5-5" class="headerlink" title="效率延迟：5/5"></a><strong>效率延迟：5/5</strong></h4><p><strong><code>指令组响应时间</code></strong>&lt;10ms</p>
+<h4 id="推荐指数：-4-5-5"><a href="#推荐指数：-4-5-5" class="headerlink" title="推荐指数： 4.5/5"></a><strong>推荐指数：</strong> 4.5/5</h4><h2 id="2-Android端-root-sendevent"><a href="#2-Android端-root-sendevent" class="headerlink" title="2. Android端 root sendevent"></a>2. Android端 root sendevent</h2><h3 id="2-1-Runtime-getRuntime-exec-“su”"><a href="#2-1-Runtime-getRuntime-exec-“su”" class="headerlink" title="2.1 Runtime.getRuntime().exec(“su”)"></a>2.1 Runtime.getRuntime().exec(“su”)</h3><h4 id="大致流程：-2"><a href="#大致流程：-2" class="headerlink" title="大致流程："></a>大致流程：</h4><p>Android端获取su权限后，利用Runtime执行sendevent命令</p>
+<p>这里的cmds 可以是<code>sendevent</code> 也可以是<code>input swipe</code> </p>
+<p>注：input swipe 即提供两点坐标 然后move且只能单指</p>
+<p>也就是说要等一个完整的DOWN-MOVE-UP过程 然后发送起始-终点位置。</p>
+<p>与其这样 还不如用sendevent 优化move间隔</p>
+<p>getevent获取不到触控信息。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">execShellCmd</span><span class="params">(String[] cmds)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    Process process = Runtime.getRuntime().exec(<span class="string">"su"</span>);</span><br><span class="line">    DataOutputStream os = <span class="keyword">new</span> DataOutputStream(process.getOutputStream());</span><br><span class="line">    <span class="keyword">for</span> (String tmpCmd : cmds) &#123;</span><br><span class="line">        os.writeBytes(tmpCmd + <span class="string">"\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    os.writeBytes(<span class="string">"exit\n"</span>);</span><br><span class="line">    os.flush();</span><br><span class="line">    os.close();</span><br><span class="line">    process.waitFor();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="实现难度：5-5-1"><a href="#实现难度：5-5-1" class="headerlink" title="实现难度：5/5"></a><strong>实现难度：5/5</strong></h4><p>实现简单，代码量少。</p>
+<h4 id="维护拓展：1-5"><a href="#维护拓展：1-5" class="headerlink" title="维护拓展：1/5"></a><strong>维护拓展：1/5</strong></h4><p>同1.1,区别只是程序运行与Android端。</p>
+<h4 id="需要root？-是"><a href="#需要root？-是" class="headerlink" title="需要root？ 是"></a><strong>需要root？</strong> 是</h4><h4 id="效率延迟：1-5-1"><a href="#效率延迟：1-5-1" class="headerlink" title="效率延迟：1/5"></a><strong>效率延迟：1/5</strong></h4><p><strong><code>指令组响应时间</code></strong>&gt;200ms</p>
+<h4 id="推荐指数：-1-5-1"><a href="#推荐指数：-1-5-1" class="headerlink" title="推荐指数： 1/5"></a><strong>推荐指数：</strong> 1/5</h4><h3 id="2-2-linux-c"><a href="#2-2-linux-c" class="headerlink" title="2.2 linux c"></a>2.2 linux c</h3><p>由于我们是自己编译Android系统，所以我们可以写个linux C socket程序放在Android里</p>
+<p>linux C socket编程这边不提及，我们假设取得解码的值了</p>
+<p>编写如下文件</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;jni.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;android/log.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/input.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/time.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> LOG_TAG <span class="meta-string">"ZJX"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_SLOT 0x2f</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_TOUCH_MAJOR 0x30</span></span><br><span class="line"><span class="comment">/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_TOUCH_MINOR 0x31</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_WIDTH_MAJOR 0x32</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_WIDTH_MINOR 0x33</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_ORIENTATION 0x34</span></span><br><span class="line"><span class="comment">/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_POSITION_X 0x35</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_POSITION_Y 0x36</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_TOOL_TYPE 0x37</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_BLOB_ID 0x38</span></span><br><span class="line"><span class="comment">/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ABS_MT_TRACKING_ID 0x39</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> finger_count=<span class="number">0</span>;</span><br><span class="line"><span class="keyword">int</span> fd_touch=<span class="number">0</span>;</span><br><span class="line"><span class="keyword">int</span> finger_id=<span class="number">520</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sendEvent</span><span class="params">(__u16 type,__u16 code,<span class="keyword">int</span> value)</span></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">input_event</span> <span class="title">event</span>;</span></span><br><span class="line">    event.type = type;</span><br><span class="line">    event.code = code;</span><br><span class="line">    event.value = value;</span><br><span class="line">	<span class="comment">//    gettimeofday(&amp;event.time,0);</span></span><br><span class="line">	<span class="built_in">write</span>(fd_touch, &amp;event, <span class="keyword">sizeof</span>(event));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">touchMove</span><span class="params">(<span class="keyword">int</span> finger_index,<span class="keyword">int</span> x,<span class="keyword">int</span> y)</span></span>&#123;</span><br><span class="line">    sendEvent( EV_ABS,ABS_MT_SLOT,finger_index);</span><br><span class="line">    sendEvent( EV_ABS, ABS_MT_POSITION_X, x);</span><br><span class="line">    sendEvent( EV_ABS, ABS_MT_POSITION_Y, y);</span><br><span class="line">    sendEvent( EV_SYN, SYN_REPORT, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">touchDown</span><span class="params">(<span class="keyword">int</span> finger_index,<span class="keyword">int</span> x,<span class="keyword">int</span> y)</span></span>&#123;</span><br><span class="line">    finger_count++;</span><br><span class="line">    sendEvent( EV_ABS, ABS_MT_SLOT, finger_index);</span><br><span class="line">   	<span class="comment">//需要指定ABS_MT_TRACKING_ID，否则sendevent( EV_ABS, ABS_MT_TRACKING_ID, -1);不会生效</span></span><br><span class="line">   	sendEvent( EV_ABS, ABS_MT_TRACKING_ID, finger_id++);</span><br><span class="line">   	sendEvent( EV_ABS, ABS_MT_POSITION_X, x);</span><br><span class="line">   	sendEvent( EV_ABS, ABS_MT_POSITION_Y, y);</span><br><span class="line">   	<span class="keyword">if</span>(finger_count==<span class="number">1</span>)&#123;</span><br><span class="line">   	    sendEvent( EV_KEY, BTN_TOUCH, <span class="number">1</span>);</span><br><span class="line">   	&#125;</span><br><span class="line">   	sendEvent( EV_SYN, SYN_REPORT, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">touchUp</span><span class="params">(<span class="keyword">int</span> finger_index)</span> </span>&#123;</span><br><span class="line">   	finger_count--;</span><br><span class="line">   	sendEvent( EV_ABS, ABS_MT_SLOT, finger_index);</span><br><span class="line">   	sendEvent( EV_ABS, ABS_MT_TRACKING_ID, <span class="number">-1</span>);</span><br><span class="line">   	<span class="keyword">if</span>(finger_count==<span class="number">0</span>)&#123;</span><br><span class="line">   	    sendEvent( EV_KEY, BTN_TOUCH, <span class="number">0</span>);</span><br><span class="line">   	&#125;</span><br><span class="line">   	sendEvent( EV_SYN, SYN_REPORT, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在main写个测试</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">	fd_touch = <span class="built_in">open</span>(<span class="string">"/dev/input/event3"</span>, O_RDWR);</span><br><span class="line">   	<span class="keyword">if</span>(fd_touch&lt;=<span class="number">0</span>) &#123;</span><br><span class="line">       	<span class="keyword">return</span> env-&gt;NewStringUTF(strerror(errno));</span><br><span class="line">   	&#125;</span><br><span class="line">    	touchDown(<span class="number">0</span>,<span class="number">380</span>,<span class="number">400</span>);</span><br><span class="line"><span class="comment">//     touchDown(1,250,250);</span></span><br><span class="line"></span><br><span class="line">     touchMove(<span class="number">0</span>,<span class="number">300</span>,<span class="number">300</span>);</span><br><span class="line"><span class="comment">//     touchMove(1,350,350);</span></span><br><span class="line">     touchMove(<span class="number">0</span>,<span class="number">200</span>,<span class="number">400</span>);</span><br><span class="line"><span class="comment">//     touchMove(1,300,500);</span></span><br><span class="line">     touchMove(<span class="number">0</span>,<span class="number">350</span>,<span class="number">250</span>);</span><br><span class="line"><span class="comment">//     touchMove(1,250,250);</span></span><br><span class="line">     touchMove(<span class="number">0</span>,<span class="number">200</span>,<span class="number">600</span>);</span><br><span class="line"></span><br><span class="line">     touchUp(<span class="number">0</span>);</span><br><span class="line"><span class="comment">//     touchUp(1);</span></span><br><span class="line">   	<span class="built_in">close</span>(fd_touch);</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<blockquote>
+<p>这边我们是一接受到socket传来的值后，就进行处理，那么需要给inpue_event赋值time属性吗？</p>
+</blockquote>
+<p>不用赋值。做了下测试，感觉没赋值的话写入时默认就是当前时间，具体event文件读写原理有空再看。或者懂的大牛告诉我下。</p>
+<blockquote>
+<p>如果是自己写的程序想模拟长按，是通过赋值time还是Thread.sleep?</p>
+</blockquote>
+<p>如果想做延迟，要在上一层去做，而不是赋值time或者在本层堵塞线程,上一层做更安全。</p>
+<blockquote>
+<p>测试的时候，打印了onTouch(MotionEvent ev)中ev的值，发现部分move事件没找到，是被丢弃了吗？</p>
+</blockquote>
+<p>并不是，打印getevent就找到是都会响应的。</p>
+<p>只是由于指令太快 Move会进行合并，onTouch中打印getHistorySize就明白了</p>
+<p>所以不要因为测试的时候画板画出来的不是我们想要的路线就以为是数据被丢掉了- -</p>
+<h4 id="实现难度：4-5-5"><a href="#实现难度：4-5-5" class="headerlink" title="实现难度：4.5/5"></a><strong>实现难度：4.5/5</strong></h4><p>实现简单，代码量少。只要懂C Socket编程就可以了。</p>
+<h4 id="维护拓展：3-5-5"><a href="#维护拓展：3-5-5" class="headerlink" title="维护拓展：3.5/5"></a><strong>维护拓展：3.5/5</strong></h4><p>需要在自编译的android系统上，以input组用户运行</p>
+<p>或者在非自编译系统采用1.2的做法</p>
+<h4 id="需要root？-不确定"><a href="#需要root？-不确定" class="headerlink" title="需要root？ 不确定"></a><strong>需要root？</strong> 不确定</h4><p>自编译的系统，可以以shell用户写eventX文件</p>
+<p>当然最方便还是直接用root啦</p>
+<h4 id="效率延迟：5-5-1"><a href="#效率延迟：5-5-1" class="headerlink" title="效率延迟：5/5"></a><strong>效率延迟：5/5</strong></h4><p><strong><code>指令组响应时间</code></strong>&lt;10ms</p>
+<h4 id="推荐指数：-4-7-5"><a href="#推荐指数：-4-7-5" class="headerlink" title="推荐指数： 4.7/5"></a><strong>推荐指数：</strong> 4.7/5</h4><h3 id="2-3-jni"><a href="#2-3-jni" class="headerlink" title="2.3  jni"></a>2.3  jni</h3><p>数据处理与<strong>2.2</strong>一致，只是socket是Android Service去做的，通过jni调用</p>
+<p>做法：</p>
+<p>1.先修改文件权限</p>
+<pre><code>shell@android:/ $ su            
+root@android:/ # chmod 777 /dev/input/event3  注 Android 5.x 由于SELinux?还是权限受限</code></pre><p>2.然后往<code>/dev/input/eventX</code>写数据就好了</p>
+<pre><code>extern &quot;C&quot;
+jstring Java_com_example_zhengjx_myapplication_MainActivity_sendEvent2(
+    JNIEnv* env,
+    jobject obj,jint type,jint a,jint b,jint c) {
+    char *hello = &quot;Hello from C++&quot;;
+    fd_touch = open(&quot;/dev/input/event3&quot;, O_RDWR);
+    if(fd_touch&lt;=0) {
+        return env-&gt;NewStringUTF(strerror(errno));
+    }
+    //将系统当前时间以结构体形式返回给cur,初始时间戳
+    struct timeval cur;
+    gettimeofday(&amp;cur, NULL);
+    switch (type){
+        case 0:touchDown(a,b,c);break;
+        case 1:touchUp(a);break;
+        case 2:touchMove(a,b,c);break;
+    }
+    close(fd_touch);
+    return env-&gt;NewStringUTF(hello);
+}</code></pre><p>TEST:</p>
+<pre><code>sendEvent2(0,0,380,400);
+sendEvent2(2,0,300,300);
+sendEvent2(2,0,200,400);
+sendEvent2(2,0,350,250);
+sendEvent2(2,0,400,600);
+sendEvent2(1,0,0,0);</code></pre><blockquote>
+<p>与2.2相比就是多了一个jni调用的耗时(该部分耗时&lt;10ms)</p>
+</blockquote>
+<p>为了不让eventX 做move优化，该部分耗时反而是好的,测试的时候每条move指令都会响应，基本不会进行move合并。</p>
+<p>另外记得把event3文件开成全局的，防止每次都要创建 关闭流的耗时- -，而且不知道会不会有什么影响</p>
+<blockquote>
+<p>5.x chmod 777 后权限受限问题</p>
+</blockquote>
+<p>按解决问题的想法，不用root的方法我们用adb shell不会出现这问题，需要root的我们直接linux C，这方法没有什么价值。</p>
+<h4 id="实现难度：5-5-2"><a href="#实现难度：5-5-2" class="headerlink" title="实现难度：5/5"></a><strong>实现难度：5/5</strong></h4><p>实现简单，代码量少。</p>
+<h4 id="维护拓展：4-5"><a href="#维护拓展：4-5" class="headerlink" title="维护拓展：4/5"></a><strong>维护拓展：4/5</strong></h4><p>5.X 的 权限受限问题，正在研究解决方案。。</p>
+<h4 id="需要root？-需要"><a href="#需要root？-需要" class="headerlink" title="需要root？ 需要"></a><strong>需要root？</strong> 需要</h4><p>需要root用户先将eventX文件属性改为777</p>
+<h4 id="效率延迟：5-5-2"><a href="#效率延迟：5-5-2" class="headerlink" title="效率延迟：5/5"></a><strong>效率延迟：5/5</strong></h4><p><strong><code>指令组响应时间</code></strong>≈10ms</p>
+<h4 id="推荐指数：-4-7-5-1"><a href="#推荐指数：-4-7-5-1" class="headerlink" title="推荐指数： 4.7/5"></a><strong>推荐指数：</strong> 4.7/5</h4><h3 id="2-4-RootTools"><a href="#2-4-RootTools" class="headerlink" title="2.4  RootTools"></a>2.4  RootTools</h3><p>RootTools是一个用于执行linux指令的<a href="https://github.com/Stericson/RootTools" target="_blank" rel="noopener">开源工具</a></p>
+<p>用法：</p>
+<pre><code>CommandCapture cmd = new CommandCapture(0, &quot;sendevent /dev/input/event3 0 0 &quot;);
+RootTools.getShell(true).add(cmd);</code></pre><p>大致研究了下，是通过线程池顺序执行指令，效率又比Rumtime高那么一点点</p>
+<h4 id="实现难度：5-5-3"><a href="#实现难度：5-5-3" class="headerlink" title="实现难度：5/5"></a><strong>实现难度：5/5</strong></h4><p>实现简单，代码量少。</p>
+<h4 id="维护拓展：5-5"><a href="#维护拓展：5-5" class="headerlink" title="维护拓展：5/5"></a><strong>维护拓展：5/5</strong></h4><h4 id="需要root？-是-1"><a href="#需要root？-是-1" class="headerlink" title="需要root？ 是"></a><strong>需要root？</strong> 是</h4><h4 id="效率延迟：2-5"><a href="#效率延迟：2-5" class="headerlink" title="效率延迟：2/5"></a><strong>效率延迟：2/5</strong></h4><p><strong><code>指令组响应时间</code></strong> :指令组中指令数量：1条100ms 2条120-200ms 3+:200+ms</p>
+<h4 id="推荐指数：-2-5"><a href="#推荐指数：-2-5" class="headerlink" title="推荐指数： 2/5"></a><strong>推荐指数：</strong> 2/5</h4><h2 id="3-MotionEvent-obtain"><a href="#3-MotionEvent-obtain" class="headerlink" title="3. MotionEvent.obtain"></a>3. MotionEvent.obtain</h2><h3 id="3-1-Instrumentation"><a href="#3-1-Instrumentation" class="headerlink" title="3.1 Instrumentation"></a>3.1 Instrumentation</h3><h4 id="大致流程"><a href="#大致流程" class="headerlink" title="大致流程"></a>大致流程</h4><pre><code>Instrumentation m_Instrumentation = new Instrumentation();
+long downTime = SystemClock.uptimeMillis();
+long eventTime = SystemClock.uptimeMillis() + 100;
+long eventTime2 = SystemClock.uptimeMillis() + 200;
+float x=200.0f;
+float y=280.0f;
+m_Instrumentation.sendPointerSync(MotionEvent.obtain(downTime,
+downTime,MotionEvent.ACTION_DOWN,x, y, 0));
+for(int i=1;i&lt;=50;i++){
+    m_Instrumentation.sendPointerSync(MotionEvent.obtain(downTime,
+        SystemClock.uptimeMillis(),MotionEvent.ACTION_MOVE,x+i, y, 0));
+}
+for(int i=1;i&lt;=50;i++){
+    m_Instrumentation.sendPointerSync(MotionEvent.obtain(downTime,
+        SystemClock.uptimeMillis(),MotionEvent.ACTION_MOVE,x+50, y+i, 0));
+}
+for(int i=50;i&gt;=1;i--){
+    m_Instrumentation.sendPointerSync(MotionEvent.obtain(downTime,
+        SystemClock.uptimeMillis(),MotionEvent.ACTION_MOVE,x+i, y+50, 0));
+}
+for(int i=50;i&gt;=1;i--){
+    m_Instrumentation.sendPointerSync(MotionEvent.obtain(downTime,
+        SystemClock.uptimeMillis(),MotionEvent.ACTION_MOVE,x, y+i, 0));
+}
+m_Instrumentation.sendPointerSync(MotionEvent.obtain(downTime,
+    eventTime2,MotionEvent.ACTION_UP,550, 550, 0));</code></pre><p>API是开放的</p>
+<p>在其他应用上使用会出现这样的提示：</p>
+<p><code>java.lang.SecurityException: Injecting to another application requires INJECT_EVENTS permission</code></p>
+<p><code>http://stackoverflow.com/questions/22163424/android-java-lang-securityexception-injecting-to-another-application-requires</code> 无解</p>
+<p>添加权限无效，必须将该应用置为system应用.</p>
+<p>底层还是基于IwindowManager 去做的，这边我们不再分析直接讨论3.2</p>
+<h3 id="3-2-IWindowManager"><a href="#3-2-IWindowManager" class="headerlink" title="3.2 IWindowManager"></a>3.2 IWindowManager</h3><p>monkey，Robotium就是基于它做的</p>
+<pre><code>IWindowManager.Stub.asInterface(ServiceManager
+               .getService(&quot;window&quot;))).injectPointerEvent(event, true);</code></pre><p>从API 8开始IWindowManager接口就被屏蔽掉了，没有这个API直接调用。</p>
+<p>可以源码编译生成jar包 root权限下降jar导入    <code>/system/framework/</code>下，或者直接用反射(效率差点) </p>
+<p>如何跳出进程间限制？<a href="http://blog.csdn.net/zhubaitian/article/details/40430053" target="_blank" rel="noopener">该篇译文给出了链接</a></p>
+<h4 id="实现难度：4-5-1"><a href="#实现难度：4-5-1" class="headerlink" title="实现难度：4/5"></a><strong>实现难度：4/5</strong></h4><p>主要是多指的代码会比较多和复杂，不易封装。</p>
+<p>没有提供内部接口的问题解决方案也给出了，或者直接用<code>Instrumentation</code>。</p>
+<h4 id="维护拓展：4-5-1"><a href="#维护拓展：4-5-1" class="headerlink" title="维护拓展：4/5"></a><strong>维护拓展：4/5</strong></h4><p>研究的不深，可能有些坑存在</p>
+<h4 id="需要root？-否-2"><a href="#需要root？-否-2" class="headerlink" title="需要root？ 否"></a><strong>需要root？</strong> 否</h4><p>但是应用需要拥有system权限</p>
+<h4 id="效率延迟：3-5-5"><a href="#效率延迟：3-5-5" class="headerlink" title="效率延迟：3.5/5"></a><strong>效率延迟：3.5/5</strong></h4><p><strong><code>指令组响应时间</code></strong>20~50ms</p>
+<h4 id="推荐指数：-4-5"><a href="#推荐指数：-4-5" class="headerlink" title="推荐指数： 4/5"></a><strong>推荐指数：</strong> 4/5</h4><h2 id="Accessibilityservice"><a href="#Accessibilityservice" class="headerlink" title="Accessibilityservice"></a>Accessibilityservice</h2><p>借助Android提供的无障碍服务<br>在<code>res/xml</code>目录下新建一个<code>accessibility_service_config.xml</code>文件</p>
+<pre><code>&lt;intent-filter&gt;
+    &lt;action android:name=&quot;android.accessibilityservice.AccessibilityService&quot; /&gt;
+&lt;/intent-filter&gt;</code></pre><p><code>http://blog.csdn.net/sinyu890807/article/details/47803149</code></p>
+<p>实现要各种判断:</p>
+<pre><code>窗口名太多 手动生成accessibility_service_config再service手动Intent注入action不太合适
+然后操作节点等又是很麻烦的一件事：适合对已知节点操作，不适合模拟</code></pre><p><strong>(弃</strong></p>
+<p>其他：非root方法</p>
+<p>通过hook方法绕过权限验证</p>
+<pre><code>//http://blog.sina.com.cn/s/blog_151b043850102wiv9.html</code></pre><p>以后有空再研究</p>
+<h1 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h1><p>sendevent.c<br><a href="http://www.netmite.com/android/mydroid/system/core/toolbox/sendevent.c" target="_blank" rel="noopener">http://www.netmite.com/android/mydroid/system/core/toolbox/sendevent.c</a><br><a href="http://androidxref.com/4.4.4_r1/xref/system/core/toolbox/getevent.c" target="_blank" rel="noopener">http://androidxref.com/4.4.4_r1/xref/system/core/toolbox/getevent.c</a></p>
+<h1 id="防退出全屏"><a href="#防退出全屏" class="headerlink" title="防退出全屏"></a>防退出全屏</h1><p>1.状态栏</p>
+<h2 id="纯客户端去做"><a href="#纯客户端去做" class="headerlink" title="纯客户端去做"></a>纯客户端去做</h2><p>目前比较简单的定义是：<br>当TOUCH_DOWN处于 纵坐标0.9-1.0区域时，将此时的事件放入buffer,<br>接下来的操作，如果为TOUCH_MOVE,且其坐标在TOUCH_DOWN的坐标上方，都将放入buffer。</p>
+<p><strong>客户端去做不太可行 一些奇怪的手势不能过滤掉</strong> </p>
+<h2 id="做一个系统应用，需要有系统签名"><a href="#做一个系统应用，需要有系统签名" class="headerlink" title="做一个系统应用，需要有系统签名"></a>做一个系统应用，需要有系统签名</h2><pre><code> 1   public static final void collapseStatusBar(Context ctx) {
+ 2   Object sbservice = ctx.getSystemService(&quot;statusbar&quot;);
+ 3   try {
+ 4   Class&lt;?&gt; statusBarManager = Class.forName(&quot;android.app.StatusBarManager&quot;);
+ 5   Method collapse;
+ 6   if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+ 7   collapse = statusBarManager.getMethod(&quot;collapsePanels&quot;);
+ 8   } else {
+ 9   collapse = statusBarManager.getMethod(&quot;collapse&quot;);
+10   }
+11   collapse.invoke(sbservice);
+12   } catch (Exception e) {
+13   e.printStackTrace();
+14   }
+15   }</code></pre><p>collapse只是折叠状态栏，还是能强行拖动下拉，不能根本的屏蔽</p>
+<p>需要调用disable方法</p>
+<pre><code>@Override
+protected void onResume() {
+    Toast.makeText(this,&quot;onResume&quot;,Toast.LENGTH_LONG).show();
+    Object service = getSystemService(&quot;statusbar&quot;);
+    try {
+        Class &lt;?&gt; statusBarManager = Class.forName(&quot;android.app.StatusBarManager&quot;);
+        Method expand = statusBarManager.getMethod(&quot;disable&quot;,int.class);
+        expand.invoke (service,0x00010000);
+        Toast.makeText(this,&quot;success&quot;,Toast.LENGTH_LONG).show();
+    } catch (Exception e) {
+        Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show();
+        e.printStackTrace();
+    }
+    super.onResume();
+}
+@Override
+protected void onDestroy() {
+    //解除禁止，反射 mStatusBarManager.disable(StatusBarManager.DISABLE_NONE);0x00000000
+    super.onDestroy();
+}
+
+
+package=&quot;com.ws.tryplayservice&quot; android:sharedUserId=&quot;android.uid.system&quot;&gt;
+&lt;uses-permission android:name=&quot;android.permission.STATUS_BAR&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.EXPAND_STATUS_BAR&quot; /&gt;</code></pre><p>2.底部导航栏</p>
+<p>需求是不让导航栏显示，也就是我们的虚拟按键按键不显示，那么在模拟器配置HardWare Profiel中开启硬件按钮（Has HardWare Button）</p>
+<h1 id="捕获基本知识"><a href="#捕获基本知识" class="headerlink" title="捕获基本知识"></a>捕获基本知识</h1><pre><code>//ACTION_POINTER_i_DOWN:5 261 517 773 存在触点的情况下 DOWN
+//ACTION_POINTER_i_UP:6 262 518 774   存在触点的情况下 UP
+//每次UP时返回index后，再次UP时系统会重做填充，
+//即按顺序1 2 3 4 DOWN后， UP了1 返回6 此时UP 2 返回的还是6 说明再次UP时会把触点INDEX往前填充
+//多个触点时，UP第一个返回的是6，但是只有一个触点时返回的是2
+//按顺序1 2 3 4 DOWN后，UP 1返回6，此时再DOWN 5返回的是5，说明再次DOWN会从头找开始填充
+//UP时，通过event.getPointerCount()得到的数量不会变，只有再次才会更新，因为我们需要得到UP点的x,y等信息
+// DOWN 0 1 2 后 UP 了 1 此时剩 0 2 getPointerId(1)可以返回index=1的点id为2
+//需要理清的是pointerIndex与pointerID非等同
+//非MOVE事件，触点坐标也可能改变。例：1 2指按，1指抬，ACTION=6 此时获取2指的x,y可能会与1指未抬时的位置不一致
+//因为触摸屏是按一定时间间隔的，在这很小的时间间隔内，同时出现了MOVE和UP,优先UP,所以ACTION=UP 但是位置还是会移动
+//压力 等传感器 暂时不考虑，触摸点直径也暂时不考虑
+//出现哪些事件需要发数据，发什么数据？与sendEvent对应
+//0.(重)进游戏界面时，发送清空所有触点的指令
+//1.DOWN  or UP 发其位置 SENDEVENT 1 or 0 具体数据 同时更新 删除数组数据
+//2.MOVE  按ID得到新的位置 与之前进行比较</code></pre><h1 id="捕获时异常"><a href="#捕获时异常" class="headerlink" title="捕获时异常"></a>捕获时异常</h1><p>单指下：<br>在GameView中滑动时(DOWN在GameView中) 能够捕获到touch信息，滑动到GameView外也能捕获到MOVE,UP信息。<br>而从GameView外滑进GameView(down在GameView外)捕获不到touch信息</p>
+<p>多指：<br>若已有一个触点在GameView内（可以捕获到touch信息），另一个触点从GameView外滑入。也是可以捕获得到另一个触点的touch信息。<br>因为第二个触点的down不是TOUCH_DOWN 而是 TOUCH_POINTER_DOWN</p>
+<p>总的来说，只要有touchdown事件，直接对屏幕的操作都能被捕获到</p>
+<p>如果从画面外开始的touch都过滤的话 操作如下：</p>
+<p>onTouch放在GameView上监听</p>
+<p>if(opt=touch_down){<br>    正常发送<br>}<br>else if(opt=touch_up){<br>    正常发送<br>}<br>else if(opt=touch_move){<br>    for(){<br>        if(ID处于黑名单)该id的move不发送<br>        else 正常发送<br>    }<br>}else if(opt=touch_pointer_down){<br>    if(down坐标处于GameView之外)将该id放入黑名单<br>    else 正常发送<br>}else if(opt=touch_pointer_up){<br>    if(id处于黑名单)则该id的up不发送<br>    else 正常发送<br>}</p>
+<p>如果要保留从画面外开始的touch,直到画面内才开始捕获：</p>
+<p>onTouch放在GameView的外层GameViewLayout上去监听</p>
+<pre><code>int opt = event.getAction();
+Log.d(TAG, &quot;onTouch: &quot; + opt);
+if (opt == 2) {
+    List&lt;TouchEvent&gt; whiteList = new ArrayList();
+    for (int i = 0; i &lt; pointerCount; i++) {
+        int id = event.getPointerId(i);
+        float x = event.getX(i);
+        float y = event.getY(i);
+        //if id位于灰名单，如果move进GameView则需要补上down事件,并从灰名单中删除
+        //else 放入白名单，最后list发送
+        if (graySet.contains(id)) {
+            //不位于GameView则不处理
+            if (locateGameView(x, y)) {
+                //之前未发过down则发送down事件
+                receiveData(new TouchEvent(id, 0, x, y));
+                graySet.remove(id);
+                receiveData(new SyncEvent(pointerCount-graySet.size()));
+            }
+        } else {
+            whiteList.add(new TouchEvent(id, 2, x, y));
+        }
+    }
+    if (whiteList != null &amp;&amp; whiteList.size() &gt; 0) {
+        receiveData(whiteList);
+    }
+} else if (opt == 0 || (opt - 5) % 256 == 0) {
+    //为了简化，我们假设这过程不会进行MOVE
+    //ind 指当前触摸序列的索引值，不一定连续
+    //获取id还得通过getPointerId
+    int ind = (event.getAction() - 5) / 256;
+    int id = event.getPointerId(ind);
+    float x = event.getX(ind);
+    float y = event.getY(ind);
+    if (!locateGameView(x, y)) {
+        //将该id放入灰名单
+        Log.d(TAG, &quot;receiveData:graySet.add&quot;);
+        graySet.add(id);
+    } else {
+        receiveData(new TouchEvent(id, 0, x, y));
+        receiveData(new SyncEvent(pointerCount-graySet.size()));
+    }
+} else if (opt == 1 || (opt - 6) % 256 == 0) {
+    int ind = (event.getAction() - 6) / 256;
+    int id = event.getPointerId(ind);
+    //if 处于灰名单 移除
+    //else 发送up事件
+    if (!graySet.contains(id)) {
+        receiveData(new TouchEvent(id, 1, 0, 0));
+        receiveData(new SyncEvent(pointerCount -graySet.size() - 1));
+    }else{
+        graySet.remove(id);
+    }
+}</code></pre><h1 id="模拟器不支持Muiti-Touch"><a href="#模拟器不支持Muiti-Touch" class="headerlink" title="模拟器不支持Muiti-Touch"></a>模拟器不支持Muiti-Touch</h1><p>一开始以为要升级模拟器版本，好像是不同模拟器默认的触控协议不一样，我们的方式的话要用B协议，A协议的话代码需要修改。</p>
+<p>SYN_EVENT里面有</p>
+<pre><code>#define SYN_REPORT 0
+#define SYN_CONFIG 1
+/* SYN_MT_REPORT 与多点触控也有关系 不知道低版本是否兼容 */
+#define SYN_MT_REPORT 2</code></pre>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%A4%9A%E7%82%B9%E8%A7%A6%E6%8E%A7/" rel="tag"># 多点触控</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/10/18/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E7%9B%91%E5%90%AC%E5%B1%8F%E5%B9%95%E6%97%8B%E8%BD%AC/" rel="prev" title="Android监听屏幕旋转">
+      <i class="fa fa-chevron-left"></i> Android监听屏幕旋转
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/01/07/2018Q1/%E8%B6%A3%E5%91%B3js-%E5%8F%AA%E7%94%A81%E5%92%8C%E7%89%B9%E6%AE%8A%E5%AD%97%E7%AC%A6%E7%94%9F%E6%88%90%E5%AD%97%E7%AC%A6%E4%B8%B2/" rel="next" title="趣味js-只用特殊字符生成任意字符串">
+      趣味js-只用特殊字符生成任意字符串 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据采集"><span class="nav-number">2.</span> <span class="nav-text">数据采集</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Android端"><span class="nav-number">2.1.</span> <span class="nav-text">Android端</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Web"><span class="nav-number">2.2.</span> <span class="nav-text">Web</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#嵌入式设备"><span class="nav-number">2.3.</span> <span class="nav-text">嵌入式设备</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据编码"><span class="nav-number">3.</span> <span class="nav-text">数据编码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据传输"><span class="nav-number">4.</span> <span class="nav-text">数据传输</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#socket"><span class="nav-number">4.1.</span> <span class="nav-text">socket</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#客户端"><span class="nav-number">4.1.1.</span> <span class="nav-text">客户端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#服务端"><span class="nav-number">4.1.2.</span> <span class="nav-text">服务端</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DataChannel"><span class="nav-number">4.2.</span> <span class="nav-text">DataChannel</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据解码"><span class="nav-number">5.</span> <span class="nav-text">数据解码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据模拟"><span class="nav-number">6.</span> <span class="nav-text">数据模拟</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-adb-shell"><span class="nav-number">6.1.</span> <span class="nav-text">1. adb shell</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-server端执行shell脚本"><span class="nav-number">6.1.1.</span> <span class="nav-text">1.1 server端执行shell脚本</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#大致流程："><span class="nav-number">6.1.1.1.</span> <span class="nav-text">大致流程：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：5-5"><span class="nav-number">6.1.1.2.</span> <span class="nav-text">实现难度：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：-1-5"><span class="nav-number">6.1.1.3.</span> <span class="nav-text">维护拓展： 1&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-否"><span class="nav-number">6.1.1.4.</span> <span class="nav-text">需要root？ 否</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：1-5"><span class="nav-number">6.1.1.5.</span> <span class="nav-text">效率延迟：1&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-1-5"><span class="nav-number">6.1.1.6.</span> <span class="nav-text">推荐指数： 1&#x2F;5</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-android端执行adb-shell用户启动的程序"><span class="nav-number">6.1.2.</span> <span class="nav-text">1.2 android端执行adb shell用户启动的程序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#大致流程：-1"><span class="nav-number">6.1.2.1.</span> <span class="nav-text">大致流程：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：4-5"><span class="nav-number">6.1.2.2.</span> <span class="nav-text">实现难度：4&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：-4-5"><span class="nav-number">6.1.2.3.</span> <span class="nav-text">维护拓展： 4&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-否-1"><span class="nav-number">6.1.2.4.</span> <span class="nav-text">需要root？ 否</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：5-5"><span class="nav-number">6.1.2.5.</span> <span class="nav-text">效率延迟：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-4-5-5"><span class="nav-number">6.1.2.6.</span> <span class="nav-text">推荐指数： 4.5&#x2F;5</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Android端-root-sendevent"><span class="nav-number">6.2.</span> <span class="nav-text">2. Android端 root sendevent</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Runtime-getRuntime-exec-“su”"><span class="nav-number">6.2.1.</span> <span class="nav-text">2.1 Runtime.getRuntime().exec(“su”)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#大致流程：-2"><span class="nav-number">6.2.1.1.</span> <span class="nav-text">大致流程：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：5-5-1"><span class="nav-number">6.2.1.2.</span> <span class="nav-text">实现难度：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：1-5"><span class="nav-number">6.2.1.3.</span> <span class="nav-text">维护拓展：1&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-是"><span class="nav-number">6.2.1.4.</span> <span class="nav-text">需要root？ 是</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：1-5-1"><span class="nav-number">6.2.1.5.</span> <span class="nav-text">效率延迟：1&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-1-5-1"><span class="nav-number">6.2.1.6.</span> <span class="nav-text">推荐指数： 1&#x2F;5</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-linux-c"><span class="nav-number">6.2.2.</span> <span class="nav-text">2.2 linux c</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：4-5-5"><span class="nav-number">6.2.2.1.</span> <span class="nav-text">实现难度：4.5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：3-5-5"><span class="nav-number">6.2.2.2.</span> <span class="nav-text">维护拓展：3.5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-不确定"><span class="nav-number">6.2.2.3.</span> <span class="nav-text">需要root？ 不确定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：5-5-1"><span class="nav-number">6.2.2.4.</span> <span class="nav-text">效率延迟：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-4-7-5"><span class="nav-number">6.2.2.5.</span> <span class="nav-text">推荐指数： 4.7&#x2F;5</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-jni"><span class="nav-number">6.2.3.</span> <span class="nav-text">2.3  jni</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：5-5-2"><span class="nav-number">6.2.3.1.</span> <span class="nav-text">实现难度：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：4-5"><span class="nav-number">6.2.3.2.</span> <span class="nav-text">维护拓展：4&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-需要"><span class="nav-number">6.2.3.3.</span> <span class="nav-text">需要root？ 需要</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：5-5-2"><span class="nav-number">6.2.3.4.</span> <span class="nav-text">效率延迟：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-4-7-5-1"><span class="nav-number">6.2.3.5.</span> <span class="nav-text">推荐指数： 4.7&#x2F;5</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-RootTools"><span class="nav-number">6.2.4.</span> <span class="nav-text">2.4  RootTools</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：5-5-3"><span class="nav-number">6.2.4.1.</span> <span class="nav-text">实现难度：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：5-5"><span class="nav-number">6.2.4.2.</span> <span class="nav-text">维护拓展：5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-是-1"><span class="nav-number">6.2.4.3.</span> <span class="nav-text">需要root？ 是</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：2-5"><span class="nav-number">6.2.4.4.</span> <span class="nav-text">效率延迟：2&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-2-5"><span class="nav-number">6.2.4.5.</span> <span class="nav-text">推荐指数： 2&#x2F;5</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-MotionEvent-obtain"><span class="nav-number">6.3.</span> <span class="nav-text">3. MotionEvent.obtain</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Instrumentation"><span class="nav-number">6.3.1.</span> <span class="nav-text">3.1 Instrumentation</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#大致流程"><span class="nav-number">6.3.1.1.</span> <span class="nav-text">大致流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-IWindowManager"><span class="nav-number">6.3.2.</span> <span class="nav-text">3.2 IWindowManager</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#实现难度：4-5-1"><span class="nav-number">6.3.2.1.</span> <span class="nav-text">实现难度：4&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#维护拓展：4-5-1"><span class="nav-number">6.3.2.2.</span> <span class="nav-text">维护拓展：4&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#需要root？-否-2"><span class="nav-number">6.3.2.3.</span> <span class="nav-text">需要root？ 否</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#效率延迟：3-5-5"><span class="nav-number">6.3.2.4.</span> <span class="nav-text">效率延迟：3.5&#x2F;5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#推荐指数：-4-5"><span class="nav-number">6.3.2.5.</span> <span class="nav-text">推荐指数： 4&#x2F;5</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Accessibilityservice"><span class="nav-number">6.4.</span> <span class="nav-text">Accessibilityservice</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附录"><span class="nav-number">7.</span> <span class="nav-text">附录</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#防退出全屏"><span class="nav-number">8.</span> <span class="nav-text">防退出全屏</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#纯客户端去做"><span class="nav-number">8.1.</span> <span class="nav-text">纯客户端去做</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#做一个系统应用，需要有系统签名"><span class="nav-number">8.2.</span> <span class="nav-text">做一个系统应用，需要有系统签名</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#捕获基本知识"><span class="nav-number">9.</span> <span class="nav-text">捕获基本知识</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#捕获时异常"><span class="nav-number">10.</span> <span class="nav-text">捕获时异常</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#模拟器不支持Muiti-Touch"><span class="nav-number">11.</span> <span class="nav-text">模拟器不支持Muiti-Touch</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

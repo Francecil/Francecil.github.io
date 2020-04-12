@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言本次分析的是 adblockplus 的 3.3.2_0 版本， 源码见 adblockplus">
+<meta property="og:type" content="article">
+<meta property="og:title" content="adblockplus.js源码解析">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2018&#x2F;09&#x2F;15&#x2F;2018Q3&#x2F;adblockplus.js%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言本次分析的是 adblockplus 的 3.3.2_0 版本， 源码见 adblockplus">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-09-15T02:18:32.000Z">
+<meta property="article:modified_time" content="2020-04-01T15:21:31.156Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="gahing">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2018/09/15/2018Q3/adblockplus.js%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>adblockplus.js源码解析 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2018/09/15/2018Q3/adblockplus.js%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          adblockplus.js源码解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-09-15 10:18:32" itemprop="dateCreated datePublished" datetime="2018-09-15T10:18:32+08:00">2018-09-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本次分析的是 <code>adblockplus</code> 的 3.3.2_0 版本，</p>
+<p>源码见 <a href="https://github.com/adblockplus/adblockpluschrome" target="_blank" rel="noopener">adblockplus</a> </p>
+<a id="more"></a>
+
+
+<h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>每个模块的写法大致都是以下这样的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">require</span>.scopes.xxx = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">var</span> obj =  &#123;&#125;</span><br><span class="line">  obj.Xxx = &#123;</span><br><span class="line">    <span class="comment">//公有方法</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> obj</span><br><span class="line">&#125;()</span><br></pre></td></tr></table></figure>
+
+<p>其他模块使用</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> xxx = <span class="built_in">require</span>(<span class="string">"xxx"</span>).Xxx</span><br></pre></td></tr></table></figure>
+
+<h1 id="模块解析"><a href="#模块解析" class="headerlink" title="模块解析"></a>模块解析</h1><h2 id="过滤器模块"><a href="#过滤器模块" class="headerlink" title="过滤器模块"></a>过滤器模块</h2><p>核心代码，从 fromText 入手</p>
+<p>在 fromText 中，对规则进行分类，构造相应的过滤器</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Cache for known filters, maps string representation to filter objects.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@type <span class="type">&#123;Map.&lt;string,Filter&gt;&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Filter.knownFilters = <span class="keyword">new</span> <span class="built_in">Map</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Regular expression that content filters should match</span></span><br><span class="line"><span class="comment"> * 匹配内容过滤器，会继续细分 元素隐藏 等过滤器</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@type <span class="type">&#123;RegExp&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Filter.contentRegExp = <span class="regexp">/^([^/*|@"!]*?)#([@?$])?#(.+)$/</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Regular expression that RegExp filters specified as RegExps should match</span></span><br><span class="line"><span class="comment"> * 匹配正则形式的规则</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@type <span class="type">&#123;RegExp&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Filter.regexpRegExp = <span class="regexp">/^(@@)?\/.*\/(?:\$~?[\w-]+(?:=[^,\s]+)?(?:,~?[\w-]+(?:=[^,\s]+)?)*)?$/</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Regular expression that options on a RegExp filter should match</span></span><br><span class="line"><span class="comment"> * 匹配过滤规则选项，这些选项放在$后 并以,分割</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@type <span class="type">&#123;RegExp&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Filter.optionsRegExp = <span class="regexp">/\$(~?[\w-]+(?:=[^,]*)?(?:,~?[\w-]+(?:=[^,]*)?)*)$/</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Regular expression that matches an invalid Content Security Policy</span></span><br><span class="line"><span class="comment"> * 匹配无效的csp</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@type <span class="type">&#123;RegExp&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Filter.invalidCSPRegExp = <span class="regexp">/(;|^) ?(base-uri|referrer|report-to|report-uri|upgrade-insecure-requests)\b/i</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Creates a filter of correct type from its text representation - does the</span></span><br><span class="line"><span class="comment"> * basic parsing and calls the right constructor then.</span></span><br><span class="line"><span class="comment"> * 解析单行字符串，构造相应过滤器</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>text   as in Filter()</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return <span class="type">&#123;Filter&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Filter.fromText = <span class="function"><span class="keyword">function</span>(<span class="params">text</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="comment">// 判断字符串是否已被解析成过滤器</span></span><br><span class="line">  <span class="keyword">let</span> filter = Filter.knownFilters.get(text);</span><br><span class="line">  <span class="keyword">if</span> (filter)</span><br><span class="line">    <span class="keyword">return</span> filter;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">let</span> match = text.includes(<span class="string">"#"</span>) ? Filter.contentRegExp.exec(text) : <span class="literal">null</span>;</span><br><span class="line">  <span class="comment">//匹配内容过滤器</span></span><br><span class="line">  <span class="keyword">if</span> (match)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">let</span> propsMatch;</span><br><span class="line">    <span class="keyword">if</span> (!match[<span class="number">2</span>] &amp;&amp;</span><br><span class="line">        (propsMatch = <span class="regexp">/\[-abp-properties=(["'])([^"']+)\1\]/</span>.exec(match[<span class="number">3</span>])))</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="comment">// This is legacy CSS properties syntax, convert to current syntax</span></span><br><span class="line">      <span class="comment">// 转化遗留css语法到当前语法--引号形式变成括号形式，例[-abp-properties='width:300px;height:250px;'] will be converted to :-abp-properties(width:300px;height:250px;)</span></span><br><span class="line">      <span class="comment">// 括号中内容表示赋值这些属性给元素style ; match[3] ：选择器及-abp-properties内容</span></span><br><span class="line">      <span class="comment">// </span></span><br><span class="line">      <span class="keyword">let</span> prefix = match[<span class="number">3</span>].substr(<span class="number">0</span>, propsMatch.index);</span><br><span class="line">      <span class="keyword">let</span> expression = propsMatch[<span class="number">2</span>];</span><br><span class="line">      <span class="keyword">let</span> suffix = match[<span class="number">3</span>].substr(propsMatch.index + propsMatch[<span class="number">0</span>].length);</span><br><span class="line">      <span class="keyword">return</span> Filter.fromText(<span class="string">`<span class="subst">$&#123;match[<span class="number">1</span>]&#125;</span>#?#`</span> +</span><br><span class="line">          <span class="string">`<span class="subst">$&#123;prefix&#125;</span>:-abp-properties(<span class="subst">$&#123;expression&#125;</span>)<span class="subst">$&#123;suffix&#125;</span>`</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    filter = ContentFilter.fromText(text, match[<span class="number">1</span>], match[<span class="number">2</span>], match[<span class="number">3</span>]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//匹配注释规则</span></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (text[<span class="number">0</span>] == <span class="string">"!"</span>)</span><br><span class="line">    filter = <span class="keyword">new</span> CommentFilter(text);</span><br><span class="line">  <span class="comment">//匹配正则形式规则</span></span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    filter = RegExpFilter.fromText(text);</span><br><span class="line">  <span class="comment">//缓存</span></span><br><span class="line">  Filter.knownFilters.set(filter.text, filter);</span><br><span class="line">  <span class="keyword">return</span> filter;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="内容过滤器-ContentFilter"><a href="#内容过滤器-ContentFilter" class="headerlink" title="内容过滤器-ContentFilter"></a>内容过滤器-ContentFilter</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">match = <span class="regexp">/^([^/*|@"!]*?)#([@?$])?#(.+)$/</span>.exec(text)</span><br><span class="line">ContentFilter.fromText(text, match[<span class="number">1</span>], match[<span class="number">2</span>], match[<span class="number">3</span>])</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Creates a content filter from a pre-parsed text representation</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>text         same as in Filter()</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[domains]</span></span><br><span class="line"><span class="comment"> *   domains part of the text representation</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[type]</span></span><br><span class="line"><span class="comment"> *   rule type, either:</span></span><br><span class="line"><span class="comment"> *     &lt;li&gt;"" for an element hiding filter&lt;/li&gt;</span></span><br><span class="line"><span class="comment"> *     &lt;li&gt;"@" for an element hiding exception filter&lt;/li&gt;</span></span><br><span class="line"><span class="comment"> *     &lt;li&gt;"?" for an element hiding emulation filter&lt;/li&gt;</span></span><br><span class="line"><span class="comment"> *     &lt;li&gt;"$" for a snippet filter&lt;/li&gt;</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> <span class="variable">body</span></span></span></span><br><span class="line"><span class="comment"> *   body part of the text representation, either a CSS selector or a snippet</span></span><br><span class="line"><span class="comment"> *   script</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return <span class="type">&#123;ElemHideFilter|ElemHideException|</span></span></span></span><br><span class="line"><span class="comment"><span class="doctag"><span class="type"> *          ElemHideEmulationFilter|SnippetFilter|InvalidFilter&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">ContentFilter.fromText = <span class="function"><span class="keyword">function</span>(<span class="params">text, domains, type, body</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="comment">// We don't allow content filters which have any empty domains.</span></span><br><span class="line">  <span class="comment">// Note: The ContentFilter.prototype.domainSeparator is duplicated here, if</span></span><br><span class="line">  <span class="comment">// that changes this must be changed too.</span></span><br><span class="line">  <span class="comment">// 存在空的域名，即 'a.com,,b.com' 逗号中间为空，故该规则无效</span></span><br><span class="line">  <span class="keyword">if</span> (domains &amp;&amp; <span class="regexp">/(^|,)~?(,|$)/</span>.test(domains))</span><br><span class="line">    <span class="comment">// 无效过滤器</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> InvalidFilter(text, <span class="string">"filter_invalid_domain"</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (type == <span class="string">"@"</span>)</span><br><span class="line">    <span class="comment">//元素隐藏例外过滤器，即匹配规则的不进行元素隐藏</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> ElemHideException(text, domains, body);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (type == <span class="string">"$"</span>)</span><br><span class="line">    <span class="comment">// script片段过滤器，目前仅找到该条规则</span></span><br><span class="line">    <span class="comment">// e.g. ipv6.baidu.com,xueshu.baidu.com,www.baidu.com,www1.baidu.com#$#hide-if-contains 广告 .c-container '.f13 &gt; .m'</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> SnippetFilter(text, domains, body);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (type == <span class="string">"?"</span>)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// Element hiding emulation filters are inefficient so we need to make sure</span></span><br><span class="line">    <span class="comment">// that they're only applied if they specify active domains</span></span><br><span class="line">    <span class="comment">// 元素隐藏拓展选择器过滤器。可以使用拓展语法，但是有性能影响,需要指定域名使用</span></span><br><span class="line">    <span class="comment">//e.g. 58.com#?#.ac_item:-abp-has(.jingpin) 规则用到了-abp-has拓展选择器</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="regexp">/,[^~][^,.]*\.[^,]/</span>.test(<span class="string">","</span> + domains))</span><br><span class="line">      <span class="comment">//未设置域名</span></span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">new</span> InvalidFilter(text, <span class="string">"filter_elemhideemulation_nodomain"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> ElemHideEmulationFilter(text, domains, body);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//默认元素隐藏过滤器</span></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> ElemHideFilter(text, domains, body);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="注释过滤器-CommentFilter"><a href="#注释过滤器-CommentFilter" class="headerlink" title="注释过滤器-CommentFilter"></a>注释过滤器-CommentFilter</h3><p>不做处理</p>
+<h3 id="正则过滤器-RegExpFilter"><a href="#正则过滤器-RegExpFilter" class="headerlink" title="正则过滤器-RegExpFilter"></a>正则过滤器-RegExpFilter</h3><h3 id="无效过滤器-InvalidFilter"><a href="#无效过滤器-InvalidFilter" class="headerlink" title="无效过滤器-InvalidFilter"></a>无效过滤器-InvalidFilter</h3><h2 id="匹配器-Matcher"><a href="#匹配器-Matcher" class="headerlink" title="匹配器 Matcher"></a>匹配器 Matcher</h2><p>规则匹配过滤器的过程</p>
+<ol>
+<li>将url分割成关键字候选列表<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Tests whether the URL matches any of the known filters</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> <span class="variable">location</span></span></span></span><br><span class="line"><span class="comment"> *   URL to be tested</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;number&#125;</span> <span class="variable">typeMask</span></span></span></span><br><span class="line"><span class="comment"> *   bitmask of content / request types to match</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> <span class="variable">docDomain</span></span></span></span><br><span class="line"><span class="comment"> *   domain name of the document that loads the URL</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;boolean&#125;</span> <span class="variable">thirdParty</span></span></span></span><br><span class="line"><span class="comment"> *   should be true if the URL is a third-party request</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;string&#125;</span> <span class="variable">sitekey</span></span></span></span><br><span class="line"><span class="comment"> *   public key provided by the document</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;boolean&#125;</span> <span class="variable">specificOnly</span></span></span></span><br><span class="line"><span class="comment"> *   should be true if generic matches should be ignored</span></span><br><span class="line"><span class="comment"> *   非通用匹配，即含有css拓展选择器</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return <span class="type">&#123;?RegExpFilter&#125;</span></span></span></span><br><span class="line"><span class="comment"> *   matching filter or null</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">matchesAny(location, typeMask, docDomain, thirdParty, sitekey, specificOnly)&#125;&#123;</span><br><span class="line">  <span class="keyword">let</span> candidates = location.toLowerCase().match(<span class="regexp">/[a-z0-9%]&#123;3,&#125;/g</span>);</span><br><span class="line">  <span class="keyword">if</span> (candidates === <span class="literal">null</span>)candidates = [];</span><br><span class="line">  candidates.push(<span class="string">""</span>);</span><br><span class="line">  <span class="comment">//2.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>遍历关键字候选列表，判断该url属于哪个过滤器<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> blacklistHit = <span class="literal">null</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = candidates.length; i &lt; l; i++) &#123;</span><br><span class="line">  <span class="keyword">let</span> substr = candidates[i];</span><br><span class="line">  <span class="comment">//在白名单列表中，直接返回</span></span><br><span class="line">  <span class="keyword">let</span> result = <span class="keyword">this</span>.whitelist._checkEntryMatch(</span><br><span class="line">    substr, location, typeMask, docDomain, thirdParty, sitekey</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">if</span> (result)</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">  <span class="keyword">if</span> (blacklistHit === <span class="literal">null</span>) &#123;</span><br><span class="line">    blacklistHit = <span class="keyword">this</span>.blacklist._checkEntryMatch(</span><br><span class="line">      substr, location, typeMask, docDomain, thirdParty, sitekey,</span><br><span class="line">      specificOnly</span><br><span class="line">    );</span><br><span class="line">    <span class="comment">//这里命中黑名单不直接返回原因是为了确保没有关键字候选命中白名单</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> blacklistHit;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<ul>
+<li>_checkEntryMatch 过程</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">_checkEntryMatch(keyword, location, typeMask, docDomain, thirdParty, sitekey, specificOnly) &#123;</span><br><span class="line">          <span class="comment">//获取关键字对应的过滤器列表</span></span><br><span class="line">          <span class="keyword">let</span> list = <span class="keyword">this</span>.filterByKeyword.get(keyword);</span><br><span class="line">          <span class="keyword">if</span> (<span class="keyword">typeof</span> list == <span class="string">"undefined"</span>) &#123; <span class="keyword">return</span> <span class="literal">null</span>; &#125;</span><br><span class="line">          <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; list.length; i++) &#123;</span><br><span class="line">            <span class="keyword">let</span> filter = list[i];</span><br><span class="line">            <span class="comment">// 属于css拓展规则，而该过滤器匹配通用规则且不在白名单（例外规则过滤器）中，则跳过</span></span><br><span class="line">            <span class="keyword">if</span> (specificOnly &amp;&amp; filter.isGeneric() &amp;&amp;</span><br><span class="line">              !(filter <span class="keyword">instanceof</span> WhitelistFilter))</span><br><span class="line">              <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (filter.matches(location, typeMask, docDomain, thirdParty, sitekey))</span><br><span class="line">              <span class="keyword">return</span> filter;</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;,</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>过滤器匹配</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">         * Tests whether the URL matches this filter</span></span><br><span class="line"><span class="comment">         * URL是否匹配该过滤器</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>location URL to be tested</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param <span class="type">&#123;number&#125;</span> </span>typeMask bitmask of content / request types to match</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[docDomain] domain name of the document that loads the URL</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param <span class="type">&#123;boolean&#125;</span> </span>[thirdParty] should be true if the URL is a third-party</span></span><br><span class="line"><span class="comment">         *                               request</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param <span class="type">&#123;string&#125;</span> </span>[sitekey] public key provided by the document</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@return <span class="type">&#123;boolean&#125;</span> </span>true in case of a match</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        matches(location, typeMask, docDomain, thirdParty, sitekey) &#123;</span><br><span class="line">          <span class="keyword">if</span> (<span class="keyword">this</span>.contentType &amp; typeMask &amp;&amp;</span><br><span class="line">            (<span class="keyword">this</span>.thirdParty == <span class="literal">null</span> || <span class="keyword">this</span>.thirdParty == thirdParty) &amp;&amp;</span><br><span class="line">            <span class="keyword">this</span>.isActiveOnDomain(docDomain, sitekey) &amp;&amp; <span class="keyword">this</span>.regexp.test(location)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>关键字添加过滤器过程</li>
+</ul>
+<blockquote>
+<p>下载规则库，url分析，初始化</p>
+</blockquote>
+<p>未完待续…</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/08/16/2018Q3/js_%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E8%BD%AC%E7%BB%9D%E5%AF%B9%E8%B7%AF%E5%BE%84/" rel="prev" title="前端实现相对路径转绝对路径的几种方法">
+      <i class="fa fa-chevron-left"></i> 前端实现相对路径转绝对路径的几种方法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/10/01/2018Q4/css%E4%B8%8Ejs%E7%9A%84%E9%98%BB%E5%A1%9E%E5%85%B3%E7%B3%BB/" rel="next" title="css与js的阻塞关系">
+      css与js的阻塞关系 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#说明"><span class="nav-number">2.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#模块解析"><span class="nav-number">3.</span> <span class="nav-text">模块解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤器模块"><span class="nav-number">3.1.</span> <span class="nav-text">过滤器模块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#内容过滤器-ContentFilter"><span class="nav-number">3.1.1.</span> <span class="nav-text">内容过滤器-ContentFilter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注释过滤器-CommentFilter"><span class="nav-number">3.1.2.</span> <span class="nav-text">注释过滤器-CommentFilter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#正则过滤器-RegExpFilter"><span class="nav-number">3.1.3.</span> <span class="nav-text">正则过滤器-RegExpFilter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#无效过滤器-InvalidFilter"><span class="nav-number">3.1.4.</span> <span class="nav-text">无效过滤器-InvalidFilter</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#匹配器-Matcher"><span class="nav-number">3.2.</span> <span class="nav-text">匹配器 Matcher</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
