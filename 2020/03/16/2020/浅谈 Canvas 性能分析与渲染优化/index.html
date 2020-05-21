@@ -54,7 +54,7 @@
 <meta property="og:description" content="前言接上文 面试官问：什么是 canvas 污染 本文仅讨论 Canvas 2D">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-03-16T02:00:00.000Z">
-<meta property="article:modified_time" content="2020-04-01T15:21:31.167Z">
+<meta property="article:modified_time" content="2020-05-21T13:24:51.476Z">
 <meta property="article:author" content="gahing">
 <meta property="article:tag" content="Canvas">
 <meta name="twitter:card" content="summary">
@@ -241,7 +241,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+                <time title="修改时间：2020-05-21 21:24:51" itemprop="dateModified" datetime="2020-05-21T21:24:51+08:00">2020-05-21</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -291,6 +291,12 @@
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 在离屏 canvas 上绘制</span></span><br><span class="line"><span class="keyword">var</span> canvasOffscreen = <span class="built_in">document</span>.createElement(<span class="string">'canvas'</span>);</span><br><span class="line">canvasOffscreen.width = dw;</span><br><span class="line">canvasOffscreen.height = dh;</span><br><span class="line">canvasOffscreen.getContext(<span class="string">'2d'</span>).drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在绘制每一帧的时候，绘制这个图形</span></span><br><span class="line">context.drawImage(canvasOffscreen, x, y);</span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>摘自 《Canvas 最佳实践（性能篇）》</p>
+</blockquote>
+<p>还可以借助 worker 进行优化</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// main.js</span></span><br><span class="line"><span class="keyword">const</span> offscreenCanvas = <span class="built_in">document</span>.getElementById(<span class="string">"c"</span>).transferControlToOffscreen();</span><br><span class="line">worker.postMessage(offscreenCanvas, [offscreenCanvas]);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// worker.js </span></span><br><span class="line"><span class="keyword">let</span> ctx, pos = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">draw</span>(<span class="params">dt</span>) </span>&#123;</span><br><span class="line">  ctx.clearRect(<span class="number">0</span>, <span class="number">0</span>, <span class="number">100</span>, <span class="number">100</span>);</span><br><span class="line">  ctx.fillRect(pos, <span class="number">0</span>, <span class="number">10</span>, <span class="number">10</span>);</span><br><span class="line">  pos += <span class="number">10</span> * dt;</span><br><span class="line">  requestAnimationFrame(draw);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">self.onmessage = <span class="function"><span class="keyword">function</span>(<span class="params">ev</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> transferredCanvas = ev.data;</span><br><span class="line">  ctx = transferredCanvas.getContext(<span class="string">"2d"</span>);</span><br><span class="line">  draw();</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>引自 <a href="https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames" target="_blank" rel="noopener">https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames</a></p>
 </blockquote>
 <h2 id="合理使用-API"><a href="#合理使用-API" class="headerlink" title="合理使用 API"></a>合理使用 API</h2><p>减少耗时 api 的使用</p>
 <p>减少改变 context 的状态</p>
@@ -433,7 +439,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-count">75</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -446,7 +452,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

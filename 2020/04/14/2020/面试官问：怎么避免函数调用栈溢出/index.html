@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言基友最近遇到的一道面试题 1234567891011&#x2F;**  * 输出 n-&gt;0 *&#x2F;function foo(n)&amp;#123;  console.log(n)  if(n &gt; 0)&amp;#123;    foo(n - 1)  &amp;#125;&amp;#125;foo(100000)&#x2F;&#x2F; 请问输出什么  答案很简单，栈溢出呗。解决方法也很简单，递归改迭代咯。 正常来说，这个问题就应该结束了。。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="面试官问：怎么避免函数调用栈溢出">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;04&#x2F;14&#x2F;2020&#x2F;%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E6%80%8E%E4%B9%88%E9%81%BF%E5%85%8D%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%A0%88%E6%BA%A2%E5%87%BA&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言基友最近遇到的一道面试题 1234567891011&#x2F;**  * 输出 n-&gt;0 *&#x2F;function foo(n)&amp;#123;  console.log(n)  if(n &gt; 0)&amp;#123;    foo(n - 1)  &amp;#125;&amp;#125;foo(100000)&#x2F;&#x2F; 请问输出什么  答案很简单，栈溢出呗。解决方法也很简单，递归改迭代咯。 正常来说，这个问题就应该结束了。。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-04-14T00:52:43.000Z">
+<meta property="article:modified_time" content="2020-05-01T10:47:11.652Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="ECMAScript">
+<meta property="article:tag" content="面试题">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2020/04/14/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E6%80%8E%E4%B9%88%E9%81%BF%E5%85%8D%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%A0%88%E6%BA%A2%E5%87%BA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>面试官问：怎么避免函数调用栈溢出 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/04/14/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E6%80%8E%E4%B9%88%E9%81%BF%E5%85%8D%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%A0%88%E6%BA%A2%E5%87%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          面试官问：怎么避免函数调用栈溢出
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-14 08:52:43" itemprop="dateCreated datePublished" datetime="2020-04-14T08:52:43+08:00">2020-04-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-01 18:47:11" itemprop="dateModified" datetime="2020-05-01T18:47:11+08:00">2020-05-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>基友最近遇到的一道面试题</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * 输出 n-&gt;0</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">n</span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(n)</span><br><span class="line">  <span class="keyword">if</span>(n &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    foo(n - <span class="number">1</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">foo(<span class="number">100000</span>)</span><br><span class="line"><span class="comment">// 请问输出什么</span></span><br></pre></td></tr></table></figure>
+
+<p>答案很简单，栈溢出呗。解决方法也很简单，递归改迭代咯。</p>
+<p>正常来说，这个问题就应该结束了。。那要是面试官再这样问你 –</p>
+<a id="more"></a>
+
+<h2 id="那你知道函数执行栈的上限么"><a href="#那你知道函数执行栈的上限么" class="headerlink" title="那你知道函数执行栈的上限么"></a>那你知道函数执行栈的上限么</h2><p>在没看过 v8 配置的情况下可以这样测试</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span> + c()</span><br><span class="line">  &#125; <span class="keyword">catch</span>(e)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">c()</span><br></pre></td></tr></table></figure>
+<p>测试结果：</p>
+<ul>
+<li>win7x64 chrome74：25173</li>
+<li>win7x64 chrome81: 12571</li>
+<li>mbp chrome80: 12547</li>
+<li>mbp chrome81: 12540</li>
+<li>mbp Safari13: 36244</li>
+</ul>
+<p>可以发现，不同的执行引擎，执行引擎的不同版本，不同的设备配置都会影响栈的深度</p>
+<p>在明白这点之后我们再看这个例子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">let</span> arr = <span class="keyword">new</span> <span class="built_in">Array</span>(<span class="number">10000</span>).fill(<span class="number">1</span>)</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> res = c() + arr[<span class="number">999</span>]</span><br><span class="line">    <span class="comment">// 无用代码</span></span><br><span class="line">    <span class="keyword">if</span>(res &lt; <span class="number">0</span>)&#123;</span><br><span class="line">      <span class="keyword">for</span>(<span class="keyword">let</span> i=<span class="number">0</span>;i&lt;arr.length;i++)&#123;</span><br><span class="line">        res+=arr[i]</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line">  &#125; <span class="keyword">catch</span>(e)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">c()</span><br></pre></td></tr></table></figure>
+<p>在 win7x64 chrome81 得到的结果为： 9669</p>
+<p>可以发现，调用栈的深度取决于调用函数的函数体大小和本地变量的个数</p>
+<p>由于栈的容量(size)是固定的，其实更应该关注栈的容量，而不是栈的深度</p>
+<p>在 Node.js 中，可以通过以下命令查看栈的容量</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ node --v8-options | grep stack-size -A 1</span><br><span class="line">  --stack-size (default size of stack region v8 is allowed to use (<span class="keyword">in</span> kBytes))</span><br><span class="line">        <span class="built_in">type</span>: int  default: 984</span><br><span class="line">--</span><br><span class="line">  --sim-stack-size (Stack size of the ARM64, MIPS64 and PPC64 simulator <span class="keyword">in</span> kByte</span><br><span class="line">s (default is 2 MB))</span><br><span class="line">        <span class="built_in">type</span>: int  default: 2048</span><br></pre></td></tr></table></figure>
+<p>win7x64 和 mbp 的 Node.js 12 输出均一致，默认栈大小为 984KB</p>
+<p>我们可以在运行时指定栈的大小来防止栈溢出，还是上面那个例子，在 node.js 上测试：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">n</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(n &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    foo(n - <span class="number">1</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">foo(<span class="number">20000</span>)</span><br></pre></td></tr></table></figure>
+<p>直接执行 <code>node a.js</code> 会栈溢出，但是</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">node --stack-size&#x3D;1968 a.js</span><br></pre></td></tr></table></figure>
+<p>则不会。</p>
+<p>总的来说，在日常开发中，如果有数千的递归，就需要考虑重写优化了，否则有些平台将导致错误</p>
+<h2 id="听过尾调用和尾递归么"><a href="#听过尾调用和尾递归么" class="headerlink" title="听过尾调用和尾递归么"></a>听过尾调用和尾递归么</h2><p>尾调用即在函数的最后一步调用另一个函数，而尾递归则是函数的最后一步调用自身</p>
+<p>注意，最后一步需要是单个函数调用，以下代码均不是尾调用</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">a</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">let</span> t = b()</span><br><span class="line">  <span class="keyword">return</span> t</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">b</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  c()</span><br><span class="line">  <span class="comment">// 等效于</span></span><br><span class="line">  <span class="comment">// return undefined</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> d() + <span class="number">1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用尾调用和尾递归，可以避免中间无用的上下文（调用帧），仅保留最外层和当前层，避免栈溢出</p>
+<h2 id="题目要采用尾递归解决，怎么改"><a href="#题目要采用尾递归解决，怎么改" class="headerlink" title="题目要采用尾递归解决，怎么改"></a>题目要采用尾递归解决，怎么改</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">n</span>)</span>&#123;</span><br><span class="line"><span class="meta">  'use strict'</span>;</span><br><span class="line">  <span class="built_in">console</span>.log(n)</span><br><span class="line">  <span class="keyword">if</span>(n &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> foo(n - <span class="number">1</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ES6 的尾调用优化只在严格模式下开启，主要原因在于正常模式下函数有两个变量可以跟踪函数的调用栈</p>
+<ul>
+<li>func.arguments：返回调用时函数的参数</li>
+<li>func.caller：返回调用当前函数的那个函数<br>这两个变量在尾调用优化上的值与未优化的情况不一致，而严格模式下这两个变量是禁用的，这样可以保证调用栈的正确性</li>
+</ul>
+<h2 id="浏览器的兼容性怎么样"><a href="#浏览器的兼容性怎么样" class="headerlink" title="浏览器的兼容性怎么样"></a>浏览器的兼容性怎么样</h2><p>如果把上面那段代码放在 chrome 控制台执行，还是会报栈溢出。</p>
+<p>我们可以看下<a href="http://kangax.github.io/compat-table/es6/" target="_blank" rel="noopener">尾调用优化的兼容性</a></p>
+<p>可以看到主流浏览器基本上只有 Safari 支持，把上述那段代码放 Safari 上测试了下是可以通过的</p>
+<p>所以在浏览器环境，还是不是想着利用尾递归来解决问题</p>
+<h2 id="Node-js-能使用尾递归么"><a href="#Node-js-能使用尾递归么" class="headerlink" title="Node.js 能使用尾递归么"></a>Node.js 能使用尾递归么</h2><p>在 node 6,7 可以通过 <code>--harmony-tailcalls</code> 开启，而在 8 之后删掉了这个选项。</p>
+<p>所以可以理解为 Node.js 不支持尾递归</p>
+<h2 id="尾递归看着这么好，为什么这么多执行引擎不支持？"><a href="#尾递归看着这么好，为什么这么多执行引擎不支持？" class="headerlink" title="尾递归看着这么好，为什么这么多执行引擎不支持？"></a>尾递归看着这么好，为什么这么多执行引擎不支持？</h2><p>关于这个问题，V8 的<a href="https://v8.dev/blog/modern-javascript" target="_blank" rel="noopener">这篇文章</a>给出了答案</p>
+<p>概括如下</p>
+<h3 id="1-隐式优化问题"><a href="#1-隐式优化问题" class="headerlink" title="1. 隐式优化问题"></a>1. 隐式优化问题</h3><p>引擎消除尾调用是隐式的，程序员很难确定哪些函数实际上位于尾部调用位置，这导致了程序员在编码时得不断的调试才能写出正确的尾递归方法。</p>
+<h3 id="2-栈帧丢失"><a href="#2-栈帧丢失" class="headerlink" title="2. 栈帧丢失"></a>2. 栈帧丢失</h3><p>尾调用会清除中间执行栈帧，导致 error.stack 中包含的有关执行流程的信息较少，进而影响依赖调用堆栈信息的调试和错误收集过程</p>
+<h2 id="STC-了解么？"><a href="#STC-了解么？" class="headerlink" title="STC 了解么？"></a>STC 了解么？</h2><p>STC 是为了解决尾调用优化不受开发者控制的问题，通过新的语法糖显式指定尾调用，比如 <code>return continue foo(n-1)</code></p>
+<p>在非尾调用的场景下使用该语法糖则会报错</p>
+<p>具体的可以看 <a href="https://github.com/tc39/proposal-ptc-syntax/blob/master/README.md" target="_blank" rel="noopener">tc39 - proposal-ptc-syntax</a></p>
+<hr>
+<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/46993552" target="_blank" rel="noopener">深入理解 V8 的 Call Stack</a></li>
+<li><a href="https://imweb.io/topic/5a244260a192c3b460fce275" target="_blank" rel="noopener">尾递归的后续探究</a></li>
+<li><a href="https://es6.ruanyifeng.com/#docs/function#%E5%B0%BE%E8%B0%83%E7%94%A8%E4%BC%98%E5%8C%96" target="_blank" rel="noopener">尾调用优化</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ECMAScript/" rel="tag"># ECMAScript</a>
+              <a href="/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/" rel="tag"># 面试题</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/12/2020/%E6%8A%8A%E7%BD%91%E7%AB%99%E6%B7%BB%E5%8A%A0%E5%88%B0%E6%A1%8C%E9%9D%A2%EF%BC%8C%E3%80%8C%E7%88%B1%E5%A5%87%E8%89%BA%E7%BD%91%E9%A1%B5%E5%BA%94%E7%94%A8%E3%80%8D%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" rel="prev" title="把网站添加到桌面，「爱奇艺网页应用」是如何实现的">
+      <i class="fa fa-chevron-left"></i> 把网站添加到桌面，「爱奇艺网页应用」是如何实现的
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/01/2020/%E6%B5%85%E8%B0%88%20React%20Fiber/" rel="next" title="2020/浅谈 React Fiber">
+      2020/浅谈 React Fiber <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#那你知道函数执行栈的上限么"><span class="nav-number">2.</span> <span class="nav-text">那你知道函数执行栈的上限么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#听过尾调用和尾递归么"><span class="nav-number">3.</span> <span class="nav-text">听过尾调用和尾递归么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#题目要采用尾递归解决，怎么改"><span class="nav-number">4.</span> <span class="nav-text">题目要采用尾递归解决，怎么改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#浏览器的兼容性怎么样"><span class="nav-number">5.</span> <span class="nav-text">浏览器的兼容性怎么样</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Node-js-能使用尾递归么"><span class="nav-number">6.</span> <span class="nav-text">Node.js 能使用尾递归么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#尾递归看着这么好，为什么这么多执行引擎不支持？"><span class="nav-number">7.</span> <span class="nav-text">尾递归看着这么好，为什么这么多执行引擎不支持？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-隐式优化问题"><span class="nav-number">7.1.</span> <span class="nav-text">1. 隐式优化问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-栈帧丢失"><span class="nav-number">7.2.</span> <span class="nav-text">2. 栈帧丢失</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#STC-了解么？"><span class="nav-number">8.</span> <span class="nav-text">STC 了解么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拓展阅读"><span class="nav-number">9.</span> <span class="nav-text">拓展阅读</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

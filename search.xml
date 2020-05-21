@@ -1,6 +1,250 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>面试官问：如何利用 random 计算 π</title>
+    <url>/2020/05/07/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E5%A6%82%E4%BD%95%E5%88%A9%E7%94%A8%20random%20%E8%AE%A1%E7%AE%97%20%CF%80/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这是基友面试 RingCenter 时被问到的一个题目</p>
+<p>表面上考察的是概率论等基础知识，实际可能还会问到事件循环等底层知识，以及 React Fiber</p>
+<a id="more"></a>
+
+<h2 id="蒙特卡洛法求-π"><a href="#蒙特卡洛法求-π" class="headerlink" title="蒙特卡洛法求 π"></a>蒙特卡洛法求 π</h2><p>说蒙特卡洛可能不太理解，换个说法 – 随机抽样</p>
+<p>构造一个单位正方形和 1/4 单位圆，往单位正方形中投入点，根据点与原点间的距离判断点是落在圆内还是圆外，分别统计落在两个区域的点的个数 n1,n2 ，<code>n1/(n1+n2)</code> 即 1/4 圆的面积估计值，从而求得 π</p>
+<p><img src="https://img-blog.csdn.net/20180121211732625?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRGFuaWVsOTYwNjAx/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="引自 CSDN/Daniel960601"></p>
+<p>以下是 js 代码</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">inCicle</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> x = <span class="built_in">Math</span>.random();</span><br><span class="line">  <span class="keyword">var</span> y = <span class="built_in">Math</span>.random();</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Math</span>.pow(x, <span class="number">2</span>) + <span class="built_in">Math</span>.pow(y, <span class="number">2</span>) &lt; <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">calcPi</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> N = <span class="number">1e+6</span></span><br><span class="line">  <span class="keyword">let</span> pointsInside = <span class="number">0</span></span><br><span class="line">  <span class="keyword">for</span>(<span class="keyword">let</span> i=<span class="number">0</span>;i&lt;N;i++)&#123;</span><br><span class="line">    <span class="keyword">if</span>(inCicle())&#123;</span><br><span class="line">      pointsInside++;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">4</span> * pointsInside / N</span><br><span class="line">&#125;</span><br><span class="line">calcPi()</span><br></pre></td></tr></table></figure>
+
+<p>直接在控制台运行，会发现有卡顿和掉帧发生，下面我们来谈谈如何解决</p>
+<h2 id="如何避免主线程阻塞"><a href="#如何避免主线程阻塞" class="headerlink" title="如何避免主线程阻塞"></a>如何避免主线程阻塞</h2><p>calcPi 是个耗时任务，会阻塞主线程，甚至导致掉帧，有什么解决方法？</p>
+<p>提供几个思路</p>
+<ol>
+<li>Web Worker</li>
+<li>requestIdleCallback</li>
+<li>requestAnimationFrame + MessageChannel</li>
+</ol>
+<h3 id="Web-Worker"><a href="#Web-Worker" class="headerlink" title="Web Worker"></a>Web Worker</h3><p>Web Worker 是啥就不再介绍了，不懂的自行 MDN 搜索</p>
+<p>我们新建一个 Worker 线程进行耗时任务计算，而后再把结果发送给主线程</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createWorker</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> text = <span class="string">`</span></span><br><span class="line"><span class="string">  function inCicle() &#123;</span></span><br><span class="line"><span class="string">    var x = Math.random();</span></span><br><span class="line"><span class="string">    var y = Math.random();</span></span><br><span class="line"><span class="string">    return Math.pow(x, 2) + Math.pow(y, 2) &lt; 1</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">  function calcPi() &#123;</span></span><br><span class="line"><span class="string">    const N = 1e+6</span></span><br><span class="line"><span class="string">    let pointsInside = 0</span></span><br><span class="line"><span class="string">    for(let i=0;i&lt;N;i++)&#123;</span></span><br><span class="line"><span class="string">      if(inCicle())&#123;</span></span><br><span class="line"><span class="string">        pointsInside++;</span></span><br><span class="line"><span class="string">      &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">    return 4 * pointsInside / N</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">  this.addEventListener('message', (msg) =&gt; &#123;</span></span><br><span class="line"><span class="string">    let pi = calcPi()</span></span><br><span class="line"><span class="string">    this.postMessage(pi);</span></span><br><span class="line"><span class="string">  &#125;, false);</span></span><br><span class="line"><span class="string">  `</span></span><br><span class="line">  <span class="keyword">let</span> blob = <span class="keyword">new</span> Blob([text]);</span><br><span class="line">  <span class="keyword">let</span> url = <span class="built_in">window</span>.URL.createObjectURL(blob);</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> Worker(url)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> worker = createWorker()</span><br><span class="line">worker.onmessage = <span class="function">(<span class="params">evt</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'PI: '</span>, evt.data)</span><br><span class="line">&#125;;</span><br><span class="line">worker.postMessage(<span class="string">"calc"</span>);</span><br></pre></td></tr></table></figure>
+
+<p>缺点就是计算次数是固定的，同时不能看到实时计算的结果</p>
+<h3 id="requestIdleCallback"><a href="#requestIdleCallback" class="headerlink" title="requestIdleCallback"></a>requestIdleCallback</h3><p>利用 <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback" target="_blank" rel="noopener">requestIdleCallback</a> 在帧空余时间执行任务的特点进行耗时任务的计算</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line"></span><br><span class="line">&lt;head&gt;</span><br><span class="line">  &lt;title&gt;Scheduling background tasks using requestIdleCallback&lt;<span class="regexp">/title&gt;</span></span><br><span class="line"><span class="regexp">&lt;/</span>head&gt;</span><br><span class="line"></span><br><span class="line">&lt;body&gt;</span><br><span class="line">  &lt;script&gt;</span><br><span class="line">    <span class="keyword">var</span> requestId = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">var</span> pointsTotal = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">var</span> pointsInside = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">piStep</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> r = <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">var</span> x = <span class="built_in">Math</span>.random() * r;</span><br><span class="line">      <span class="keyword">var</span> y = <span class="built_in">Math</span>.random() * r;</span><br><span class="line">      <span class="keyword">return</span> (<span class="built_in">Math</span>.pow(x, <span class="number">2</span>) + <span class="built_in">Math</span>.pow(y, <span class="number">2</span>) &lt; <span class="built_in">Math</span>.pow(r, <span class="number">2</span>))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">refinePi</span>(<span class="params">deadline</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">while</span> (deadline.timeRemaining() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (piStep())</span><br><span class="line">          pointsInside++;</span><br><span class="line">        pointsTotal++;</span><br><span class="line">      &#125;</span><br><span class="line">      currentEstimate = (<span class="number">4</span> * pointsInside / pointsTotal);</span><br><span class="line">      textElement = <span class="built_in">document</span>.getElementById(<span class="string">"piEstimate"</span>);</span><br><span class="line">      textElement.innerHTML = <span class="string">"Pi Estimate: "</span> + currentEstimate;</span><br><span class="line">      requestId = <span class="built_in">window</span>.requestIdleCallback(refinePi);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">start</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      textElement = <span class="built_in">document</span>.getElementById(<span class="string">"piEstimate"</span>);</span><br><span class="line">      textElement.innerHTML = <span class="string">"Pi Estimate: "</span> + <span class="string">"loading"</span>;</span><br><span class="line">      requestId = <span class="built_in">window</span>.requestIdleCallback(refinePi);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">stop</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="comment">// alert(1)</span></span><br><span class="line">      <span class="keyword">if</span> (requestId)</span><br><span class="line">        <span class="built_in">window</span>.cancelIdleCallback(requestId);</span><br><span class="line">      requestId = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &lt;<span class="regexp">/script&gt;</span></span><br><span class="line"><span class="regexp"></span></span><br><span class="line"><span class="regexp">  &lt;button onclick="start()"&gt;Click me to start!&lt;/</span>button&gt;</span><br><span class="line">  &lt;button onclick=<span class="string">"stop()"</span>&gt;Click me to stop!<span class="xml"><span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line">  &lt;div id=<span class="string">"piEstimate"</span>&gt;Not started&lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">&lt;/</span>body&gt;</span><br><span class="line"></span><br><span class="line">&lt;<span class="regexp">/html&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+<p>几个要点</p>
+<ol>
+<li>requestIdleCallback 中进行的 dom 变更，只能在下一帧的 Update Rendering 阶段进行渲染<blockquote>
+<p>stop 时 piEstimate innerHTML 帧渲染前后不一致</p>
+</blockquote>
+</li>
+<li>requestIdleCallback 有兼容性问题，常用 requestAnimationFrame 和 MessageChannel 去 fallback</li>
+</ol>
+<h3 id="requestAnimationFrame-MessageChannel"><a href="#requestAnimationFrame-MessageChannel" class="headerlink" title="requestAnimationFrame + MessageChannel"></a>requestAnimationFrame + MessageChannel</h3><p>requestAnimationFrame 将在事件循环中 <a href="https://html.spec.whatwg.org/multipage/webappapis.html#update-the-rendering" target="_blank" rel="noopener">UI Render 阶段</a>的实际渲染前执行，可以简单理解为帧渲染初期</p>
+<p>MessageChannel 用来收发消息开启一个宏任务，相比 setTimeout 可以更快执行（4ms的原因）</p>
+<p>我们在 requestAnimationFrame 设置一个标记时间点 markPoint ，并通过 MessageChannel 发起一个宏任务，设置该宏任务的过期时间为 markPoint + timeout(16ms) ，超过这个时间，任务不再执行</p>
+<p>这样可以保证宏任务不会因为执行太久导致卡顿和掉帧</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line"></span><br><span class="line">&lt;head&gt;</span><br><span class="line">  &lt;title&gt;Scheduling background tasks using requestIdleCallback&lt;<span class="regexp">/title&gt;</span></span><br><span class="line"><span class="regexp">&lt;/</span>head&gt;</span><br><span class="line"></span><br><span class="line">&lt;body&gt;</span><br><span class="line">  &lt;script&gt;</span><br><span class="line">    <span class="keyword">const</span> timeout = <span class="number">16</span> <span class="comment">// 默认一帧为16ms</span></span><br><span class="line">    <span class="keyword">var</span> requestId = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">var</span> pointsTotal = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">var</span> pointsInside = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">let</span> currentTask = &#123;</span><br><span class="line">      startTime: <span class="number">0</span>,</span><br><span class="line">      endTime: <span class="number">0</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> channel = <span class="keyword">new</span> MessageChannel();</span><br><span class="line">    <span class="keyword">var</span> sender = channel.port2; <span class="comment">// port2 用来发消息</span></span><br><span class="line">    channel.port1.onmessage = <span class="function"><span class="keyword">function</span> (<span class="params">event</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (performance.now() &gt; currentTask.endTime) &#123;</span><br><span class="line">        <span class="comment">// 可能是插入了其他宏任务导致该任务过期，直接 rAF</span></span><br><span class="line">        requestId = requestAnimationFrame(markPoint)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">      &#125;</span><br><span class="line">      refinePi(currentTask.endTime)</span><br><span class="line">      requestId = requestAnimationFrame(markPoint)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">piStep</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> r = <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">var</span> x = <span class="built_in">Math</span>.random() * r;</span><br><span class="line">      <span class="keyword">var</span> y = <span class="built_in">Math</span>.random() * r;</span><br><span class="line">      <span class="keyword">return</span> (<span class="built_in">Math</span>.pow(x, <span class="number">2</span>) + <span class="built_in">Math</span>.pow(y, <span class="number">2</span>) &lt; <span class="built_in">Math</span>.pow(r, <span class="number">2</span>))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">refinePi</span>(<span class="params">deadline</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">while</span> (performance.now() &lt; deadline) &#123;</span><br><span class="line">        <span class="keyword">if</span> (piStep()) &#123;</span><br><span class="line">          pointsInside++;</span><br><span class="line">        &#125;</span><br><span class="line">        pointsTotal++;</span><br><span class="line">      &#125;</span><br><span class="line">      currentEstimate = (<span class="number">4</span> * pointsInside / pointsTotal);</span><br><span class="line">      textElement = <span class="built_in">document</span>.getElementById(<span class="string">"piEstimate"</span>);</span><br><span class="line">      textElement.innerHTML = <span class="string">"Pi Estimate: "</span> + currentEstimate;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">markPoint</span>(<span class="params">timestamp</span>) </span>&#123;</span><br><span class="line">      currentTask.startTime = timestamp</span><br><span class="line">      currentTask.endTime = timestamp + timeout</span><br><span class="line">      <span class="comment">// 下轮宏任务</span></span><br><span class="line">      sender.postMessage(<span class="string">""</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">start</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      requestId = requestAnimationFrame(markPoint)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">stop</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="comment">// alert(1)</span></span><br><span class="line">      <span class="keyword">if</span> (requestId)</span><br><span class="line">        <span class="built_in">window</span>.cancelAnimationFrame(requestId);</span><br><span class="line">      requestId = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">handle</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">let</span> start = performance.now()</span><br><span class="line">      <span class="keyword">while</span> (performance.now() - start &lt; <span class="number">100</span>) &#123; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &lt;<span class="regexp">/script&gt;</span></span><br><span class="line"><span class="regexp"></span></span><br><span class="line"><span class="regexp">  &lt;button onclick="start()"&gt;Click me to start!&lt;/</span>button&gt;</span><br><span class="line">  &lt;button onclick=<span class="string">"stop()"</span>&gt;Click me to stop!<span class="xml"><span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line">  &lt;button onclick=<span class="string">"handle()"</span>&gt;执行耗时任务，观察 PI 的计算情况&lt;<span class="regexp">/button&gt;</span></span><br><span class="line"><span class="regexp">  &lt;div id="piEstimate"&gt;Not started&lt;/</span>div&gt;</span><br><span class="line">&lt;<span class="regexp">/body&gt;</span></span><br><span class="line"><span class="regexp"></span></span><br><span class="line"><span class="regexp">&lt;/</span>html&gt;</span><br></pre></td></tr></table></figure>
+
+<p><a href="https://jsfiddle.net/bdsyf50c/" target="_blank" rel="noopener">在线测试</a></p>
+<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ol>
+<li><a href="https://www.w3.org/TR/requestidlecallback/" target="_blank" rel="noopener">Cooperative Scheduling of Background Tasks</a></li>
+<li><a href="https://github.com/facebook/react/tree/master/packages/scheduler" target="_blank" rel="noopener">react-scheduler</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>HTML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>2020/浅谈 React Fiber</title>
+    <url>/2020/05/01/2020/%E6%B5%85%E8%B0%88%20React%20Fiber/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>看了很多关于 React Fiber 的文章，大概就是这样一个意思</p>
+<p>React Fiber 避免了同步渲染所有组件导致主线程卡顿，现在会根据优先级去渲染</p>
+<p>可能还会放弃之前已经渲染到一半的虚拟 dom</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>面试官问：怎么避免函数调用栈溢出</title>
+    <url>/2020/04/14/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E6%80%8E%E4%B9%88%E9%81%BF%E5%85%8D%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%A0%88%E6%BA%A2%E5%87%BA/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>基友最近遇到的一道面试题</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * 输出 n-&gt;0</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">n</span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(n)</span><br><span class="line">  <span class="keyword">if</span>(n &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    foo(n - <span class="number">1</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">foo(<span class="number">100000</span>)</span><br><span class="line"><span class="comment">// 请问输出什么</span></span><br></pre></td></tr></table></figure>
+
+<p>答案很简单，栈溢出呗。解决方法也很简单，递归改迭代咯。</p>
+<p>正常来说，这个问题就应该结束了。。那要是面试官再这样问你 –</p>
+<a id="more"></a>
+
+<h2 id="那你知道函数执行栈的上限么"><a href="#那你知道函数执行栈的上限么" class="headerlink" title="那你知道函数执行栈的上限么"></a>那你知道函数执行栈的上限么</h2><p>在没看过 v8 配置的情况下可以这样测试</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span> + c()</span><br><span class="line">  &#125; <span class="keyword">catch</span>(e)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">c()</span><br></pre></td></tr></table></figure>
+<p>测试结果：</p>
+<ul>
+<li>win7x64 chrome74：25173</li>
+<li>win7x64 chrome81: 12571</li>
+<li>mbp chrome80: 12547</li>
+<li>mbp chrome81: 12540</li>
+<li>mbp Safari13: 36244</li>
+</ul>
+<p>可以发现，不同的执行引擎，执行引擎的不同版本，不同的设备配置都会影响栈的深度</p>
+<p>在明白这点之后我们再看这个例子</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">let</span> arr = <span class="keyword">new</span> <span class="built_in">Array</span>(<span class="number">10000</span>).fill(<span class="number">1</span>)</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> res = c() + arr[<span class="number">999</span>]</span><br><span class="line">    <span class="comment">// 无用代码</span></span><br><span class="line">    <span class="keyword">if</span>(res &lt; <span class="number">0</span>)&#123;</span><br><span class="line">      <span class="keyword">for</span>(<span class="keyword">let</span> i=<span class="number">0</span>;i&lt;arr.length;i++)&#123;</span><br><span class="line">        res+=arr[i]</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line">  &#125; <span class="keyword">catch</span>(e)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">c()</span><br></pre></td></tr></table></figure>
+<p>在 win7x64 chrome81 得到的结果为： 9669</p>
+<p>可以发现，调用栈的深度取决于调用函数的函数体大小和本地变量的个数</p>
+<p>由于栈的容量(size)是固定的，其实更应该关注栈的容量，而不是栈的深度</p>
+<p>在 Node.js 中，可以通过以下命令查看栈的容量</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ node --v8-options | grep stack-size -A 1</span><br><span class="line">  --stack-size (default size of stack region v8 is allowed to use (<span class="keyword">in</span> kBytes))</span><br><span class="line">        <span class="built_in">type</span>: int  default: 984</span><br><span class="line">--</span><br><span class="line">  --sim-stack-size (Stack size of the ARM64, MIPS64 and PPC64 simulator <span class="keyword">in</span> kByte</span><br><span class="line">s (default is 2 MB))</span><br><span class="line">        <span class="built_in">type</span>: int  default: 2048</span><br></pre></td></tr></table></figure>
+<p>win7x64 和 mbp 的 Node.js 12 输出均一致，默认栈大小为 984KB</p>
+<p>我们可以在运行时指定栈的大小来防止栈溢出，还是上面那个例子，在 node.js 上测试：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">n</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(n &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    foo(n - <span class="number">1</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">foo(<span class="number">20000</span>)</span><br></pre></td></tr></table></figure>
+<p>直接执行 <code>node a.js</code> 会栈溢出，但是</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">node --stack-size&#x3D;1968 a.js</span><br></pre></td></tr></table></figure>
+<p>则不会。</p>
+<p>总的来说，在日常开发中，如果有数千的递归，就需要考虑重写优化了，否则有些平台将导致错误</p>
+<h2 id="听过尾调用和尾递归么"><a href="#听过尾调用和尾递归么" class="headerlink" title="听过尾调用和尾递归么"></a>听过尾调用和尾递归么</h2><p>尾调用即在函数的最后一步调用另一个函数，而尾递归则是函数的最后一步调用自身</p>
+<p>注意，最后一步需要是单个函数调用，以下代码均不是尾调用</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">a</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">let</span> t = b()</span><br><span class="line">  <span class="keyword">return</span> t</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">b</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  c()</span><br><span class="line">  <span class="comment">// 等效于</span></span><br><span class="line">  <span class="comment">// return undefined</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> d() + <span class="number">1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用尾调用和尾递归，可以避免中间无用的上下文（调用帧），仅保留最外层和当前层，避免栈溢出</p>
+<h2 id="题目要采用尾递归解决，怎么改"><a href="#题目要采用尾递归解决，怎么改" class="headerlink" title="题目要采用尾递归解决，怎么改"></a>题目要采用尾递归解决，怎么改</h2><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">n</span>)</span>&#123;</span><br><span class="line"><span class="meta">  'use strict'</span>;</span><br><span class="line">  <span class="built_in">console</span>.log(n)</span><br><span class="line">  <span class="keyword">if</span>(n &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> foo(n - <span class="number">1</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ES6 的尾调用优化只在严格模式下开启，主要原因在于正常模式下函数有两个变量可以跟踪函数的调用栈</p>
+<ul>
+<li>func.arguments：返回调用时函数的参数</li>
+<li>func.caller：返回调用当前函数的那个函数<br>这两个变量在尾调用优化上的值与未优化的情况不一致，而严格模式下这两个变量是禁用的，这样可以保证调用栈的正确性</li>
+</ul>
+<h2 id="浏览器的兼容性怎么样"><a href="#浏览器的兼容性怎么样" class="headerlink" title="浏览器的兼容性怎么样"></a>浏览器的兼容性怎么样</h2><p>如果把上面那段代码放在 chrome 控制台执行，还是会报栈溢出。</p>
+<p>我们可以看下<a href="http://kangax.github.io/compat-table/es6/" target="_blank" rel="noopener">尾调用优化的兼容性</a></p>
+<p>可以看到主流浏览器基本上只有 Safari 支持，把上述那段代码放 Safari 上测试了下是可以通过的</p>
+<p>所以在浏览器环境，还是不是想着利用尾递归来解决问题</p>
+<h2 id="Node-js-能使用尾递归么"><a href="#Node-js-能使用尾递归么" class="headerlink" title="Node.js 能使用尾递归么"></a>Node.js 能使用尾递归么</h2><p>在 node 6,7 可以通过 <code>--harmony-tailcalls</code> 开启，而在 8 之后删掉了这个选项。</p>
+<p>所以可以理解为 Node.js 不支持尾递归</p>
+<h2 id="尾递归看着这么好，为什么这么多执行引擎不支持？"><a href="#尾递归看着这么好，为什么这么多执行引擎不支持？" class="headerlink" title="尾递归看着这么好，为什么这么多执行引擎不支持？"></a>尾递归看着这么好，为什么这么多执行引擎不支持？</h2><p>关于这个问题，V8 的<a href="https://v8.dev/blog/modern-javascript" target="_blank" rel="noopener">这篇文章</a>给出了答案</p>
+<p>概括如下</p>
+<h3 id="1-隐式优化问题"><a href="#1-隐式优化问题" class="headerlink" title="1. 隐式优化问题"></a>1. 隐式优化问题</h3><p>引擎消除尾调用是隐式的，程序员很难确定哪些函数实际上位于尾部调用位置，这导致了程序员在编码时得不断的调试才能写出正确的尾递归方法。</p>
+<h3 id="2-栈帧丢失"><a href="#2-栈帧丢失" class="headerlink" title="2. 栈帧丢失"></a>2. 栈帧丢失</h3><p>尾调用会清除中间执行栈帧，导致 error.stack 中包含的有关执行流程的信息较少，进而影响依赖调用堆栈信息的调试和错误收集过程</p>
+<h2 id="STC-了解么？"><a href="#STC-了解么？" class="headerlink" title="STC 了解么？"></a>STC 了解么？</h2><p>STC 是为了解决尾调用优化不受开发者控制的问题，通过新的语法糖显式指定尾调用，比如 <code>return continue foo(n-1)</code></p>
+<p>在非尾调用的场景下使用该语法糖则会报错</p>
+<p>具体的可以看 <a href="https://github.com/tc39/proposal-ptc-syntax/blob/master/README.md" target="_blank" rel="noopener">tc39 - proposal-ptc-syntax</a></p>
+<hr>
+<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/46993552" target="_blank" rel="noopener">深入理解 V8 的 Call Stack</a></li>
+<li><a href="https://imweb.io/topic/5a244260a192c3b460fce275" target="_blank" rel="noopener">尾递归的后续探究</a></li>
+<li><a href="https://es6.ruanyifeng.com/#docs/function#%E5%B0%BE%E8%B0%83%E7%94%A8%E4%BC%98%E5%8C%96" target="_blank" rel="noopener">尾调用优化</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>ECMAScript</tag>
+        <tag>面试题</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>把网站添加到桌面，「爱奇艺网页应用」是如何实现的</title>
+    <url>/2020/04/12/2020/%E6%8A%8A%E7%BD%91%E7%AB%99%E6%B7%BB%E5%8A%A0%E5%88%B0%E6%A1%8C%E9%9D%A2%EF%BC%8C%E3%80%8C%E7%88%B1%E5%A5%87%E8%89%BA%E7%BD%91%E9%A1%B5%E5%BA%94%E7%94%A8%E3%80%8D%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>希望网站提供一个「添加网页应用」功能，点击安装后，自动为用户创建一个网站的桌面快捷方式。</p>
+<p>下次用户直接从桌面快捷方式，即可访问我们的网站</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-20ffae80eca4d59d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="iqiyi.png"></p>
+<!--moore-->
+
+<h2 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h2><h3 id="1-Chrome-App"><a href="#1-Chrome-App" class="headerlink" title="1. Chrome App"></a>1. Chrome App</h3><p>在线安装（由于网络原因不太可行，而且如今已经没有入口了） or 离线下载</p>
+<p>举几个熟悉的 Chrome 应用：微信、Postman 。可以理解为一个独立的新应用了，和网站本身没有任何关系，因此可拓展性也较高。</p>
+<p>曾经较为流行，由于各种原因，chrome 将不再支持（目前只支持更新，不再上新），所以该方案放弃</p>
+<p>详见 <a href="https://blog.chromium.org/2020/01/moving-forward-from-chrome-apps.html" target="_blank" rel="noopener">https://blog.chromium.org/2020/01/moving-forward-from-chrome-apps.html</a></p>
+<h3 id="2-Progressive-Web-App-（PWA）"><a href="#2-Progressive-Web-App-（PWA）" class="headerlink" title="2. Progressive Web App （PWA）"></a>2. Progressive Web App （PWA）</h3><p>即 <a href="https://developer.mozilla.org/zh-CN/docs/Web/Progressive_web_apps/Introduction" target="_blank" rel="noopener">渐进式 Web 应用</a>，这不是一个单独的技术，而是多种技术的组合，包括</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Manifest" target="_blank" rel="noopener">Web app manifests</a>: 通过 JSON 提供应用程序相关信息，目的是将应用程序安装到设备桌面</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" target="_blank" rel="noopener">Service Worker</a>: 充当浏览器与服务端间的网络代理，提供离线访问能力</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API" target="_blank" rel="noopener">Push API</a>: 从服务器向客户端推送消息，需要借助 service worker</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API" target="_blank" rel="noopener">Notifications API</a>: 允许网页或应用程序在系统级别发送在页面外部显示的通知</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Add_to_home_screen" target="_blank" rel="noopener">Add to Home Screen</a>: 将应用程序安装到设备桌面的关键，需要浏览器支持 beforeinstallprompt 事件</li>
+</ul>
+<p>不要被上述技术栈吓到。。如果只是为了实现 「把网站添加到桌面」功能，仅需要 <code>Web app manifests</code>, <code>Add to Home Screen</code> , <code>Service Worker</code> . 5分钟就可以开发好</p>
+<h2 id="功能实现"><a href="#功能实现" class="headerlink" title="功能实现"></a>功能实现</h2><p>首先需要说明的是，我们的网站必须运行在 https 环境。所以开发测试的时候可以用 <code>github.io</code> 白嫖</p>
+<p>大体流程如下：</p>
+<ol>
+<li>编写一个简单的 HTML 页面<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>A2HS demo<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="css">      <span class="selector-class">.add-button</span> &#123;</span></span><br><span class="line">        position: absolute;</span><br><span class="line">        top: 1px;</span><br><span class="line">        left: 1px;</span><br><span class="line">      &#125;</span><br><span class="line">    <span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"index.js"</span> <span class="attr">defer</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"manifest"</span> <span class="attr">href</span>=<span class="string">"manifest.webmanifest"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>测试文本<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"add-button"</span>&gt;</span>添加到桌面<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li>编写一份 <code>Web app manifests</code> JSON(后面会详细讲解各个字段) ,命名为 <code>manifest.webmanifest</code> <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Add_to_home_screen#Manifest" target="_blank" rel="noopener">?</a></li>
+</ol>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"background_color"</span>: <span class="string">"purple"</span>,</span><br><span class="line">  <span class="attr">"display"</span>: <span class="string">"fullscreen"</span>,</span><br><span class="line">  <span class="attr">"icons"</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="attr">"src"</span>: <span class="string">"icon/fox-icon.png"</span>,</span><br><span class="line">      <span class="attr">"sizes"</span>: <span class="string">"192x192"</span>,</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"image/png"</span></span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"name"</span>: <span class="string">"xx快捷版"</span>,</span><br><span class="line">  <span class="attr">"short_name"</span>: <span class="string">"快"</span>,</span><br><span class="line">  <span class="attr">"start_url"</span>: <span class="string">"."</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>注册安装事件 </li>
+</ol>
+<p>index.js</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> deferredPrompt;</span><br><span class="line"><span class="comment">// 默认不展示按钮，仅支持 「Add to Home Screen」 功能才展现</span></span><br><span class="line"><span class="keyword">const</span> addBtn = <span class="built_in">document</span>.querySelector(<span class="string">'.add-button'</span>);</span><br><span class="line">addBtn.style.display = <span class="string">'none'</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规定必须注册 serviceWorker 才能使用 Add to Home Screen，</span></span><br><span class="line"><span class="comment">// 且需要监听 install 和 fetch 事件，可以不处理</span></span><br><span class="line"><span class="keyword">if</span>(<span class="string">'serviceWorker'</span> <span class="keyword">in</span> navigator) &#123;</span><br><span class="line">  navigator.serviceWorker</span><br><span class="line">           .register(<span class="string">'./sw.js'</span>)</span><br><span class="line">           .then(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="string">'Service Worker Registered'</span>); &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 仅浏览器支持且未安装该应用，以下事件才会触发</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'beforeinstallprompt'</span>, (e) =&gt; &#123;</span><br><span class="line">  <span class="comment">// Chrome 67 及之前版本，会自动展现安装的 prompt</span></span><br><span class="line">  <span class="comment">// 为了版本统一及用户体验，我们禁止自动展现 prompt</span></span><br><span class="line">  e.preventDefault();</span><br><span class="line">  <span class="comment">// 存放事件用于后续触发</span></span><br><span class="line">  deferredPrompt = e;</span><br><span class="line">  <span class="comment">// 展现按钮</span></span><br><span class="line">  addBtn.style.display = <span class="string">'block'</span>;</span><br><span class="line"></span><br><span class="line">  addBtn.addEventListener(<span class="string">'click'</span>, (e) =&gt; &#123;</span><br><span class="line">    <span class="comment">// hide our user interface that shows our A2HS button</span></span><br><span class="line">    addBtn.style.display = <span class="string">'none'</span>;</span><br><span class="line">    <span class="comment">// 展现安装的 prompt</span></span><br><span class="line">    deferredPrompt.prompt();</span><br><span class="line">    <span class="comment">// 等待用户对 prompt 进行操作</span></span><br><span class="line">    <span class="comment">// 如果用户从地址栏或其他浏览器组件安装了PWA，则以下代码将不起作用 </span></span><br><span class="line">    deferredPrompt.userChoice.then(<span class="function">(<span class="params">choiceResult</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (choiceResult.outcome === <span class="string">'accepted'</span>) &#123;</span><br><span class="line">          <span class="built_in">console</span>.log(<span class="string">'点击添加'</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="built_in">console</span>.log(<span class="string">'取消添加'</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        deferredPrompt = <span class="literal">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 无论以何种方式安装 PWA 该事件都会触发</span></span><br><span class="line"><span class="comment">// 因此这里可以用来做埋点</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'appinstalled'</span>, (evt) =&gt; &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'应用安装'</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>编写 sw 文件</li>
+</ol>
+<p>sw.js</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">self.addEventListener(<span class="string">'install'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'install success'</span>)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">self.addEventListener(<span class="string">'fetch'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(e.request.url);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<ol start="5">
+<li>最后，准备一个 icon ，见 <code>manifest.webmanifest</code> 中的 icons 配置</li>
+</ol>
+<p>之后，就可以体验这个功能了 </p>
+<h3 id="在线示例"><a href="#在线示例" class="headerlink" title="在线示例"></a>在线示例</h3><p><a href="https://fe-examples.github.io/pwa-examples/a2hs/" target="_blank" rel="noopener">https://fe-examples.github.io/pwa-examples/a2hs/</a></p>
+<p>如果浏览器支持 ,页面左上角将展现 「添加到桌面」按钮</p>
+<p>欢迎试用，并把操作系统、浏览器型号发在评论区，看看兼容性如何~</p>
+<h3 id="Web-app-manifests-相关配置"><a href="#Web-app-manifests-相关配置" class="headerlink" title="Web app manifests 相关配置"></a>Web app manifests 相关配置</h3><p>这里只举常用的，更多详见 <a href="https://w3c.github.io/manifest/#webappmanifest-dictionary" target="_blank" rel="noopener">WebAppManifest</a></p>
+<ul>
+<li>background_color: 应用启动时资源未加载时展示的背景色。仅用于改善加载时的用户体验，不影响后续网站背景。</li>
+<li>theme_color: 主题色，相当于显式的设置 <code>&lt;meta name=&quot;theme-color&quot; content=&quot;颜色值&quot;&gt;</code> ,将会影响浏览器外观颜色的展现。</li>
+<li>display: 指定如何显示应用。有以下几种取值，在不支持的情况下按从上往下顺序 fallback<ul>
+<li>fullscreen: 占用所有可用显示区域，无任何浏览器 UI 元素。不影响 Fullscreen API</li>
+<li>standalone: 类似本机应用程序。排除地址栏，但是可能包含状态栏和系统后退按钮</li>
+<li>minimal-ui: 相比 <code>standalone</code> 增加了导航控件（后退，前进，刷新）等 UI 元素</li>
+<li>browser: 等同于打开标签页。需要注意的是， browser 是兜底方式且仅部分浏览器支持，如果浏览器还不支持，整份配置将无效<blockquote>
+<p>Macos chrome 下测试 2 和 1 显示一致，不支持 4</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>icons: 指定在不同位置时采用的图标，主要是根据 sizes 字段来判断。相比移动端 APP 的 icon ，PWA 多了桌面位置、Chrome 应用入口位置。至少指定一个 icon</li>
+<li>name/short_name: 前者为完整的应用名称，后者为当没有足够空间显示全名时才展示。最好两者都提供</li>
+<li>start_url: 应用启动时所加载的 URL 。其值为相对于 manifest 的 url 的相对路径<blockquote>
+<p>例如 manifest URL 为 <code>https://www.iqiyi.com/manifest.json</code> ; start_url 为 <code>./index.html</code> ，则启动地址为 <code>https://www.iqiyi.com/index.html</code> 。而 start_url 为 <code>.</code> 启动地址就是 <code>https://www.iqiyi.com/</code> <br>还有更多的骚操作，比如把 uuid 或者 launcher 方式带在 <code>start_url</code> 后面（ <code>./?launcher=homescreen&amp;uuid=xxxx</code>），有助于用户分析</p>
+</blockquote>
+</li>
+</ul>
+<p>singleton</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-57ee6b2f8bbbbb7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="singleton"></p>
+<p>minimal-ui<br><img src="https://upload-images.jianshu.io/upload_images/9277731-dd9fcf46d8a2642c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="minimal-ui"></p>
+<h3 id="根据不同的启动方式应用不同样式"><a href="#根据不同的启动方式应用不同样式" class="headerlink" title="根据不同的启动方式应用不同样式"></a>根据不同的启动方式应用不同样式</h3><p>比如说，PWA 背景色应用红色，普通 Tab 应用白色，该如何实现呢？</p>
+<p>可以采用 CSS 的媒体查询</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="keyword">@media</span> all <span class="keyword">and</span> (<span class="attribute">display-mode:</span> standalone) &#123;</span><br><span class="line">  <span class="selector-tag">body</span> &#123;</span><br><span class="line">    <span class="attribute">background-color</span>: red;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>或者脚本检测</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'load'</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">if</span> (navigator.standalone) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Installed (iOS)'</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (matchMedia(<span class="string">'(display-mode: standalone)'</span>).matches) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Installed'</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Browser Tab'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>⚠️ 注意：iOS Safari 不支持 matchMedia ，但是其可以通过 <code>navigator.standalone</code> 返回的 true 表明自己以独立模式运行</p>
+<h2 id="浏览器兼容性"><a href="#浏览器兼容性" class="headerlink" title="浏览器兼容性"></a>浏览器兼容性</h2><p>可以看到，我们仅用到了 PWA 体系中的 <code>Web app manifests</code> , <code>Add to Home Screen</code> 和 <code>Service Worker</code>，因此该功能的浏览器兼容性取决于这几个的短板</p>
+<h3 id="Service-Worker"><a href="#Service-Worker" class="headerlink" title="Service Worker"></a>Service Worker</h3><p><img src="https://upload-images.jianshu.io/upload_images/9277731-8d545f352e70a70f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="sw.png"></p>
+<h3 id="Add-to-Home-Screen"><a href="#Add-to-Home-Screen" class="headerlink" title="Add to Home Screen"></a>Add to Home Screen</h3><p>待测试，本机（Macos chrome 81 支持）</p>
+<h3 id="Web-app-manifests"><a href="#Web-app-manifests" class="headerlink" title="Web app manifests"></a>Web app manifests</h3><p>待测试，本机（Macos chrome 81 支持）</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>（兼容性列表欢迎大家一起维护~）<br>…</p>
+<h2 id="题外话-自己动手丰衣足食"><a href="#题外话-自己动手丰衣足食" class="headerlink" title="题外话 - 自己动手丰衣足食"></a>题外话 - 自己动手丰衣足食</h2><p>对于普通的 Chrome 用户，如果自己喜欢的网站没有实现上述功能，自己如何把网站添加到桌面呢？</p>
+<p>右上角选择「更多工具」-「创建快捷方式」- 「确定」</p>
+<blockquote>
+<p>如果选择新窗口打开，新开窗口将不带导航栏、工具栏等，类似于 <code>display=standalone</code> ，否则就是普通的打开标签页 <code>display=browser</code></p>
+</blockquote>
+<p>可以看到桌面就存在一个该网站的图标了~ 点击就可以打开该网站</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li><a href="https://web.dev/customize-install/" target="_blank" rel="noopener">Provide a custom install experience</a></li>
+<li><a href="https://developers.chrome.com/apps/migration" target="_blank" rel="noopener">Transitioning from Chrome Apps</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/Progressive_web_apps" target="_blank" rel="noopener">渐进式 Web 应用（PWA）</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>随笔</tag>
+        <tag>PWA</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>实现第三方登录无刷新更新页面</title>
     <url>/2020/04/12/2020/%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E7%99%BB%E5%BD%95%E6%97%A0%E5%88%B7%E6%96%B0%E6%9B%B4%E6%96%B0%E9%A1%B5%E9%9D%A2/</url>
     <content><![CDATA[<h2 id="需求背景"><a href="#需求背景" class="headerlink" title="需求背景"></a>需求背景</h2><p>最近在研究 iqiyi 的登录流程，发现他们的第三方登录体验挺好的。</p>
@@ -794,6 +1038,12 @@
 <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 在离屏 canvas 上绘制</span></span><br><span class="line"><span class="keyword">var</span> canvasOffscreen = <span class="built_in">document</span>.createElement(<span class="string">'canvas'</span>);</span><br><span class="line">canvasOffscreen.width = dw;</span><br><span class="line">canvasOffscreen.height = dh;</span><br><span class="line">canvasOffscreen.getContext(<span class="string">'2d'</span>).drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在绘制每一帧的时候，绘制这个图形</span></span><br><span class="line">context.drawImage(canvasOffscreen, x, y);</span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>摘自 《Canvas 最佳实践（性能篇）》</p>
+</blockquote>
+<p>还可以借助 worker 进行优化</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// main.js</span></span><br><span class="line"><span class="keyword">const</span> offscreenCanvas = <span class="built_in">document</span>.getElementById(<span class="string">"c"</span>).transferControlToOffscreen();</span><br><span class="line">worker.postMessage(offscreenCanvas, [offscreenCanvas]);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// worker.js </span></span><br><span class="line"><span class="keyword">let</span> ctx, pos = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">draw</span>(<span class="params">dt</span>) </span>&#123;</span><br><span class="line">  ctx.clearRect(<span class="number">0</span>, <span class="number">0</span>, <span class="number">100</span>, <span class="number">100</span>);</span><br><span class="line">  ctx.fillRect(pos, <span class="number">0</span>, <span class="number">10</span>, <span class="number">10</span>);</span><br><span class="line">  pos += <span class="number">10</span> * dt;</span><br><span class="line">  requestAnimationFrame(draw);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">self.onmessage = <span class="function"><span class="keyword">function</span>(<span class="params">ev</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> transferredCanvas = ev.data;</span><br><span class="line">  ctx = transferredCanvas.getContext(<span class="string">"2d"</span>);</span><br><span class="line">  draw();</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>引自 <a href="https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames" target="_blank" rel="noopener">https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames</a></p>
 </blockquote>
 <h2 id="合理使用-API"><a href="#合理使用-API" class="headerlink" title="合理使用 API"></a>合理使用 API</h2><p>减少耗时 api 的使用</p>
 <p>减少改变 context 的状态</p>
@@ -4886,7 +5136,7 @@
 
 <h3 id="合并连续多个commit（aaaa-gt-bbbb）到指定的分支上"><a href="#合并连续多个commit（aaaa-gt-bbbb）到指定的分支上" class="headerlink" title="合并连续多个commit（aaaa-&gt;bbbb）到指定的分支上"></a>合并连续多个commit（aaaa-&gt;bbbb）到指定的分支上</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 创建并切换到newbranch分支 以bbbb提交为结尾</span></span><br><span class="line">git checkout -b newbranch bbbb</span><br><span class="line"><span class="comment"># 以aaaa的commit记录开始合并到master，此时合并的为aaaa-&gt;bbbb的commit</span></span><br><span class="line">git rebase —onto master aaaa^</span><br></pre></td></tr></table></figure>
 
-<h2 id="3-push"><a href="#3-push" class="headerlink" title="3. push"></a>3. push</h2><h3 id="推送到指定名称的远程分支"><a href="#推送到指定名称的远程分支" class="headerlink" title="推送到指定名称的远程分支"></a>推送到指定名称的远程分支</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">// 将<span class="built_in">local</span>-dev推送到 origin-dev 分支</span><br><span class="line">git push origin <span class="built_in">local</span>-dev:origin-dev</span><br><span class="line">// 当 <span class="built_in">local</span>-dev 为空时，将删除 origin-dev 分支</span><br></pre></td></tr></table></figure>
+<h2 id="3-push"><a href="#3-push" class="headerlink" title="3. push"></a>3. push</h2><h3 id="推送到指定名称的远程分支"><a href="#推送到指定名称的远程分支" class="headerlink" title="推送到指定名称的远程分支"></a>推送到指定名称的远程分支</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">// 将<span class="built_in">local</span>-dev推送到 origin-dev 分支</span><br><span class="line">git push origin <span class="built_in">local</span>-dev:origin-dev</span><br><span class="line">// 当 <span class="built_in">local</span>-dev 为空时，将删除 origin-dev 分支</span><br><span class="line">git push origin :origin-dev</span><br></pre></td></tr></table></figure>
 <h3 id="将本地仓库转到远程仓库"><a href="#将本地仓库转到远程仓库" class="headerlink" title="将本地仓库转到远程仓库"></a>将本地仓库转到远程仓库</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 添加远程仓库</span></span><br><span class="line">git remote add [name] [url]</span><br><span class="line"><span class="comment"># 推送远程仓库：这里的场景 localBranchName 一般用master</span></span><br><span class="line">git push [remoteName] [localBranchName]</span><br></pre></td></tr></table></figure>
 
 <h2 id="4-版本回退"><a href="#4-版本回退" class="headerlink" title="4. 版本回退"></a>4. 版本回退</h2><h3 id="删除远程仓库的文件-并忽略提交"><a href="#删除远程仓库的文件-并忽略提交" class="headerlink" title="删除远程仓库的文件 并忽略提交"></a>删除远程仓库的文件 并忽略提交</h3><p>当文件进入版本管理时，设置 gitignore 将没有效果，此时将提交push到远程仓库会发现远程仓库有这些文件</p>
@@ -4915,6 +5165,9 @@
 <li>git stash pop 还原工作区并删除对应的stash</li>
 <li>git stash list 此时应该是空的</li>
 </ol>
+<h2 id="git-commit"><a href="#git-commit" class="headerlink" title="git commit"></a>git commit</h2><p>–amend : 用来修改上次提交时的 message</p>
+<h2 id="git-rebase"><a href="#git-rebase" class="headerlink" title="git rebase"></a>git rebase</h2><h3 id="i-start-point-end-point-可交互变基"><a href="#i-start-point-end-point-可交互变基" class="headerlink" title="-i [start_point] [end_point] 可交互变基"></a>-i [start_point] [end_point] 可交互变基</h3><p>常用来调整 commit 记录的顺序， 进行 commit 合并等。</p>
+<p>首条 pick or edit(修改 message 用)，其他的用 s or f(丢弃该 commit 的 message)</p>
 <h2 id="git-tag"><a href="#git-tag" class="headerlink" title="git tag"></a>git tag</h2><p><a href="https://www.jianshu.com/p/9e64bdf1e8f9" target="_blank" rel="noopener">参考</a></p>
 <h3 id="添加tag"><a href="#添加tag" class="headerlink" title="添加tag"></a>添加tag</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git tag -a  &lt;tag名&gt; -m &lt;注释文字&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># git tag -a v0.1.0 -m v0.1.0</span></span><br></pre></td></tr></table></figure>
 
