@@ -6,7 +6,7 @@
     <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>希望网站提供一个「添加网页应用」功能，点击安装后，自动为用户创建一个网站的桌面快捷方式。</p>
 <p>下次用户直接从桌面快捷方式，即可访问我们的网站</p>
 <p><img src="https://upload-images.jianshu.io/upload_images/9277731-20ffae80eca4d59d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="iqiyi.png"></p>
-<!--moore-->
+<a id="more"></a>
 
 <h2 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h2><h3 id="1-Chrome-App"><a href="#1-Chrome-App" class="headerlink" title="1. Chrome App"></a>1. Chrome App</h3><p>在线安装（由于网络原因不太可行，而且如今已经没有入口了） or 离线下载</p>
 <p>举几个熟悉的 Chrome 应用：微信、Postman 。可以理解为一个独立的新应用了，和网站本身没有任何关系，因此可拓展性也较高。</p>
@@ -2680,139 +2680,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Promise then 原理分析</title>
-    <url>/2019/12/10/2019Q4/Promise%20then%20%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>先谈规范，再分析 polyfill 源码，最后实例解析。</p>
-<a id="more"></a>
-
-<h2 id="规范"><a href="#规范" class="headerlink" title="规范"></a>规范</h2><p>规范直接参考这边：<a href="http://www.ituring.com.cn/article/66566" target="_blank" rel="noopener">【翻译】Promises/A+规范</a></p>
-<p><strong>返回值这部分重要且易错，这里单独提出来分析下</strong></p>
-<p>首先，then 方法必须返回一个 promise 对象</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">promise2 = promise1.then(onFulfilled, onRejected);</span><br></pre></td></tr></table></figure>
-<ul>
-<li>如果 onFulfilled 或者 onRejected 返回一个值 x ，则运行下面的 <a href="#promise-solution-process"><strong>Promise 解决过程：<code>[[Resolve]](promise2, x)</code></strong></a></li>
-<li>如果 onFulfilled 或者 onRejected 抛出一个异常 e ，则 promise2 必须拒绝执行，并返回拒因 e</li>
-<li>如果 onFulfilled 不是函数且 promise1 成功执行， promise2 必须成功执行并返回相同的值<blockquote>
-<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled = 2;</code> <br>则 <code>promise2 = Promise {&lt;resolved&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>如果 onRejected 不是函数且 promise1 拒绝执行， promise2 必须拒绝执行并返回相同的据因<blockquote>
-<p>e.g.: <code>promise1 = Promise.reject(1);onRejected = 2;</code> <br>则 <code>promise2 = Promise {&lt;rejected&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>不论 promise1 被 reject 还是被 resolve 时 promise2 都会被 resolve，只有出现异常时才会被 rejected。<blockquote>
-<p>e.g.: <code>promise1 = Promise.reject(1);onFulfilled =()=&gt;1; onRejected=()=&gt;2;</code><br>则 <code>promise2 = Promise {&lt;resolved&gt;: 2}</code>;</p>
-<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled =()=&gt;{throw new Error(&#39;test&#39;)}; onRejected=(e)=&gt;console.log(e);</code><br>则 <code>promise2 = Promise {&lt;rejected&gt;: Error: test</code></p>
-</blockquote>
-</li>
-</ul>
-<h3 id="Promise-解决过程-Resolve-promise-x"><a href="#Promise-解决过程-Resolve-promise-x" class="headerlink" title="Promise 解决过程 [[Resolve]](promise, x)"></a><span id="promise-solution-process"><strong>Promise 解决过程 <code>[[Resolve]](promise, x)</code></strong></span></h3><p>promise 为 then 回调的返回值，运行 <code>[[Resolve]](promise, x)</code> 需遵循以下步骤：</p>
-<ul>
-<li>x 与 promise 相等<blockquote>
-<p>如果 promise 和 x 指向同一对象，以 TypeError 为据因拒绝执行 promise <br>e.g.: <code>test = {};test = Promise.resolve().then(()=&gt;test)</code> <br><code>//Promise {&lt;rejected&gt;: TypeError: Chaining cycle detected for promise #&lt;Promise&gt;}</code></p>
-</blockquote>
-</li>
-<li>x 为 Promise<blockquote>
-<p>promise 接受x的状态 <br>e.g.: <code>promise2 = Promise.resolve().then(()=&gt;Promise.reject(1))</code> <br><code>//Promise {&lt;rejected&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li><strong>x 为对象或函数</strong><ul>
-<li>把 x.then 赋值给 then。用引用保持，防止其他地方又更改了then的值</li>
-<li>如果取 x.then 的值时抛出错误 e ，则以 e 为据因拒绝 promise</li>
-<li>如果 then 是函数，将 x 作为函数的作用域 this 调用之。传递两个回调函数作为参数，第一个参数叫做 resolvePromise ，第二个参数叫做 rejectPromise:<ul>
-<li>如果 resolvePromise 以值 y 为参数被调用，则运行 [[Resolve]](promise, y)<blockquote>
-<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){res(this.a)}}))</code></p>
-<p><code>//Promise {&lt;resolved&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>如果 rejectPromise 以据因 r 为参数被调用，则以据因 r 拒绝 promise<blockquote>
-<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){rej(this.a)}}))</code></p>
-<p><code>//Promise {&lt;rejected&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>如果 resolvePromise 和 rejectPromise 均被调用，或者被同一参数调用了多次，则优先采用首次调用并忽略剩下的调用</li>
-<li>如果调用 then 方法抛出了异常 e：<ul>
-<li>如果 resolvePromise 或 rejectPromise 已经被调用，则忽略之</li>
-<li>否则以 e 为据因拒绝 promise</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>x 不为对象或函数<blockquote>
-<p>以 x 为参数执行 promise </p>
-</blockquote>
-</li>
-</ul>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">如果一个 promise 被一个循环的 thenable 链中的对象解决，而 [[Resolve]](promise, thenable) 的递归性质又使得其被再次调用，根据上述的算法将会陷入无限递归之中。算法虽不强制要求，但也鼓励施者检测这样的递归是否存在，若检测到存在则以一个可识别的 <span class="built_in">TypeError</span> 为据因来拒绝 promise</span><br></pre></td></tr></table></figure>
-
-<p>这个目前还不知道怎么写才能产生循环的 thenable 链 - -</p>
-<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><h3 id="then-操作解析"><a href="#then-操作解析" class="headerlink" title="then 操作解析"></a>then 操作解析</h3><p>全局维护一个 microTask Queue ，每个 promise 自身维护一个 queue</p>
-<p>当 promise 执行 then 方法时：</p>
-<ol>
-<li>令 then 方法中的回调为 resolver，令 promise 的内部值为 outcome</li>
-<li>创建一个 PENDING 状态的 Promise 对象 promise2</li>
-<li>如果 promise 处于 PENDING 状态，将 “执行 resolver ，改变 promise2 状态” 作为队列项放入该 promise 对象自身维护的 queue</li>
-<li>否则将 “执行 resolver ，改变 promise2 状态” 作为 microTask 放入 microTask Queue</li>
-<li>返回 promise2</li>
-</ol>
-<p>当同步代码执行完毕，开始执行 microTask Queue 中的任务</p>
-<p>执行 microTask ：</p>
-<ol>
-<li>以 promise 的内部值 outcome 作为参数执行 resolver 并得到返回值 returnValue</li>
-<li>若出现异常，将异常赋值给 returnValue </li>
-<li>若未出现异常，对 returnValue 做些处理，这里不细讲</li>
-<li>修改 promise2 的状态为 FULFILLED/REJECTED ，并修改 promise2 的内部值 outcome 为 returnValue</li>
-<li>该 promise2 维护的 queue 中的队列项放入 microTask Queue </li>
-</ol>
-<p>不断的执行 microTask 直到 microTask Queue 为空，一轮 event loop 结束</p>
-<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><p>对 <a href="https://github.com/calvinmetcalf/lie" target="_blank" rel="noopener">lie.js</a> (一个 Promise polyfill 库) 的代码做个精简，仅考虑普通的 then 回调和 resolve 方法</p>
-<p>然后 microTask 任务执行接口我们直接用的 setTimeout ，不搞 Mutation 那些幺蛾子，代码如下</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// immediate.js</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> scheduleDrain = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  setTimeout(nextTick, <span class="number">0</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> draining;</span><br><span class="line"><span class="keyword">var</span> queue = [];</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在同步代码 task 执行之后，模拟清空 microTask queue</span></span><br><span class="line"><span class="comment">// 由于执行过程中可能有新的 microTask 所以用了双层循环</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">nextTick</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  draining = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">var</span> i, oldQueue;</span><br><span class="line">  <span class="keyword">var</span> len = queue.length;</span><br><span class="line">  <span class="keyword">while</span> (len) &#123;</span><br><span class="line">    oldQueue = queue;</span><br><span class="line">    queue = [];</span><br><span class="line">    i = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">      oldQueue[i]();</span><br><span class="line">    &#125;</span><br><span class="line">    len = queue.length;</span><br><span class="line">  &#125;</span><br><span class="line">  draining = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">immediate</span>(<span class="params">task</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (queue.push(task) === <span class="number">1</span> &amp;&amp; !draining) &#123;</span><br><span class="line">    scheduleDrain();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Promise 代码如下</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// promise.js</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// then 方法执行时作为参数 resolver 实例化 Promise</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">INTERNAL</span> (<span class="params"></span>) </span>&#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> REJECTED = <span class="string">'REJECTED'</span>;</span><br><span class="line"><span class="keyword">const</span> FULFILLED = <span class="string">'FULFILLED'</span>;</span><br><span class="line"><span class="keyword">const</span> PENDING = <span class="string">'PENDING'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Promise</span> (<span class="params">resolver</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> resolver !== <span class="string">'function'</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">TypeError</span>(<span class="string">'resolver must be a function'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.state = PENDING;</span><br><span class="line">  <span class="keyword">this</span>.queue = [];</span><br><span class="line">  <span class="keyword">this</span>.outcome = <span class="keyword">void</span> <span class="number">0</span>;</span><br><span class="line">  <span class="comment">// 外部通过 new 实例化时执行</span></span><br><span class="line">  <span class="keyword">if</span> (resolver !== INTERNAL) &#123;</span><br><span class="line">    safelyResolveThenable(<span class="keyword">this</span>, resolver);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.prototype.then = <span class="function"><span class="keyword">function</span> (<span class="params">onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 特殊参数的处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> onFulfilled !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === FULFILLED ||</span><br><span class="line">    <span class="keyword">typeof</span> onRejected !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === REJECTED) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 创建一个 PENDING 状态的 promise</span></span><br><span class="line">  <span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="keyword">this</span>.constructor(INTERNAL);</span><br><span class="line">  <span class="comment">// 根据原 promise 状态进行不同处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.state !== PENDING) &#123;</span><br><span class="line">    <span class="keyword">var</span> resolver = <span class="keyword">this</span>.state === FULFILLED ? onFulfilled : onRejected;</span><br><span class="line">    makeMicroTask(promise, resolver, <span class="keyword">this</span>.outcome);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.queue.push(<span class="keyword">new</span> QueueItem(promise, onFulfilled, onRejected));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> promise;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.resolve = <span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> <span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> handleResolve(<span class="keyword">new</span> <span class="keyword">this</span>(INTERNAL), value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// promsie 内部队列项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">QueueItem</span> (<span class="params">promise, onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.promise = promise;</span><br><span class="line">  <span class="comment">// 仅考虑 function类型的 onFulfilled</span></span><br><span class="line">  <span class="keyword">this</span>.onFulfilled = onFulfilled;</span><br><span class="line">  <span class="keyword">this</span>.callFulfilled = <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">    makeMicroTask(<span class="keyword">this</span>.promise, <span class="keyword">this</span>.onFulfilled, value);</span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="comment">// 暂不处理 onRejected</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 handleResolve 操作放入 microtask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">makeMicroTask</span> (<span class="params">promise, func, value</span>) </span>&#123;</span><br><span class="line">  immediate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    handleResolve(promise, func(value));</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 改变 promise 状态，并通知 queue 中的 promise 执行 makeMicroTask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResolve</span> (<span class="params">self, value</span>) </span>&#123;</span><br><span class="line">  self.state = FULFILLED;</span><br><span class="line">  self.outcome = value;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">var</span> len = self.queue.length;</span><br><span class="line">  <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">    self.queue[i].callFulfilled(value);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对 resolver 方法的两个参数（resolve,reject）进行包装</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">safelyResolveThenable</span> (<span class="params">self, thenable</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> called = <span class="literal">false</span>;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onError</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    <span class="comment">// 暂不处理 reject</span></span><br><span class="line">    <span class="comment">// handlers.reject(self, value);</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onSuccess</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    handleResolve(self, value);</span><br><span class="line">  &#125;</span><br><span class="line">  thenable(onSuccess, onError);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="params">resolve</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">    resolve(<span class="number">3</span>);</span><br><span class="line">    <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">num</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(num)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
-
-<details>
-<summary>答案</summary>
-
-<p>1243 </p>
-</details>
-
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">3</span>)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
-
-<details>
-<summary>答案</summary>
-
-<p>2143 </p>
-</details>
-
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">11</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">12</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">13</span>)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">2</span>);</span><br><span class="line">  <span class="keyword">let</span> promise = <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">21</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">22</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">23</span>))</span><br><span class="line">  promise.then(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="number">29</span>))</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">24</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">25</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">26</span>))</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">27</span>)</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">28</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
-<details>
-<summary>答案</summary>
-
-<p>【1,2,11,21,24,27,28,12,22,25,13,23,26,29】</p>
-</details>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>当我们的 polyfill 写完后，需要测试下是否符合规范，我们自己写测试用例肯定是不可能的，这里有一个测试库<br><a href="https://github.com/promises-aplus/promises-tests" target="_blank" rel="noopener">promises-tests</a></p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> tests = <span class="built_in">require</span>(<span class="string">"promises-aplus-tests"</span>);</span><br><span class="line"><span class="keyword">const</span> <span class="built_in">Promise</span> = <span class="built_in">require</span>(<span class="string">"./index"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> deferred = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> resolve, reject;</span><br><span class="line">    <span class="keyword">const</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span>(<span class="params">_resolve, _reject</span>) </span>&#123;</span><br><span class="line">        resolve = _resolve;</span><br><span class="line">        reject = _reject;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        promise: promise,</span><br><span class="line">        resolve: resolve,</span><br><span class="line">        reject: reject</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">const</span> adapter = &#123;</span><br><span class="line">    deferred</span><br><span class="line">&#125;;</span><br><span class="line">tests.mocha(adapter);</span><br></pre></td></tr></table></figure>
-
-<p>这样就可以做测试了</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
-<li><a href="https://juejin.im/post/5aa3f7b9f265da23766ae5ae" target="_blank" rel="noopener">从一道Promise执行顺序的题目看Promise实现</a></li>
-<li><a href="https://segmentfault.com/a/1190000020037919" target="_blank" rel="noopener">手写一个符合A+规范的Promise</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>大前端</category>
-      </categories>
-      <tags>
-        <tag>ECMAScript</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Code Server搭建指南</title>
     <url>/2019/12/10/2019Q4/Code%20Server%E6%90%AD%E5%BB%BA%E6%8C%87%E5%8D%97/</url>
     <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>有个个人项目，比如博客、开源项目，在学校宿舍电脑上写一半，回到家想继续写，怎么做到？</p>
@@ -3029,6 +2896,139 @@
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Promise then 原理分析</title>
+    <url>/2019/12/10/2019Q4/Promise%20then%20%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>先谈规范，再分析 polyfill 源码，最后实例解析。</p>
+<a id="more"></a>
+
+<h2 id="规范"><a href="#规范" class="headerlink" title="规范"></a>规范</h2><p>规范直接参考这边：<a href="http://www.ituring.com.cn/article/66566" target="_blank" rel="noopener">【翻译】Promises/A+规范</a></p>
+<p><strong>返回值这部分重要且易错，这里单独提出来分析下</strong></p>
+<p>首先，then 方法必须返回一个 promise 对象</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">promise2 = promise1.then(onFulfilled, onRejected);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>如果 onFulfilled 或者 onRejected 返回一个值 x ，则运行下面的 <a href="#promise-solution-process"><strong>Promise 解决过程：<code>[[Resolve]](promise2, x)</code></strong></a></li>
+<li>如果 onFulfilled 或者 onRejected 抛出一个异常 e ，则 promise2 必须拒绝执行，并返回拒因 e</li>
+<li>如果 onFulfilled 不是函数且 promise1 成功执行， promise2 必须成功执行并返回相同的值<blockquote>
+<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled = 2;</code> <br>则 <code>promise2 = Promise {&lt;resolved&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>如果 onRejected 不是函数且 promise1 拒绝执行， promise2 必须拒绝执行并返回相同的据因<blockquote>
+<p>e.g.: <code>promise1 = Promise.reject(1);onRejected = 2;</code> <br>则 <code>promise2 = Promise {&lt;rejected&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>不论 promise1 被 reject 还是被 resolve 时 promise2 都会被 resolve，只有出现异常时才会被 rejected。<blockquote>
+<p>e.g.: <code>promise1 = Promise.reject(1);onFulfilled =()=&gt;1; onRejected=()=&gt;2;</code><br>则 <code>promise2 = Promise {&lt;resolved&gt;: 2}</code>;</p>
+<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled =()=&gt;{throw new Error(&#39;test&#39;)}; onRejected=(e)=&gt;console.log(e);</code><br>则 <code>promise2 = Promise {&lt;rejected&gt;: Error: test</code></p>
+</blockquote>
+</li>
+</ul>
+<h3 id="Promise-解决过程-Resolve-promise-x"><a href="#Promise-解决过程-Resolve-promise-x" class="headerlink" title="Promise 解决过程 [[Resolve]](promise, x)"></a><span id="promise-solution-process"><strong>Promise 解决过程 <code>[[Resolve]](promise, x)</code></strong></span></h3><p>promise 为 then 回调的返回值，运行 <code>[[Resolve]](promise, x)</code> 需遵循以下步骤：</p>
+<ul>
+<li>x 与 promise 相等<blockquote>
+<p>如果 promise 和 x 指向同一对象，以 TypeError 为据因拒绝执行 promise <br>e.g.: <code>test = {};test = Promise.resolve().then(()=&gt;test)</code> <br><code>//Promise {&lt;rejected&gt;: TypeError: Chaining cycle detected for promise #&lt;Promise&gt;}</code></p>
+</blockquote>
+</li>
+<li>x 为 Promise<blockquote>
+<p>promise 接受x的状态 <br>e.g.: <code>promise2 = Promise.resolve().then(()=&gt;Promise.reject(1))</code> <br><code>//Promise {&lt;rejected&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li><strong>x 为对象或函数</strong><ul>
+<li>把 x.then 赋值给 then。用引用保持，防止其他地方又更改了then的值</li>
+<li>如果取 x.then 的值时抛出错误 e ，则以 e 为据因拒绝 promise</li>
+<li>如果 then 是函数，将 x 作为函数的作用域 this 调用之。传递两个回调函数作为参数，第一个参数叫做 resolvePromise ，第二个参数叫做 rejectPromise:<ul>
+<li>如果 resolvePromise 以值 y 为参数被调用，则运行 [[Resolve]](promise, y)<blockquote>
+<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){res(this.a)}}))</code></p>
+<p><code>//Promise {&lt;resolved&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>如果 rejectPromise 以据因 r 为参数被调用，则以据因 r 拒绝 promise<blockquote>
+<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){rej(this.a)}}))</code></p>
+<p><code>//Promise {&lt;rejected&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>如果 resolvePromise 和 rejectPromise 均被调用，或者被同一参数调用了多次，则优先采用首次调用并忽略剩下的调用</li>
+<li>如果调用 then 方法抛出了异常 e：<ul>
+<li>如果 resolvePromise 或 rejectPromise 已经被调用，则忽略之</li>
+<li>否则以 e 为据因拒绝 promise</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>x 不为对象或函数<blockquote>
+<p>以 x 为参数执行 promise </p>
+</blockquote>
+</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">如果一个 promise 被一个循环的 thenable 链中的对象解决，而 [[Resolve]](promise, thenable) 的递归性质又使得其被再次调用，根据上述的算法将会陷入无限递归之中。算法虽不强制要求，但也鼓励施者检测这样的递归是否存在，若检测到存在则以一个可识别的 <span class="built_in">TypeError</span> 为据因来拒绝 promise</span><br></pre></td></tr></table></figure>
+
+<p>这个目前还不知道怎么写才能产生循环的 thenable 链 - -</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><h3 id="then-操作解析"><a href="#then-操作解析" class="headerlink" title="then 操作解析"></a>then 操作解析</h3><p>全局维护一个 microTask Queue ，每个 promise 自身维护一个 queue</p>
+<p>当 promise 执行 then 方法时：</p>
+<ol>
+<li>令 then 方法中的回调为 resolver，令 promise 的内部值为 outcome</li>
+<li>创建一个 PENDING 状态的 Promise 对象 promise2</li>
+<li>如果 promise 处于 PENDING 状态，将 “执行 resolver ，改变 promise2 状态” 作为队列项放入该 promise 对象自身维护的 queue</li>
+<li>否则将 “执行 resolver ，改变 promise2 状态” 作为 microTask 放入 microTask Queue</li>
+<li>返回 promise2</li>
+</ol>
+<p>当同步代码执行完毕，开始执行 microTask Queue 中的任务</p>
+<p>执行 microTask ：</p>
+<ol>
+<li>以 promise 的内部值 outcome 作为参数执行 resolver 并得到返回值 returnValue</li>
+<li>若出现异常，将异常赋值给 returnValue </li>
+<li>若未出现异常，对 returnValue 做些处理，这里不细讲</li>
+<li>修改 promise2 的状态为 FULFILLED/REJECTED ，并修改 promise2 的内部值 outcome 为 returnValue</li>
+<li>该 promise2 维护的 queue 中的队列项放入 microTask Queue </li>
+</ol>
+<p>不断的执行 microTask 直到 microTask Queue 为空，一轮 event loop 结束</p>
+<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><p>对 <a href="https://github.com/calvinmetcalf/lie" target="_blank" rel="noopener">lie.js</a> (一个 Promise polyfill 库) 的代码做个精简，仅考虑普通的 then 回调和 resolve 方法</p>
+<p>然后 microTask 任务执行接口我们直接用的 setTimeout ，不搞 Mutation 那些幺蛾子，代码如下</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// immediate.js</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> scheduleDrain = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  setTimeout(nextTick, <span class="number">0</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> draining;</span><br><span class="line"><span class="keyword">var</span> queue = [];</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在同步代码 task 执行之后，模拟清空 microTask queue</span></span><br><span class="line"><span class="comment">// 由于执行过程中可能有新的 microTask 所以用了双层循环</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">nextTick</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  draining = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">var</span> i, oldQueue;</span><br><span class="line">  <span class="keyword">var</span> len = queue.length;</span><br><span class="line">  <span class="keyword">while</span> (len) &#123;</span><br><span class="line">    oldQueue = queue;</span><br><span class="line">    queue = [];</span><br><span class="line">    i = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">      oldQueue[i]();</span><br><span class="line">    &#125;</span><br><span class="line">    len = queue.length;</span><br><span class="line">  &#125;</span><br><span class="line">  draining = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">immediate</span>(<span class="params">task</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (queue.push(task) === <span class="number">1</span> &amp;&amp; !draining) &#123;</span><br><span class="line">    scheduleDrain();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Promise 代码如下</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// promise.js</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// then 方法执行时作为参数 resolver 实例化 Promise</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">INTERNAL</span> (<span class="params"></span>) </span>&#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> REJECTED = <span class="string">'REJECTED'</span>;</span><br><span class="line"><span class="keyword">const</span> FULFILLED = <span class="string">'FULFILLED'</span>;</span><br><span class="line"><span class="keyword">const</span> PENDING = <span class="string">'PENDING'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Promise</span> (<span class="params">resolver</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> resolver !== <span class="string">'function'</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">TypeError</span>(<span class="string">'resolver must be a function'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.state = PENDING;</span><br><span class="line">  <span class="keyword">this</span>.queue = [];</span><br><span class="line">  <span class="keyword">this</span>.outcome = <span class="keyword">void</span> <span class="number">0</span>;</span><br><span class="line">  <span class="comment">// 外部通过 new 实例化时执行</span></span><br><span class="line">  <span class="keyword">if</span> (resolver !== INTERNAL) &#123;</span><br><span class="line">    safelyResolveThenable(<span class="keyword">this</span>, resolver);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.prototype.then = <span class="function"><span class="keyword">function</span> (<span class="params">onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 特殊参数的处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> onFulfilled !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === FULFILLED ||</span><br><span class="line">    <span class="keyword">typeof</span> onRejected !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === REJECTED) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 创建一个 PENDING 状态的 promise</span></span><br><span class="line">  <span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="keyword">this</span>.constructor(INTERNAL);</span><br><span class="line">  <span class="comment">// 根据原 promise 状态进行不同处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.state !== PENDING) &#123;</span><br><span class="line">    <span class="keyword">var</span> resolver = <span class="keyword">this</span>.state === FULFILLED ? onFulfilled : onRejected;</span><br><span class="line">    makeMicroTask(promise, resolver, <span class="keyword">this</span>.outcome);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.queue.push(<span class="keyword">new</span> QueueItem(promise, onFulfilled, onRejected));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> promise;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.resolve = <span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> <span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> handleResolve(<span class="keyword">new</span> <span class="keyword">this</span>(INTERNAL), value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// promsie 内部队列项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">QueueItem</span> (<span class="params">promise, onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.promise = promise;</span><br><span class="line">  <span class="comment">// 仅考虑 function类型的 onFulfilled</span></span><br><span class="line">  <span class="keyword">this</span>.onFulfilled = onFulfilled;</span><br><span class="line">  <span class="keyword">this</span>.callFulfilled = <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">    makeMicroTask(<span class="keyword">this</span>.promise, <span class="keyword">this</span>.onFulfilled, value);</span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="comment">// 暂不处理 onRejected</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 handleResolve 操作放入 microtask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">makeMicroTask</span> (<span class="params">promise, func, value</span>) </span>&#123;</span><br><span class="line">  immediate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    handleResolve(promise, func(value));</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 改变 promise 状态，并通知 queue 中的 promise 执行 makeMicroTask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResolve</span> (<span class="params">self, value</span>) </span>&#123;</span><br><span class="line">  self.state = FULFILLED;</span><br><span class="line">  self.outcome = value;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">var</span> len = self.queue.length;</span><br><span class="line">  <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">    self.queue[i].callFulfilled(value);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对 resolver 方法的两个参数（resolve,reject）进行包装</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">safelyResolveThenable</span> (<span class="params">self, thenable</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> called = <span class="literal">false</span>;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onError</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    <span class="comment">// 暂不处理 reject</span></span><br><span class="line">    <span class="comment">// handlers.reject(self, value);</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onSuccess</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    handleResolve(self, value);</span><br><span class="line">  &#125;</span><br><span class="line">  thenable(onSuccess, onError);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="params">resolve</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">    resolve(<span class="number">3</span>);</span><br><span class="line">    <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">num</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(num)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<details>
+<summary>答案</summary>
+
+<p>1243 </p>
+</details>
+
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">3</span>)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<details>
+<summary>答案</summary>
+
+<p>2143 </p>
+</details>
+
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">11</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">12</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">13</span>)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">2</span>);</span><br><span class="line">  <span class="keyword">let</span> promise = <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">21</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">22</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">23</span>))</span><br><span class="line">  promise.then(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="number">29</span>))</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">24</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">25</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">26</span>))</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">27</span>)</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">28</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<details>
+<summary>答案</summary>
+
+<p>【1,2,11,21,24,27,28,12,22,25,13,23,26,29】</p>
+</details>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>当我们的 polyfill 写完后，需要测试下是否符合规范，我们自己写测试用例肯定是不可能的，这里有一个测试库<br><a href="https://github.com/promises-aplus/promises-tests" target="_blank" rel="noopener">promises-tests</a></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> tests = <span class="built_in">require</span>(<span class="string">"promises-aplus-tests"</span>);</span><br><span class="line"><span class="keyword">const</span> <span class="built_in">Promise</span> = <span class="built_in">require</span>(<span class="string">"./index"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> deferred = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> resolve, reject;</span><br><span class="line">    <span class="keyword">const</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span>(<span class="params">_resolve, _reject</span>) </span>&#123;</span><br><span class="line">        resolve = _resolve;</span><br><span class="line">        reject = _reject;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        promise: promise,</span><br><span class="line">        resolve: resolve,</span><br><span class="line">        reject: reject</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">const</span> adapter = &#123;</span><br><span class="line">    deferred</span><br><span class="line">&#125;;</span><br><span class="line">tests.mocha(adapter);</span><br></pre></td></tr></table></figure>
+
+<p>这样就可以做测试了</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://juejin.im/post/5aa3f7b9f265da23766ae5ae" target="_blank" rel="noopener">从一道Promise执行顺序的题目看Promise实现</a></li>
+<li><a href="https://segmentfault.com/a/1190000020037919" target="_blank" rel="noopener">手写一个符合A+规范的Promise</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>ECMAScript</tag>
       </tags>
   </entry>
   <entry>
@@ -5489,8 +5489,8 @@
         <category>大前端</category>
       </categories>
       <tags>
-        <tag>CDN</tag>
         <tag>前端优化</tag>
+        <tag>CDN</tag>
       </tags>
   </entry>
   <entry>
