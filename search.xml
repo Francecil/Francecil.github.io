@@ -1,6 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>把网站添加到桌面，「爱奇艺网页应用」是如何实现的</title>
+    <url>/2020/05/21/2020/%E6%8A%8A%E7%BD%91%E7%AB%99%E6%B7%BB%E5%8A%A0%E5%88%B0%E6%A1%8C%E9%9D%A2%EF%BC%8C%E3%80%8C%E7%88%B1%E5%A5%87%E8%89%BA%E7%BD%91%E9%A1%B5%E5%BA%94%E7%94%A8%E3%80%8D%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>希望网站提供一个「添加网页应用」功能，点击安装后，自动为用户创建一个网站的桌面快捷方式。</p>
+<p>下次用户直接从桌面快捷方式，即可访问我们的网站</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-20ffae80eca4d59d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="iqiyi.png"></p>
+<!--moore-->
+
+<h2 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h2><h3 id="1-Chrome-App"><a href="#1-Chrome-App" class="headerlink" title="1. Chrome App"></a>1. Chrome App</h3><p>在线安装（由于网络原因不太可行，而且如今已经没有入口了） or 离线下载</p>
+<p>举几个熟悉的 Chrome 应用：微信、Postman 。可以理解为一个独立的新应用了，和网站本身没有任何关系，因此可拓展性也较高。</p>
+<p>曾经较为流行，由于各种原因，chrome 将不再支持（目前只支持更新，不再上新），所以该方案放弃</p>
+<p>详见 <a href="https://blog.chromium.org/2020/01/moving-forward-from-chrome-apps.html" target="_blank" rel="noopener">https://blog.chromium.org/2020/01/moving-forward-from-chrome-apps.html</a></p>
+<h3 id="2-Progressive-Web-App-（PWA）"><a href="#2-Progressive-Web-App-（PWA）" class="headerlink" title="2. Progressive Web App （PWA）"></a>2. Progressive Web App （PWA）</h3><p>即 <a href="https://developer.mozilla.org/zh-CN/docs/Web/Progressive_web_apps/Introduction" target="_blank" rel="noopener">渐进式 Web 应用</a>，这不是一个单独的技术，而是多种技术的组合，包括</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Manifest" target="_blank" rel="noopener">Web app manifests</a>: 通过 JSON 提供应用程序相关信息，目的是将应用程序安装到设备桌面</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" target="_blank" rel="noopener">Service Worker</a>: 充当浏览器与服务端间的网络代理，提供离线访问能力</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API" target="_blank" rel="noopener">Push API</a>: 从服务器向客户端推送消息，需要借助 service worker</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API" target="_blank" rel="noopener">Notifications API</a>: 允许网页或应用程序在系统级别发送在页面外部显示的通知</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Add_to_home_screen" target="_blank" rel="noopener">Add to Home Screen</a>: 将应用程序安装到设备桌面的关键，需要浏览器支持 beforeinstallprompt 事件</li>
+</ul>
+<p>不要被上述技术栈吓到。。如果只是为了实现 「把网站添加到桌面」功能，仅需要 <code>Web app manifests</code>, <code>Add to Home Screen</code> , <code>Service Worker</code> . 5分钟就可以开发好</p>
+<h2 id="功能实现"><a href="#功能实现" class="headerlink" title="功能实现"></a>功能实现</h2><p>首先需要说明的是，我们的网站必须运行在 https 环境。所以开发测试的时候可以用 <code>github.io</code> 白嫖</p>
+<p>大体流程如下：</p>
+<ol>
+<li>编写一个简单的 HTML 页面<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>A2HS demo<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="css">      <span class="selector-class">.add-button</span> &#123;</span></span><br><span class="line">        position: absolute;</span><br><span class="line">        top: 1px;</span><br><span class="line">        left: 1px;</span><br><span class="line">      &#125;</span><br><span class="line">    <span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"index.js"</span> <span class="attr">defer</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"manifest"</span> <span class="attr">href</span>=<span class="string">"manifest.webmanifest"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>测试文本<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"add-button"</span>&gt;</span>添加到桌面<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li>编写一份 <code>Web app manifests</code> JSON(后面会详细讲解各个字段) ,命名为 <code>manifest.webmanifest</code> <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Add_to_home_screen#Manifest" target="_blank" rel="noopener">?</a></li>
+</ol>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"background_color"</span>: <span class="string">"purple"</span>,</span><br><span class="line">  <span class="attr">"display"</span>: <span class="string">"fullscreen"</span>,</span><br><span class="line">  <span class="attr">"icons"</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="attr">"src"</span>: <span class="string">"icon/fox-icon.png"</span>,</span><br><span class="line">      <span class="attr">"sizes"</span>: <span class="string">"192x192"</span>,</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"image/png"</span></span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"name"</span>: <span class="string">"xx快捷版"</span>,</span><br><span class="line">  <span class="attr">"short_name"</span>: <span class="string">"快"</span>,</span><br><span class="line">  <span class="attr">"start_url"</span>: <span class="string">"."</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>注册安装事件 </li>
+</ol>
+<p>index.js</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> deferredPrompt;</span><br><span class="line"><span class="comment">// 默认不展示按钮，仅支持 「Add to Home Screen」 功能才展现</span></span><br><span class="line"><span class="keyword">const</span> addBtn = <span class="built_in">document</span>.querySelector(<span class="string">'.add-button'</span>);</span><br><span class="line">addBtn.style.display = <span class="string">'none'</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规定必须注册 serviceWorker 才能使用 Add to Home Screen，</span></span><br><span class="line"><span class="comment">// 且需要监听 install 和 fetch 事件，可以不处理</span></span><br><span class="line"><span class="keyword">if</span>(<span class="string">'serviceWorker'</span> <span class="keyword">in</span> navigator) &#123;</span><br><span class="line">  navigator.serviceWorker</span><br><span class="line">           .register(<span class="string">'./sw.js'</span>)</span><br><span class="line">           .then(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="string">'Service Worker Registered'</span>); &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 仅浏览器支持且未安装该应用，以下事件才会触发</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'beforeinstallprompt'</span>, (e) =&gt; &#123;</span><br><span class="line">  <span class="comment">// Chrome 67 及之前版本，会自动展现安装的 prompt</span></span><br><span class="line">  <span class="comment">// 为了版本统一及用户体验，我们禁止自动展现 prompt</span></span><br><span class="line">  e.preventDefault();</span><br><span class="line">  <span class="comment">// 存放事件用于后续触发</span></span><br><span class="line">  deferredPrompt = e;</span><br><span class="line">  <span class="comment">// 展现按钮</span></span><br><span class="line">  addBtn.style.display = <span class="string">'block'</span>;</span><br><span class="line"></span><br><span class="line">  addBtn.addEventListener(<span class="string">'click'</span>, (e) =&gt; &#123;</span><br><span class="line">    <span class="comment">// hide our user interface that shows our A2HS button</span></span><br><span class="line">    addBtn.style.display = <span class="string">'none'</span>;</span><br><span class="line">    <span class="comment">// 展现安装的 prompt</span></span><br><span class="line">    deferredPrompt.prompt();</span><br><span class="line">    <span class="comment">// 等待用户对 prompt 进行操作</span></span><br><span class="line">    <span class="comment">// 如果用户从地址栏或其他浏览器组件安装了PWA，则以下代码将不起作用 </span></span><br><span class="line">    deferredPrompt.userChoice.then(<span class="function">(<span class="params">choiceResult</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (choiceResult.outcome === <span class="string">'accepted'</span>) &#123;</span><br><span class="line">          <span class="built_in">console</span>.log(<span class="string">'点击添加'</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="built_in">console</span>.log(<span class="string">'取消添加'</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        deferredPrompt = <span class="literal">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 无论以何种方式安装 PWA 该事件都会触发</span></span><br><span class="line"><span class="comment">// 因此这里可以用来做埋点</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'appinstalled'</span>, (evt) =&gt; &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'应用安装'</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>编写 sw 文件</li>
+</ol>
+<p>sw.js</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">self.addEventListener(<span class="string">'install'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'install success'</span>)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">self.addEventListener(<span class="string">'fetch'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(e.request.url);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<ol start="5">
+<li>最后，准备一个 icon ，见 <code>manifest.webmanifest</code> 中的 icons 配置</li>
+</ol>
+<p>之后，就可以体验这个功能了 </p>
+<h3 id="在线示例"><a href="#在线示例" class="headerlink" title="在线示例"></a>在线示例</h3><p><a href="https://fe-examples.github.io/pwa-examples/a2hs/" target="_blank" rel="noopener">https://fe-examples.github.io/pwa-examples/a2hs/</a></p>
+<p>如果浏览器支持 ,页面左上角将展现 「添加到桌面」按钮</p>
+<p>欢迎试用，并把操作系统、浏览器型号发在评论区，看看兼容性如何~</p>
+<h3 id="Web-app-manifests-相关配置"><a href="#Web-app-manifests-相关配置" class="headerlink" title="Web app manifests 相关配置"></a>Web app manifests 相关配置</h3><p>这里只举常用的，更多详见 <a href="https://w3c.github.io/manifest/#webappmanifest-dictionary" target="_blank" rel="noopener">WebAppManifest</a></p>
+<ul>
+<li>background_color: 应用启动时资源未加载时展示的背景色。仅用于改善加载时的用户体验，不影响后续网站背景。</li>
+<li>theme_color: 主题色，相当于显式的设置 <code>&lt;meta name=&quot;theme-color&quot; content=&quot;颜色值&quot;&gt;</code> ,将会影响浏览器外观颜色的展现。</li>
+<li>display: 指定如何显示应用。有以下几种取值，在不支持的情况下按从上往下顺序 fallback<ul>
+<li>fullscreen: 占用所有可用显示区域，无任何浏览器 UI 元素。不影响 Fullscreen API</li>
+<li>standalone: 类似本机应用程序。排除地址栏，但是可能包含状态栏和系统后退按钮</li>
+<li>minimal-ui: 相比 <code>standalone</code> 增加了导航控件（后退，前进，刷新）等 UI 元素</li>
+<li>browser: 等同于打开标签页。需要注意的是， browser 是兜底方式且仅部分浏览器支持，如果浏览器还不支持，整份配置将无效<blockquote>
+<p>Macos chrome 下测试 2 和 1 显示一致，不支持 4</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>icons: 指定在不同位置时采用的图标，主要是根据 sizes 字段来判断。相比移动端 APP 的 icon ，PWA 多了桌面位置、Chrome 应用入口位置。至少指定一个 icon</li>
+<li>name/short_name: 前者为完整的应用名称，后者为当没有足够空间显示全名时才展示。最好两者都提供</li>
+<li>start_url: 应用启动时所加载的 URL 。其值为相对于 manifest 的 url 的相对路径<blockquote>
+<p>例如 manifest URL 为 <code>https://www.iqiyi.com/manifest.json</code> ; start_url 为 <code>./index.html</code> ，则启动地址为 <code>https://www.iqiyi.com/index.html</code> 。而 start_url 为 <code>.</code> 启动地址就是 <code>https://www.iqiyi.com/</code> <br>还有更多的骚操作，比如把 uuid 或者 launcher 方式带在 <code>start_url</code> 后面（ <code>./?launcher=homescreen&amp;uuid=xxxx</code>），有助于用户分析</p>
+</blockquote>
+</li>
+</ul>
+<p>singleton</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-57ee6b2f8bbbbb7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="singleton"></p>
+<p>minimal-ui<br><img src="https://upload-images.jianshu.io/upload_images/9277731-dd9fcf46d8a2642c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="minimal-ui"></p>
+<h3 id="根据不同的启动方式应用不同样式"><a href="#根据不同的启动方式应用不同样式" class="headerlink" title="根据不同的启动方式应用不同样式"></a>根据不同的启动方式应用不同样式</h3><p>比如说，PWA 背景色应用红色，普通 Tab 应用白色，该如何实现呢？</p>
+<p>可以采用 CSS 的媒体查询</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="keyword">@media</span> all <span class="keyword">and</span> (<span class="attribute">display-mode:</span> standalone) &#123;</span><br><span class="line">  <span class="selector-tag">body</span> &#123;</span><br><span class="line">    <span class="attribute">background-color</span>: red;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>或者脚本检测</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'load'</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">if</span> (navigator.standalone) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Installed (iOS)'</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (matchMedia(<span class="string">'(display-mode: standalone)'</span>).matches) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Installed'</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Browser Tab'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>⚠️ 注意：iOS Safari 不支持 matchMedia ，但是其可以通过 <code>navigator.standalone</code> 返回的 true 表明自己以独立模式运行</p>
+<h2 id="浏览器兼容性"><a href="#浏览器兼容性" class="headerlink" title="浏览器兼容性"></a>浏览器兼容性</h2><p>可以看到，我们仅用到了 PWA 体系中的 <code>Web app manifests</code> , <code>Add to Home Screen</code> 和 <code>Service Worker</code>，因此该功能的浏览器兼容性取决于这几个的短板</p>
+<h3 id="Service-Worker"><a href="#Service-Worker" class="headerlink" title="Service Worker"></a>Service Worker</h3><p><img src="https://upload-images.jianshu.io/upload_images/9277731-8d545f352e70a70f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="sw.png"></p>
+<h3 id="Add-to-Home-Screen"><a href="#Add-to-Home-Screen" class="headerlink" title="Add to Home Screen"></a>Add to Home Screen</h3><p>待测试，本机（Macos chrome 81 支持）</p>
+<h3 id="Web-app-manifests"><a href="#Web-app-manifests" class="headerlink" title="Web app manifests"></a>Web app manifests</h3><p>待测试，本机（Macos chrome 81 支持）</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>（兼容性列表欢迎大家一起维护~）<br>…</p>
+<h2 id="题外话-自己动手丰衣足食"><a href="#题外话-自己动手丰衣足食" class="headerlink" title="题外话 - 自己动手丰衣足食"></a>题外话 - 自己动手丰衣足食</h2><p>对于普通的 Chrome 用户，如果自己喜欢的网站没有实现上述功能，自己如何把网站添加到桌面呢？</p>
+<p>右上角选择「更多工具」-「创建快捷方式」- 「确定」</p>
+<blockquote>
+<p>如果选择新窗口打开，新开窗口将不带导航栏、工具栏等，类似于 <code>display=standalone</code> ，否则就是普通的打开标签页 <code>display=browser</code></p>
+</blockquote>
+<p>可以看到桌面就存在一个该网站的图标了~ 点击就可以打开该网站</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li><a href="https://web.dev/customize-install/" target="_blank" rel="noopener">Provide a custom install experience</a></li>
+<li><a href="https://developers.chrome.com/apps/migration" target="_blank" rel="noopener">Transitioning from Chrome Apps</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/Progressive_web_apps" target="_blank" rel="noopener">渐进式 Web 应用（PWA）</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>随笔</tag>
+        <tag>PWA</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>面试官问：如何利用 random 计算 π</title>
     <url>/2020/05/07/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E5%A6%82%E4%BD%95%E5%88%A9%E7%94%A8%20random%20%E8%AE%A1%E7%AE%97%20%CF%80/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这是基友面试 RingCenter 时被问到的一个题目</p>
@@ -138,110 +242,6 @@
       <tags>
         <tag>ECMAScript</tag>
         <tag>面试题</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>把网站添加到桌面，「爱奇艺网页应用」是如何实现的</title>
-    <url>/2020/04/12/2020/%E6%8A%8A%E7%BD%91%E7%AB%99%E6%B7%BB%E5%8A%A0%E5%88%B0%E6%A1%8C%E9%9D%A2%EF%BC%8C%E3%80%8C%E7%88%B1%E5%A5%87%E8%89%BA%E7%BD%91%E9%A1%B5%E5%BA%94%E7%94%A8%E3%80%8D%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>希望网站提供一个「添加网页应用」功能，点击安装后，自动为用户创建一个网站的桌面快捷方式。</p>
-<p>下次用户直接从桌面快捷方式，即可访问我们的网站</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/9277731-20ffae80eca4d59d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="iqiyi.png"></p>
-<!--moore-->
-
-<h2 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h2><h3 id="1-Chrome-App"><a href="#1-Chrome-App" class="headerlink" title="1. Chrome App"></a>1. Chrome App</h3><p>在线安装（由于网络原因不太可行，而且如今已经没有入口了） or 离线下载</p>
-<p>举几个熟悉的 Chrome 应用：微信、Postman 。可以理解为一个独立的新应用了，和网站本身没有任何关系，因此可拓展性也较高。</p>
-<p>曾经较为流行，由于各种原因，chrome 将不再支持（目前只支持更新，不再上新），所以该方案放弃</p>
-<p>详见 <a href="https://blog.chromium.org/2020/01/moving-forward-from-chrome-apps.html" target="_blank" rel="noopener">https://blog.chromium.org/2020/01/moving-forward-from-chrome-apps.html</a></p>
-<h3 id="2-Progressive-Web-App-（PWA）"><a href="#2-Progressive-Web-App-（PWA）" class="headerlink" title="2. Progressive Web App （PWA）"></a>2. Progressive Web App （PWA）</h3><p>即 <a href="https://developer.mozilla.org/zh-CN/docs/Web/Progressive_web_apps/Introduction" target="_blank" rel="noopener">渐进式 Web 应用</a>，这不是一个单独的技术，而是多种技术的组合，包括</p>
-<ul>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/Manifest" target="_blank" rel="noopener">Web app manifests</a>: 通过 JSON 提供应用程序相关信息，目的是将应用程序安装到设备桌面</li>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" target="_blank" rel="noopener">Service Worker</a>: 充当浏览器与服务端间的网络代理，提供离线访问能力</li>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API" target="_blank" rel="noopener">Push API</a>: 从服务器向客户端推送消息，需要借助 service worker</li>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API" target="_blank" rel="noopener">Notifications API</a>: 允许网页或应用程序在系统级别发送在页面外部显示的通知</li>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Add_to_home_screen" target="_blank" rel="noopener">Add to Home Screen</a>: 将应用程序安装到设备桌面的关键，需要浏览器支持 beforeinstallprompt 事件</li>
-</ul>
-<p>不要被上述技术栈吓到。。如果只是为了实现 「把网站添加到桌面」功能，仅需要 <code>Web app manifests</code>, <code>Add to Home Screen</code> , <code>Service Worker</code> . 5分钟就可以开发好</p>
-<h2 id="功能实现"><a href="#功能实现" class="headerlink" title="功能实现"></a>功能实现</h2><p>首先需要说明的是，我们的网站必须运行在 https 环境。所以开发测试的时候可以用 <code>github.io</code> 白嫖</p>
-<p>大体流程如下：</p>
-<ol>
-<li>编写一个简单的 HTML 页面<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>A2HS demo<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="css">      <span class="selector-class">.add-button</span> &#123;</span></span><br><span class="line">        position: absolute;</span><br><span class="line">        top: 1px;</span><br><span class="line">        left: 1px;</span><br><span class="line">      &#125;</span><br><span class="line">    <span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"index.js"</span> <span class="attr">defer</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"manifest"</span> <span class="attr">href</span>=<span class="string">"manifest.webmanifest"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>测试文本<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"add-button"</span>&gt;</span>添加到桌面<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
-<li>编写一份 <code>Web app manifests</code> JSON(后面会详细讲解各个字段) ,命名为 <code>manifest.webmanifest</code> <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Add_to_home_screen#Manifest" target="_blank" rel="noopener">?</a></li>
-</ol>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"background_color"</span>: <span class="string">"purple"</span>,</span><br><span class="line">  <span class="attr">"display"</span>: <span class="string">"fullscreen"</span>,</span><br><span class="line">  <span class="attr">"icons"</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="attr">"src"</span>: <span class="string">"icon/fox-icon.png"</span>,</span><br><span class="line">      <span class="attr">"sizes"</span>: <span class="string">"192x192"</span>,</span><br><span class="line">      <span class="attr">"type"</span>: <span class="string">"image/png"</span></span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"name"</span>: <span class="string">"xx快捷版"</span>,</span><br><span class="line">  <span class="attr">"short_name"</span>: <span class="string">"快"</span>,</span><br><span class="line">  <span class="attr">"start_url"</span>: <span class="string">"."</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="3">
-<li>注册安装事件 </li>
-</ol>
-<p>index.js</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> deferredPrompt;</span><br><span class="line"><span class="comment">// 默认不展示按钮，仅支持 「Add to Home Screen」 功能才展现</span></span><br><span class="line"><span class="keyword">const</span> addBtn = <span class="built_in">document</span>.querySelector(<span class="string">'.add-button'</span>);</span><br><span class="line">addBtn.style.display = <span class="string">'none'</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规定必须注册 serviceWorker 才能使用 Add to Home Screen，</span></span><br><span class="line"><span class="comment">// 且需要监听 install 和 fetch 事件，可以不处理</span></span><br><span class="line"><span class="keyword">if</span>(<span class="string">'serviceWorker'</span> <span class="keyword">in</span> navigator) &#123;</span><br><span class="line">  navigator.serviceWorker</span><br><span class="line">           .register(<span class="string">'./sw.js'</span>)</span><br><span class="line">           .then(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="string">'Service Worker Registered'</span>); &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 仅浏览器支持且未安装该应用，以下事件才会触发</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'beforeinstallprompt'</span>, (e) =&gt; &#123;</span><br><span class="line">  <span class="comment">// Chrome 67 及之前版本，会自动展现安装的 prompt</span></span><br><span class="line">  <span class="comment">// 为了版本统一及用户体验，我们禁止自动展现 prompt</span></span><br><span class="line">  e.preventDefault();</span><br><span class="line">  <span class="comment">// 存放事件用于后续触发</span></span><br><span class="line">  deferredPrompt = e;</span><br><span class="line">  <span class="comment">// 展现按钮</span></span><br><span class="line">  addBtn.style.display = <span class="string">'block'</span>;</span><br><span class="line"></span><br><span class="line">  addBtn.addEventListener(<span class="string">'click'</span>, (e) =&gt; &#123;</span><br><span class="line">    <span class="comment">// hide our user interface that shows our A2HS button</span></span><br><span class="line">    addBtn.style.display = <span class="string">'none'</span>;</span><br><span class="line">    <span class="comment">// 展现安装的 prompt</span></span><br><span class="line">    deferredPrompt.prompt();</span><br><span class="line">    <span class="comment">// 等待用户对 prompt 进行操作</span></span><br><span class="line">    <span class="comment">// 如果用户从地址栏或其他浏览器组件安装了PWA，则以下代码将不起作用 </span></span><br><span class="line">    deferredPrompt.userChoice.then(<span class="function">(<span class="params">choiceResult</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (choiceResult.outcome === <span class="string">'accepted'</span>) &#123;</span><br><span class="line">          <span class="built_in">console</span>.log(<span class="string">'点击添加'</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="built_in">console</span>.log(<span class="string">'取消添加'</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        deferredPrompt = <span class="literal">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 无论以何种方式安装 PWA 该事件都会触发</span></span><br><span class="line"><span class="comment">// 因此这里可以用来做埋点</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'appinstalled'</span>, (evt) =&gt; &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'应用安装'</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li>编写 sw 文件</li>
-</ol>
-<p>sw.js</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">self.addEventListener(<span class="string">'install'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'install success'</span>)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">self.addEventListener(<span class="string">'fetch'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(e.request.url);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<ol start="5">
-<li>最后，准备一个 icon ，见 <code>manifest.webmanifest</code> 中的 icons 配置</li>
-</ol>
-<p>之后，就可以体验这个功能了 </p>
-<h3 id="在线示例"><a href="#在线示例" class="headerlink" title="在线示例"></a>在线示例</h3><p><a href="https://fe-examples.github.io/pwa-examples/a2hs/" target="_blank" rel="noopener">https://fe-examples.github.io/pwa-examples/a2hs/</a></p>
-<p>如果浏览器支持 ,页面左上角将展现 「添加到桌面」按钮</p>
-<p>欢迎试用，并把操作系统、浏览器型号发在评论区，看看兼容性如何~</p>
-<h3 id="Web-app-manifests-相关配置"><a href="#Web-app-manifests-相关配置" class="headerlink" title="Web app manifests 相关配置"></a>Web app manifests 相关配置</h3><p>这里只举常用的，更多详见 <a href="https://w3c.github.io/manifest/#webappmanifest-dictionary" target="_blank" rel="noopener">WebAppManifest</a></p>
-<ul>
-<li>background_color: 应用启动时资源未加载时展示的背景色。仅用于改善加载时的用户体验，不影响后续网站背景。</li>
-<li>theme_color: 主题色，相当于显式的设置 <code>&lt;meta name=&quot;theme-color&quot; content=&quot;颜色值&quot;&gt;</code> ,将会影响浏览器外观颜色的展现。</li>
-<li>display: 指定如何显示应用。有以下几种取值，在不支持的情况下按从上往下顺序 fallback<ul>
-<li>fullscreen: 占用所有可用显示区域，无任何浏览器 UI 元素。不影响 Fullscreen API</li>
-<li>standalone: 类似本机应用程序。排除地址栏，但是可能包含状态栏和系统后退按钮</li>
-<li>minimal-ui: 相比 <code>standalone</code> 增加了导航控件（后退，前进，刷新）等 UI 元素</li>
-<li>browser: 等同于打开标签页。需要注意的是， browser 是兜底方式且仅部分浏览器支持，如果浏览器还不支持，整份配置将无效<blockquote>
-<p>Macos chrome 下测试 2 和 1 显示一致，不支持 4</p>
-</blockquote>
-</li>
-</ul>
-</li>
-<li>icons: 指定在不同位置时采用的图标，主要是根据 sizes 字段来判断。相比移动端 APP 的 icon ，PWA 多了桌面位置、Chrome 应用入口位置。至少指定一个 icon</li>
-<li>name/short_name: 前者为完整的应用名称，后者为当没有足够空间显示全名时才展示。最好两者都提供</li>
-<li>start_url: 应用启动时所加载的 URL 。其值为相对于 manifest 的 url 的相对路径<blockquote>
-<p>例如 manifest URL 为 <code>https://www.iqiyi.com/manifest.json</code> ; start_url 为 <code>./index.html</code> ，则启动地址为 <code>https://www.iqiyi.com/index.html</code> 。而 start_url 为 <code>.</code> 启动地址就是 <code>https://www.iqiyi.com/</code> <br>还有更多的骚操作，比如把 uuid 或者 launcher 方式带在 <code>start_url</code> 后面（ <code>./?launcher=homescreen&amp;uuid=xxxx</code>），有助于用户分析</p>
-</blockquote>
-</li>
-</ul>
-<p>singleton</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/9277731-57ee6b2f8bbbbb7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="singleton"></p>
-<p>minimal-ui<br><img src="https://upload-images.jianshu.io/upload_images/9277731-dd9fcf46d8a2642c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="minimal-ui"></p>
-<h3 id="根据不同的启动方式应用不同样式"><a href="#根据不同的启动方式应用不同样式" class="headerlink" title="根据不同的启动方式应用不同样式"></a>根据不同的启动方式应用不同样式</h3><p>比如说，PWA 背景色应用红色，普通 Tab 应用白色，该如何实现呢？</p>
-<p>可以采用 CSS 的媒体查询</p>
-<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="keyword">@media</span> all <span class="keyword">and</span> (<span class="attribute">display-mode:</span> standalone) &#123;</span><br><span class="line">  <span class="selector-tag">body</span> &#123;</span><br><span class="line">    <span class="attribute">background-color</span>: red;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>或者脚本检测</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'load'</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">if</span> (navigator.standalone) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Installed (iOS)'</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (matchMedia(<span class="string">'(display-mode: standalone)'</span>).matches) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Installed'</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Launched: Browser Tab'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-<p>⚠️ 注意：iOS Safari 不支持 matchMedia ，但是其可以通过 <code>navigator.standalone</code> 返回的 true 表明自己以独立模式运行</p>
-<h2 id="浏览器兼容性"><a href="#浏览器兼容性" class="headerlink" title="浏览器兼容性"></a>浏览器兼容性</h2><p>可以看到，我们仅用到了 PWA 体系中的 <code>Web app manifests</code> , <code>Add to Home Screen</code> 和 <code>Service Worker</code>，因此该功能的浏览器兼容性取决于这几个的短板</p>
-<h3 id="Service-Worker"><a href="#Service-Worker" class="headerlink" title="Service Worker"></a>Service Worker</h3><p><img src="https://upload-images.jianshu.io/upload_images/9277731-8d545f352e70a70f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="sw.png"></p>
-<h3 id="Add-to-Home-Screen"><a href="#Add-to-Home-Screen" class="headerlink" title="Add to Home Screen"></a>Add to Home Screen</h3><p>待测试，本机（Macos chrome 81 支持）</p>
-<h3 id="Web-app-manifests"><a href="#Web-app-manifests" class="headerlink" title="Web app manifests"></a>Web app manifests</h3><p>待测试，本机（Macos chrome 81 支持）</p>
-<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>（兼容性列表欢迎大家一起维护~）<br>…</p>
-<h2 id="题外话-自己动手丰衣足食"><a href="#题外话-自己动手丰衣足食" class="headerlink" title="题外话 - 自己动手丰衣足食"></a>题外话 - 自己动手丰衣足食</h2><p>对于普通的 Chrome 用户，如果自己喜欢的网站没有实现上述功能，自己如何把网站添加到桌面呢？</p>
-<p>右上角选择「更多工具」-「创建快捷方式」- 「确定」</p>
-<blockquote>
-<p>如果选择新窗口打开，新开窗口将不带导航栏、工具栏等，类似于 <code>display=standalone</code> ，否则就是普通的打开标签页 <code>display=browser</code></p>
-</blockquote>
-<p>可以看到桌面就存在一个该网站的图标了~ 点击就可以打开该网站</p>
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
-<li><a href="https://web.dev/customize-install/" target="_blank" rel="noopener">Provide a custom install experience</a></li>
-<li><a href="https://developers.chrome.com/apps/migration" target="_blank" rel="noopener">Transitioning from Chrome Apps</a></li>
-<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/Progressive_web_apps" target="_blank" rel="noopener">渐进式 Web 应用（PWA）</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>大前端</category>
-      </categories>
-      <tags>
-        <tag>随笔</tag>
-        <tag>PWA</tag>
       </tags>
   </entry>
   <entry>
@@ -6988,8 +6988,8 @@ VM122 phone_frame.html:450 handlePeerMessage:{
         <category>流媒体</category>
       </categories>
       <tags>
-        <tag>WebRTC</tag>
         <tag>ffmpeg</tag>
+        <tag>WebRTC</tag>
       </tags>
   </entry>
   <entry>
@@ -7025,8 +7025,8 @@ VM122 phone_frame.html:450 handlePeerMessage:{
         <category>流媒体</category>
       </categories>
       <tags>
-        <tag>WebRTC</tag>
         <tag>ffmpeg</tag>
+        <tag>WebRTC</tag>
       </tags>
   </entry>
   <entry>
@@ -7106,8 +7106,8 @@ onMouseover和onMousemove有什么区别?
         <category>大前端</category>
       </categories>
       <tags>
-        <tag>HTML</tag>
         <tag>多点触控</tag>
+        <tag>HTML</tag>
       </tags>
   </entry>
   <entry>
@@ -7954,8 +7954,8 @@ setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, &quot;analyzeduration&quot;, &quot
         <category>流媒体</category>
       </categories>
       <tags>
-        <tag>WebRTC</tag>
         <tag>ffmpeg</tag>
+        <tag>WebRTC</tag>
       </tags>
   </entry>
   <entry>
