@@ -54,7 +54,7 @@
 <meta property="og:description" content="前言">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-04-30T17:00:00.000Z">
-<meta property="article:modified_time" content="2020-04-01T15:21:31.160Z">
+<meta property="article:modified_time" content="2020-06-03T16:55:18.951Z">
 <meta property="article:author" content="gahing">
 <meta property="article:tag" content="TypeScript">
 <meta name="twitter:card" content="summary">
@@ -241,7 +241,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-01 23:21:31" itemprop="dateModified" datetime="2020-04-01T23:21:31+08:00">2020-04-01</time>
+                <time title="修改时间：2020-06-04 00:55:18" itemprop="dateModified" datetime="2020-06-04T00:55:18+08:00">2020-06-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -288,6 +288,15 @@
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">interface Option &#123;</span><br><span class="line">  [key: string]: React.ReactNode;</span><br><span class="line">&#125;</span><br><span class="line">type A = Option | Option[]</span><br><span class="line"><span class="keyword">const</span> a:A = &#123;<span class="attr">name</span>:<span class="string">"111"</span>&#125;</span><br><span class="line"><span class="comment">// 实现 toArray 函数，使得 b 的类型为 Option[]</span></span><br><span class="line"><span class="keyword">const</span> b = toArray(a)</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">export function toArray&lt;T&gt;(value: T | T[] | undefined): T[] &#123;</span><br><span class="line">  <span class="keyword">let</span> ret = value;</span><br><span class="line">  <span class="keyword">if</span> (value === <span class="literal">undefined</span>) &#123;</span><br><span class="line">    ret = [];</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!<span class="built_in">Array</span>.isArray(value)) &#123;</span><br><span class="line">    ret = [value <span class="keyword">as</span> T];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ret <span class="keyword">as</span> T[];</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 本例还需要带上类型，其他的简单接口就不用了</span></span><br><span class="line">toArray&lt;Option&gt;(a)</span><br></pre></td></tr></table></figure>
+
+<h2 id="数组过滤-null"><a href="#数组过滤-null" class="headerlink" title="数组过滤 null"></a>数组过滤 null</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> list = [<span class="string">"a"</span>,<span class="literal">null</span>,<span class="string">"b"</span>]</span><br><span class="line"><span class="keyword">const</span> list2 = list.filter(<span class="function"><span class="params">v</span>=&gt;</span>v)</span><br></pre></td></tr></table></figure>
+
+<p>然后 list2 的推导类型还是 <code>string | null []</code></p>
+<p>需要对 filter 方法进行声明</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 箭头函数 TODO</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">notEmpty</span>&lt;<span class="title">TValue</span>&gt;(<span class="params">value: TValue | null | undefined</span>): <span class="title">value</span> <span class="title">is</span> <span class="title">TValue</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> value !== <span class="literal">null</span> &amp;&amp; value !== <span class="literal">undefined</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> list2 = list.filter(notEmpty) <span class="comment">// string[]</span></span><br></pre></td></tr></table></figure>
+
+
+
     </div>
 
     
@@ -391,7 +400,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Partial"><span class="nav-number">2.</span> <span class="nav-text">Partial</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Omit"><span class="nav-number">3.</span> <span class="nav-text">Omit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#T-T-gt-T"><span class="nav-number">4.</span> <span class="nav-text">T | T[] &#x3D;&gt; T[]</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Partial"><span class="nav-number">2.</span> <span class="nav-text">Partial</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Omit"><span class="nav-number">3.</span> <span class="nav-text">Omit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#T-T-gt-T"><span class="nav-number">4.</span> <span class="nav-text">T | T[] &#x3D;&gt; T[]</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数组过滤-null"><span class="nav-number">5.</span> <span class="nav-text">数组过滤 null</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -407,7 +416,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">76</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -420,7 +429,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-count">44</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="背景在尝试调试 V8 的时候，发现需要用到这个工具 macOS 版本： 10.15">
+<meta property="og:type" content="article">
+<meta property="og:title" content="macOS 上使用 gdb">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;06&#x2F;03&#x2F;2020&#x2F;macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="背景在尝试调试 V8 的时候，发现需要用到这个工具 macOS 版本： 10.15">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-03T03:12:40.000Z">
+<meta property="article:modified_time" content="2020-06-03T16:57:58.912Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="gcc">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://gahing.top/2020/06/03/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>macOS 上使用 gdb | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/06/03/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          macOS 上使用 gdb
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-03 11:12:40" itemprop="dateCreated datePublished" datetime="2020-06-03T11:12:40+08:00">2020-06-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-04 00:57:58" itemprop="dateModified" datetime="2020-06-04T00:57:58+08:00">2020-06-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9A%8F%E7%AC%94/" itemprop="url" rel="index">
+                    <span itemprop="name">随笔</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在尝试调试 V8 的时候，发现需要用到这个工具</p>
+<p>macOS 版本： 10.15 </p>
+<a id="more"></a>
+
+<h2 id="安装与签名"><a href="#安装与签名" class="headerlink" title="安装与签名"></a>安装与签名</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">brew install gdb</span><br><span class="line">gdb -v</span><br><span class="line"><span class="comment"># 9.2</span></span><br></pre></td></tr></table></figure>
+
+<p>网上有说什么高版本有坑的需要下特定版本的，反正我暂时没遇到</p>
+<p>上面安装完后还会输出以下信息（很关键）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">gdb requires special privileges to access Mach ports.</span><br><span class="line">You will need to codesign the binary. For instructions, see:</span><br><span class="line"></span><br><span class="line">  https:&#x2F;&#x2F;sourceware.org&#x2F;gdb&#x2F;wiki&#x2F;BuildingOnDarwin</span><br><span class="line"></span><br><span class="line">On 10.12 (Sierra) or later with SIP, you need to run this:</span><br><span class="line"></span><br><span class="line">  echo &quot;set startup-with-shell off&quot; &gt;&gt; ~&#x2F;.gdbinit</span><br></pre></td></tr></table></figure>
+
+<p>安装完需要进行签名，否则会报类似以下的错误</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Starting program: &#x2F;x&#x2F;y&#x2F;foo</span><br><span class="line">Unable to find Mach task port for process-id 28885: (os&#x2F;kern) failure (0x5).</span><br><span class="line"> (please check gdb is codesigned - see taskgated(8))</span><br></pre></td></tr></table></figure>
+<p>网上<a href="https://blog.csdn.net/weixin_30257433/article/details/94883470" target="_blank" rel="noopener">大部分文章</a>讲的都是 10.14 之前的做法，按之前的做法还是会签名失败。</p>
+<p>可以看上面输出的地址 – <a href="https://sourceware.org/gdb/wiki/BuildingOnDarwin" target="_blank" rel="noopener">https://sourceware.org/gdb/wiki/BuildingOnDarwin</a> ，里面讲了如何解决这个问题。</p>
+<h2 id="调试命令"><a href="#调试命令" class="headerlink" title="调试命令"></a>调试命令</h2><p>权当记录</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">list(l) <span class="comment"># 查看程序代码</span></span><br><span class="line">回车 <span class="comment"># 表示执行上一条命令</span></span><br><span class="line">start(s) <span class="comment"># 开始执行程序</span></span><br><span class="line">run(r) <span class="comment">#从头开始调试</span></span><br><span class="line">quit(q) <span class="comment">#退出程序</span></span><br><span class="line">next(n) <span class="comment">#单步执行</span></span><br><span class="line">step(s) <span class="comment">#进入函数</span></span><br><span class="line">backtrace(bt) <span class="comment">#查看函数调用栈帧 结果显示: #0 xxx #1 xxx</span></span><br><span class="line">frame(f) x <span class="comment">#选择 x 号栈帧</span></span><br><span class="line"></span><br><span class="line">info(i) locals <span class="comment">#查看变量信息</span></span><br><span class="line">info(i) breakpoints <span class="comment">#查看断点信息</span></span><br><span class="line">info(i) watchpoints <span class="comment">#查询观察点</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(p) x <span class="comment">#输出变量 x 的值</span></span><br><span class="line">finish <span class="comment">#将程序运行到当前函数返回</span></span><br><span class="line"><span class="built_in">continue</span>(c) <span class="comment">#将程序运行到结束或者断点处</span></span><br><span class="line"><span class="built_in">set</span> var 变量=XX <span class="comment">#进行变量赋值</span></span><br><span class="line">display 变量 <span class="comment">#追踪变量值，每次执行(next)都会对追踪变量进行输出显示</span></span><br><span class="line">undisplay 编号 <span class="comment">#取消追踪</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">break</span>(b) 行号/函数名 &lt;条件语句&gt; <span class="comment">#设置断点</span></span><br><span class="line">delete breakpoints 断点编号  <span class="comment">#删除断点，没带断点编号则删除所有断点</span></span><br><span class="line"><span class="built_in">disable</span> breakpoints 断点编号 <span class="comment">#禁用断点</span></span><br><span class="line"><span class="built_in">enable</span> 断点编号 <span class="comment">#启用断点</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#观察点是当程序访问某个存储单元时中断</span></span><br><span class="line">watch arr[4] <span class="comment"># 访问arr[4] 时中断</span></span><br></pre></td></tr></table></figure>
+<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><p><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a> 这篇文章举了几个例子，并一步步教命令怎么使用，建议阅读，这里就不重复了。</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a></li>
+<li><a href="https://sourceware.org/gdb/wiki/PermissionsDarwin" target="_blank" rel="noopener">PermissionsDarwin</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/gcc/" rel="tag"># gcc</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/21/2020/%E6%8A%8A%E7%BD%91%E7%AB%99%E6%B7%BB%E5%8A%A0%E5%88%B0%E6%A1%8C%E9%9D%A2%EF%BC%8C%E3%80%8C%E7%88%B1%E5%A5%87%E8%89%BA%E7%BD%91%E9%A1%B5%E5%BA%94%E7%94%A8%E3%80%8D%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" rel="prev" title="把网站添加到桌面，「爱奇艺网页应用」是如何实现的">
+      <i class="fa fa-chevron-left"></i> 把网站添加到桌面，「爱奇艺网页应用」是如何实现的
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装与签名"><span class="nav-number">2.</span> <span class="nav-text">安装与签名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调试命令"><span class="nav-number">3.</span> <span class="nav-text">调试命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例分析"><span class="nav-number">4.</span> <span class="nav-text">实例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">5.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
