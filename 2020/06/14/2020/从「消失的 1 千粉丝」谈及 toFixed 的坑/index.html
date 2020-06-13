@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="故事是这样的小郑是某平台一位 UP 🐷，经过两年努力现在平台粉丝也有 994500 个了，距离冲击百万 UP 仅剩一步之遥。  金主爸爸告诉他，只要百万，就让他接个大的广告单。 奈何最近没有灵感，天天🕊，始终不涨粉。 于是他便打起了歪主意，买粉！先到某宝上买了 1 千粉丝试试水，很快，对方说已到账。 小郑兴冲冲的上平台上一看，并没有，还是显示的 99.5 ，1 千个粉丝去哪了？？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从「消失的 1 千粉丝」谈及 toFixed 的坑">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;06&#x2F;14&#x2F;2020&#x2F;%E4%BB%8E%E3%80%8C%E6%B6%88%E5%A4%B1%E7%9A%84%201%20%E5%8D%83%E7%B2%89%E4%B8%9D%E3%80%8D%E8%B0%88%E5%8F%8A%20toFixed%20%E7%9A%84%E5%9D%91&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="故事是这样的小郑是某平台一位 UP 🐷，经过两年努力现在平台粉丝也有 994500 个了，距离冲击百万 UP 仅剩一步之遥。  金主爸爸告诉他，只要百万，就让他接个大的广告单。 奈何最近没有灵感，天天🕊，始终不涨粉。 于是他便打起了歪主意，买粉！先到某宝上买了 1 千粉丝试试水，很快，对方说已到账。 小郑兴冲冲的上平台上一看，并没有，还是显示的 99.5 ，1 千个粉丝去哪了？？">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-4c8db063ccdf1ca1.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-4790996ca7d0b42f.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="og:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-b6ba435aed1e5c67.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+<meta property="article:published_time" content="2020-06-14T02:00:00.000Z">
+<meta property="article:modified_time" content="2020-06-13T21:10:20.727Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="ECMAScript">
+<meta property="article:tag" content="JavaScriptCore">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;upload-images.jianshu.io&#x2F;upload_images&#x2F;9277731-4c8db063ccdf1ca1.png?imageMogr2&#x2F;auto-orient&#x2F;strip%7CimageView2&#x2F;2&#x2F;w&#x2F;1240">
+
+<link rel="canonical" href="https://gahing.top/2020/06/14/2020/%E4%BB%8E%E3%80%8C%E6%B6%88%E5%A4%B1%E7%9A%84%201%20%E5%8D%83%E7%B2%89%E4%B8%9D%E3%80%8D%E8%B0%88%E5%8F%8A%20toFixed%20%E7%9A%84%E5%9D%91/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>从「消失的 1 千粉丝」谈及 toFixed 的坑 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/06/14/2020/%E4%BB%8E%E3%80%8C%E6%B6%88%E5%A4%B1%E7%9A%84%201%20%E5%8D%83%E7%B2%89%E4%B8%9D%E3%80%8D%E8%B0%88%E5%8F%8A%20toFixed%20%E7%9A%84%E5%9D%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从「消失的 1 千粉丝」谈及 toFixed 的坑
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-14 10:00:00 / 修改时间：05:10:20" itemprop="dateCreated datePublished" datetime="2020-06-14T10:00:00+08:00">2020-06-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="故事是这样的"><a href="#故事是这样的" class="headerlink" title="故事是这样的"></a>故事是这样的</h2><p>小郑是某平台一位 UP 🐷，经过两年努力现在平台粉丝也有 994500 个了，距离冲击百万 UP 仅剩一步之遥。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-4c8db063ccdf1ca1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="99.45w"></p>
+<p>金主爸爸告诉他，只要百万，就让他接个大的广告单。</p>
+<p>奈何最近没有灵感，天天🕊，始终不涨粉。</p>
+<p>于是他便打起了歪主意，买粉！先到某宝上买了 1 千粉丝试试水，很快，对方说已到账。</p>
+<p>小郑兴冲冲的上平台上一看，并没有，还是显示的 <code>99.5</code> ，1 千个粉丝去哪了？？</p>
+<a id="more"></a>
+
+<p>正准备投诉商家时，鼠标下滑看到了这样的一幕！</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-4790996ca7d0b42f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="99.55w"></p>
+<p>具体粉丝数确实是正确的，按照小学教的的四舍五入，应该显示 <code>99.6万</code> 才对。</p>
+<p>难道是平台的 bug ?不解的小郑打算向程序员朋友小盖询问，小盖一看：</p>
+<p>「 这应该是用了 toFixed 了吧，这方法有个坑。。容我细细道来 」</p>
+<blockquote>
+<p>以上故事纯属虚构（包括图片）</p>
+</blockquote>
+<h2 id="toFixed-是什么"><a href="#toFixed-是什么" class="headerlink" title="toFixed 是什么"></a>toFixed 是什么</h2><p>以下引自 <a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed" target="_blank" rel="noopener">MDN</a> 的定义</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">numObj.toFixed(digits)</span><br></pre></td></tr></table></figure>
+
+<p>返回指定 digits 位数的字符串，必要时会进行四舍五入。看以下例子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">99.45</span>.toFixed(<span class="number">1</span>);   <span class="comment">// "99.5"</span></span><br><span class="line"><span class="number">99.99</span>.toFixed(<span class="number">1</span>);   <span class="comment">// "100.0"</span></span><br><span class="line"><span class="number">99.55</span>.toFixed(<span class="number">1</span>);   <span class="comment">// "99.5" warning: 见下面解释</span></span><br></pre></td></tr></table></figure>
+
+<p>是不是发现第三个例子不太对？</p>
+<p>我们知道，js 中的浮点数内部是用双精度 64位（double）表示的，采用的是 <a href="https://en.wikipedia.org/wiki/IEEE_754" target="_blank" rel="noopener">IEEE 754 表示法</a>，</p>
+<p>所以 <code>99.55</code> 实际是 <code>99.549999999999997</code></p>
+<blockquote>
+<p>网上有<a href="https://www.binaryconvert.com/convert_double.html?decimal=057057046053053" target="_blank" rel="noopener">在线工具</a>可以直接算出来</p>
+</blockquote>
+<p>那么很明显可以看出来答案，四舍五入结果就是 <code>99.5</code> </p>
+<p>so，得到答案了，本文结束?</p>
+<p>我们再看下 ecmascript 规范是怎么描述的</p>
+<p><a href="http://www.ecma-international.org/ecma-262/6.0/#sec-number.prototype.tofixed" target="_blank" rel="noopener">Number.prototype.toFixed ( fractionDigits )</a></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/9277731-b6ba435aed1e5c67.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="toFixed"></p>
+<p>关键看红色区域，我们需要找个一个 n ，使其 <code>n / 10 - 99.55</code> 尽可能接近零。 找到 n 之后后面的结果就都确定了。</p>
+<p>（额，看起来好像很复杂的样子，不是直接对小数位四舍五入。。）</p>
+<p>假设 n 为 995,则 m 为 “995”, k = m.length = 3, a = “99”, b = “5”, 最终结果为 “99.5”</p>
+<p>那么 n 是不是 995 呢？</p>
+<p>满足 <code>n / 10 - 99.55</code> 尽可能接近零这个条件的有两个数： 995,996 而他们的计算结果分别为：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">995</span>/<span class="number">10</span> - <span class="number">99.55</span> <span class="comment">// -0.04999999999999716</span></span><br><span class="line"><span class="number">996</span>/<span class="number">10</span> - <span class="number">99.55</span> <span class="comment">//  0.04999999999999716</span></span><br></pre></td></tr></table></figure>
+
+<p>和 0 间的差值是一样的，选大的结果是 996 ，可我们运行的结果却是 99.5 ，这又是为何？难道浏览器引擎的实现有误？或者没按规范实现？</p>
+<p>对比了几个引擎，结果都是 995，我们先看一哈 JavaScriptCore (Webkit 的 js 引擎) 实现</p>
+<h2 id="JavaScriptCore-toFixed-源码"><a href="#JavaScriptCore-toFixed-源码" class="headerlink" title="JavaScriptCore toFixed 源码"></a>JavaScriptCore toFixed 源码</h2><p>源码在 <code>webkit/Source/JavaScriptCore/runtime/NumberPrototype.cpp</code> 中的 numberProtoFuncToFixed 方法</p>
+<p>在 JavaScriptCore 中，原型方法很好找，就是 xxxProtoFuncXxx 的结构</p>
+<h3 id="调试环境"><a href="#调试环境" class="headerlink" title="调试环境"></a>调试环境</h3><p>（本小结可以选择略过，直接看后面的分析和小结）</p>
+<p>在 macOS 上编译 webkit 比 v8 简单多了，详见 <a href="https://liveoverflow.com/setup-and-debug-javascriptcore-webkit-browser-0x01/" target="_blank" rel="noopener">Setup and Debug JavaScriptCore / WebKit</a></p>
+<p>通过以下命令进入 debug 环境</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 利用 lldb 调试 jsc</span></span><br><span class="line">$ lldb ./WebKitBuild/Debug/bin/jsc</span><br><span class="line"><span class="comment"># 开始调试</span></span><br><span class="line">(lldb) run</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="comment"># control + c 再次进入 lldb</span></span><br><span class="line"><span class="comment"># 打断点, 断点方法输几个字符按 Tab 就可以出提示了</span></span><br><span class="line">(lldb): b JSC::numberProtoFuncToFixed(JSC::JSGlobalObject*, JSC::CallFrame*)</span><br><span class="line">(lldb): b WTF::double_conversion::FastFixedDtoa(double, int, WTF::double_conversion::BufferReference&lt;char&gt;, int*, int*) </span><br><span class="line"><span class="comment"># 结束调试，切到 jsc, 需要按 2次回车</span></span><br><span class="line">(lldb): c</span><br><span class="line"><span class="comment"># 输入 js 代码，回车进入 lldb 调试环境</span></span><br><span class="line">&gt;&gt;&gt; 99.55.toFixed(1)</span><br><span class="line"><span class="comment"># EncodedJSValue JSC_HOST_CALL numberProtoFuncToFixed(JSGlobalObject* globalObject, CallFrame* callFrame)</span></span><br></pre></td></tr></table></figure>
+
+<p>jsc 常用指令</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">describe(x) <span class="comment">#查看对象（js在 c 中均为对象） 的内部描述，结构，内存地址</span></span><br></pre></td></tr></table></figure>
+
+<p>lldb 常用指令</p>
+<blockquote>
+<p>增强插件 chisel ，更多使用方法后续写一篇文章，</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">x/8gx address <span class="comment">#查看内存地址 address</span></span><br><span class="line"></span><br><span class="line">next(n) <span class="comment">#单步执行</span></span><br><span class="line">step(s) <span class="comment">#进入函数</span></span><br><span class="line"><span class="built_in">continue</span>(c) <span class="comment">#将程序运行到结束或者断点处（进入下一断点）</span></span><br><span class="line">finish <span class="comment">#将程序运行到当前函数返回（从函数跳出）</span></span><br><span class="line">breakpoint(b) 行号/函数名 &lt;条件语句&gt; <span class="comment">#设置断点</span></span><br><span class="line">fr v <span class="comment">#查看局部变量信息</span></span><br><span class="line"><span class="built_in">print</span>(p) x <span class="comment">#输出变量 x 的值</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h3><p>入口，各种情况的处理</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">EncodedJSValue JSC_HOST_CALL <span class="title">numberProtoFuncToFixed</span><span class="params">(JSGlobalObject* globalObject, CallFrame* callFrame)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    VM&amp; vm = globalObject-&gt;vm();</span><br><span class="line">    <span class="keyword">auto</span> scope = DECLARE_THROW_SCOPE(vm);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// x 取值 99.549999999999997</span></span><br><span class="line">    <span class="keyword">double</span> x;</span><br><span class="line">    <span class="keyword">if</span> (!toThisNumber(vm, callFrame-&gt;thisValue(), x))</span><br><span class="line">        <span class="keyword">return</span> throwVMToThisNumberError(globalObject, scope, callFrame-&gt;thisValue());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// decimalPlaces 取值 1</span></span><br><span class="line">    <span class="keyword">int</span> decimalPlaces = <span class="keyword">static_cast</span>&lt;<span class="keyword">int</span>&gt;(callFrame-&gt;argument(<span class="number">0</span>).toInteger(globalObject));</span><br><span class="line">    RETURN_IF_EXCEPTION(scope, &#123; &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 特殊处理，略</span></span><br><span class="line">    <span class="keyword">if</span> (decimalPlaces &lt; <span class="number">0</span> || decimalPlaces &gt; <span class="number">100</span>)</span><br><span class="line">        <span class="keyword">return</span> throwVMRangeError(globalObject, scope, <span class="string">"toFixed() argument must be between 0 and 100"</span>_s);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// x 的特殊处理，略</span></span><br><span class="line">    <span class="keyword">if</span> (!(<span class="built_in">fabs</span>(x) &lt; <span class="number">1e+21</span>))</span><br><span class="line">        <span class="keyword">return</span> JSValue::encode(jsString(vm, <span class="keyword">String</span>::number(x)));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// NaN or Infinity 的特殊处理</span></span><br><span class="line">    ASSERT(<span class="built_in">std</span>::isfinite(x));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 进入执行 number=99.549999999999997, decimalPlaces=1</span></span><br><span class="line">    <span class="keyword">return</span> JSValue::encode(jsString(vm, <span class="keyword">String</span>::numberToStringFixedWidth(x, decimalPlaces)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从 numberToStringFixedWidth 方法不断进入，到达 FastFixedDtoa 处理方法</p>
+<p>需要注意的是，原数值的整数和小数部分都分别采用了指数表示法，方便后面位运算处理</p>
+<p><code>99.549999999999997 = 7005208482886451 * 2 ** -46
+= 99 + 38702809297715 * 2 ** -46</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// FastFixedDtoa(v=99.549999999999997, fractional_count=1, buffer=(start_ = "", length_ = 122), length=0x00007ffeefbfd488, decimal_point=0x00007ffeefbfd494)</span></span><br><span class="line"></span><br><span class="line">bool FastFixedDtoa(double v,</span><br><span class="line">                   int fractional_count,</span><br><span class="line">                   BufferReference&lt;char&gt; buffer,</span><br><span class="line">                   int* length,</span><br><span class="line">                   int* decimal_point) &#123;</span><br><span class="line">  <span class="keyword">const</span> uint32_t kMaxUInt32 = <span class="number">0xFFFFFFFF</span>;</span><br><span class="line">  <span class="comment">// 将 v 表示成 尾数(significand) × 底数(2) ^ 指数(exponent) </span></span><br><span class="line">  <span class="comment">// 7005208482886451 x 2 ^ -46</span></span><br><span class="line">  uint64_t significand = Double(v).Significand();</span><br><span class="line">  int exponent = Double(v).Exponent();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 省略部分代码</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (exponent + kDoubleSignificandSize &gt; <span class="number">64</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (exponent &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (exponent &gt; -kDoubleSignificandSize) &#123;</span><br><span class="line">    <span class="comment">// exponent &gt; -53 的情况, 切割数字</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 整数部分: integrals = 7005208482886451 &gt;&gt; 46 = 99 </span></span><br><span class="line">    uint64_t integrals = significand &gt;&gt; -exponent;</span><br><span class="line">    <span class="comment">// 小数部分(指数表达法的尾数部分): fractionals = 7005208482886451 - 99 &lt;&lt; 46  = 38702809297715</span></span><br><span class="line">    <span class="comment">// 指数不变 -46</span></span><br><span class="line">    <span class="comment">// 38702809297715 * (2 ** -46) = 0.5499999999999972</span></span><br><span class="line">    uint64_t fractionals = significand - (integrals &lt;&lt; -exponent);</span><br><span class="line">    <span class="keyword">if</span> (integrals &gt; kMaxUInt32) &#123;</span><br><span class="line">      FillDigits64(integrals, buffer, length);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// buffer 中放入 "99"</span></span><br><span class="line">      FillDigits32(static_cast&lt;uint32_t&gt;(integrals), buffer, length);</span><br><span class="line">    &#125;</span><br><span class="line">    *decimal_point = *length;</span><br><span class="line">    <span class="comment">// 填充小数部分，buffer 为 "995"</span></span><br><span class="line">    FillFractionals(fractionals, exponent, fractional_count,</span><br><span class="line">                    buffer, length, decimal_point);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (exponent &lt; <span class="number">-128</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">  TrimZeros(buffer, length, decimal_point);</span><br><span class="line">  buffer[*length] = <span class="string">'\0'</span>;</span><br><span class="line">  <span class="keyword">if</span> ((*length) == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// The string is empty and the decimal_point thus has no importance. Mimick</span></span><br><span class="line">    <span class="comment">// Gay's dtoa and and set it to -fractional_count.</span></span><br><span class="line">    *decimal_point = -fractional_count;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>FillFractionals 用来填充小数部分，取几位，是否进位都在该方法中处理</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// FillFractionals(fractionals=38702809297715, exponent=-46, fractional_count=1, buffer=(start_ = "99���", length_ = 122), length=0x00007ffeefbfd488, decimal_point=0x00007ffeefbfd494)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">小数部分的二进制表示法： fractionals * 2 ^ -exponent</span></span><br><span class="line"><span class="comment">38702809297715 * (2 ** -46) = 0.5499999999999972</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">前提：</span></span><br><span class="line"><span class="comment">  -128 &lt;= exponent &lt;=0。</span></span><br><span class="line"><span class="comment">  0 &lt;= fractionals * 2 ^ exponent &lt; 1 </span></span><br><span class="line"><span class="comment">  buffer 可以保存结果</span></span><br><span class="line"><span class="comment">此函数将舍入结果。在舍入过程中，此函数未生成的数字可能会更新，且小数点变量可能会更新。如果此函数生成数字 99，并且缓冲区已经包含 “199”（因此产生的缓冲区为“19999”），则向上舍入会将缓冲区的内容更改为 “20000”。</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">FillFractionals</span><span class="params">(<span class="keyword">uint64_t</span> fractionals, <span class="keyword">int</span> exponent,</span></span></span><br><span class="line"><span class="function"><span class="params">                            <span class="keyword">int</span> fractional_count, BufferReference&lt;<span class="keyword">char</span>&gt; <span class="built_in">buffer</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">                            <span class="keyword">int</span>* length, <span class="keyword">int</span>* decimal_point)</span> </span>&#123;</span><br><span class="line">  ASSERT(<span class="number">-128</span> &lt;= exponent &amp;&amp; exponent &lt;= <span class="number">0</span>);</span><br><span class="line">  <span class="keyword">if</span> (-exponent &lt;= <span class="number">64</span>) &#123; </span><br><span class="line">    ASSERT(fractionals &gt;&gt; <span class="number">56</span> == <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> <span class="built_in">point</span> = -exponent; <span class="comment">// 46</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 每次迭代，将小数乘以10，去除整数部分放入 buffer</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; fractional_count; ++i) &#123; <span class="comment">// 0-&gt;1</span></span><br><span class="line">      <span class="keyword">if</span> (fractionals == <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// fractionals 乘以 5 而不是乘以 10 ，并调整 point 的位置，这样， fractionals 变量将不会溢出。然后整体相当于乘以 10</span></span><br><span class="line">      <span class="comment">// 不会溢出的验证过程：</span></span><br><span class="line">      <span class="comment">// 循环初始： fractionals &lt; 2 ^ point , point &lt;= 64 且 fractionals &lt; 2 ^ 56</span></span><br><span class="line">      <span class="comment">// 每次迭代后， point-- 。</span></span><br><span class="line">      <span class="comment">// 注意 5 ^ 3 = 125 &lt; 128 = 2 ^ 7。</span></span><br><span class="line">      <span class="comment">// 因此，此循环的三个迭代不会溢出 fractionals （即使在循环体末尾没有减法）。</span></span><br><span class="line">      <span class="comment">// 与此同时 point 将满足 point &lt;= 61，因此 fractionals &lt; 2 ^ point ，并且 fractionals 再乘以 5 将不会溢出(&lt;int64)。</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">      <span class="comment">// 该操作不会溢出，证明见上方</span></span><br><span class="line">      fractionals *= <span class="number">5</span>; <span class="comment">// 193514046488575</span></span><br><span class="line">      <span class="built_in">point</span>--; <span class="comment">// 45</span></span><br><span class="line">      <span class="keyword">int</span> digit = <span class="keyword">static_cast</span>&lt;<span class="keyword">int</span>&gt;(fractionals &gt;&gt; <span class="built_in">point</span>); <span class="comment">// 193514046488575 * 2 ** -45 = 5</span></span><br><span class="line">      ASSERT(digit &lt;= <span class="number">9</span>);</span><br><span class="line">      <span class="built_in">buffer</span>[*length] = <span class="keyword">static_cast</span>&lt;<span class="keyword">char</span>&gt;(<span class="string">'0'</span> + digit); <span class="comment">// '995'</span></span><br><span class="line">      (*length)++;</span><br><span class="line">      <span class="comment">// 去掉整数位</span></span><br><span class="line">      fractionals -= <span class="keyword">static_cast</span>&lt;<span class="keyword">uint64_t</span>&gt;(digit) &lt;&lt; <span class="built_in">point</span>; <span class="comment">// 193514046488575 - 5 * 2 ** 45 = 17592186044415 </span></span><br><span class="line">      <span class="comment">// 17592186044415 * 2 ** -45 = 0.4999999999999716 </span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 看小数的下一位是否值得让 buffer 中元素进位</span></span><br><span class="line">    <span class="comment">// 通过乘2看是否能 &gt;=1 来判断</span></span><br><span class="line">    ASSERT(fractionals == <span class="number">0</span> || <span class="built_in">point</span> - <span class="number">1</span> &gt;= <span class="number">0</span>);</span><br><span class="line">    <span class="comment">// 本例中 17592186044415 &gt;&gt; 44 = 17592186044415 * 2 ** -44 = 0.9999999999999432 , &amp; 1 = 0</span></span><br><span class="line">    <span class="keyword">if</span> ((fractionals != <span class="number">0</span>) &amp;&amp; ((fractionals &gt;&gt; (<span class="built_in">point</span> - <span class="number">1</span>)) &amp; <span class="number">1</span>) == <span class="number">1</span>) &#123;</span><br><span class="line">      RoundUp(<span class="built_in">buffer</span>, length, decimal_point);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;  <span class="comment">// We need 128 bits.</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样就得到了 995 ，即规范描述中的 n ，后面插入一个小数点即为最终结果 99.5</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>js 引擎并没有按规范中说的，去寻找一个 n ，使其 <code>n / (10 ^ f)</code> 尽可能等于 x ，感觉这样效率太慢了。而是直接将 x 分为整数和小数部分，并采用指数表示法分别进行计算。</p>
+<p>处理小数的时候，其实就是让小数点右移。用指数表示法的时候，其中有个细节就是考虑了底数直接 <code>*10</code> 可能会导致溢出，然后采用了 <code>底数 *5 ，指数递减</code> 的方式 ，注释中给出了证明。 在 f 位计算后，最后再计算下一位，看是否需要进位。</p>
+<p>当然，最终结果不符合我们日常的计算，核心还是在于 IEEE 754 表示法</p>
+<p>99.55 在调试初期取值就是 99.549999999999997 了</p>
+<p>因此，以后用 toFixed 方法的时候，要是担心没有正常四舍五入，就先去 <a href="https://www.binaryconvert.com/convert_double.html?decimal=057057046053053" target="_blank" rel="noopener">在线工具</a> 上查看看</p>
+<h2 id="V8-toFixed-源码"><a href="#V8-toFixed-源码" class="headerlink" title="V8 toFixed 源码"></a>V8 toFixed 源码</h2><p><a href="https://source.chromium.org/chromium/chromium/src/+/master:v8/src/builtins/builtins-number.cc;l=67?q=NumberPrototypeToFixed&ss=chromium%2Fchromium%2Fsrc:v8%2F" target="_blank" rel="noopener">v8 toFixed</a></p>
+<p>入口在这，就不再分析了，和 JavaScriptCore 大同小异，感兴趣的读者可以自行查看</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ES6 section 20.1.3.3 Number.prototype.toFixed ( fractionDigits )</span></span><br><span class="line">BUILTIN(NumberPrototypeToFixed) &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ... 省略参数解析，拆包，类型判断</span></span><br><span class="line">  </span><br><span class="line">  <span class="comment">// value_number 和 fraction_digits_number 即为我们目标值</span></span><br><span class="line">  <span class="comment">// 假设 value_number = 99.55, fraction_digits_number = 1.0</span></span><br><span class="line">  <span class="keyword">double</span> <span class="keyword">const</span> value_number = value-&gt;Number();</span><br><span class="line">  <span class="keyword">double</span> <span class="keyword">const</span> fraction_digits_number = fraction_digits-&gt;Number();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ... 省略范围检查</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// ... 省略 value_number 特殊值处理： Infinity NaN</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 实际处理方法 DoubleToFixedCString</span></span><br><span class="line">  <span class="keyword">char</span>* <span class="keyword">const</span> str = DoubleToFixedCString(</span><br><span class="line">      value_number, <span class="keyword">static_cast</span>&lt;<span class="keyword">int</span>&gt;(fraction_digits_number));</span><br><span class="line">  Handle&lt;<span class="keyword">String</span>&gt; result = isolate-&gt;factory()-&gt;NewStringFromAsciiChecked(str);</span><br><span class="line">  DeleteArray(str);</span><br><span class="line">  <span class="keyword">return</span> *result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="正确的-「四舍五入」"><a href="#正确的-「四舍五入」" class="headerlink" title="正确的 「四舍五入」"></a>正确的 「四舍五入」</h2><p>那如何写出一个符合常理的四舍五入方法呢？我们可以借助 <a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Math/round" target="_blank" rel="noopener">Math.round</a> 方法实现</p>
+<h3 id="Math-round-x"><a href="#Math-round-x" class="headerlink" title="Math.round(x)"></a>Math.round(x)</h3><p>给定数字的值 x 四舍五入到最接近的整数。</p>
+<ul>
+<li>如果 x 的小数部分大于 0.5，则舍入到相邻的绝对值更大的整数。 </li>
+<li>如果 x 的小数部分小于 0.5，则舍入到相邻的绝对值更小的整数。</li>
+<li>如果参数的小数部分恰好等于0.5，则舍入到相邻的在正无穷（+∞）方向上的整数。<blockquote>
+<p>⚠️ 注意： 与很多其他语言中的round()函数不同，Math.round()并不总是舍入到远离0的方向（尤其是在负数的小数部分恰好等于0.5的情况下）。</p>
+</blockquote>
+</li>
+</ul>
+<p>举例</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Math</span>.round(<span class="number">99.51</span>) <span class="comment">// 100</span></span><br><span class="line"><span class="built_in">Math</span>.round(<span class="number">99.5</span>) <span class="comment">// 100</span></span><br><span class="line"><span class="built_in">Math</span>.round(<span class="number">99.49</span>) <span class="comment">//99</span></span><br><span class="line"><span class="built_in">Math</span>.round(<span class="number">-99.51</span>) <span class="comment">// -100</span></span><br><span class="line"><span class="built_in">Math</span>.round(<span class="number">-99.5</span>) <span class="comment">// -99</span></span><br><span class="line"><span class="built_in">Math</span>.round(<span class="number">-99.49</span>) <span class="comment">//-99</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注意，要用除法。若用乘法的话，乘以小数，该小数是不精确的 （还是上面的原因，ieee 754 表示法）</span></span><br><span class="line"><span class="comment">// 996 * 0.1 = 99.60000000000001</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">round</span>(<span class="params">number, precision=<span class="number">0</span></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Math</span>.round(+number + <span class="string">'e'</span> + precision) / (<span class="number">10</span> ** precision)</span><br><span class="line">    <span class="comment">//same as:</span></span><br><span class="line">    <span class="comment">//return Number(Math.round(+number + 'e' + precision) + 'e-' + precision);</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">round(<span class="number">99.55</span>,<span class="number">1</span>) <span class="comment">// 99.6</span></span><br><span class="line">round(<span class="number">-99.5</span>,<span class="number">0</span>) <span class="comment">// -99</span></span><br></pre></td></tr></table></figure>
+
+<p>对负数进行，比如 -99.5 四舍五入按其他平台处理，取值 -100</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>number </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;*&#125;</span> </span>precision </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;boolean&#125;</span> </span>flag 负数四舍五入是否按远离 0 处理</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">round</span>(<span class="params">number, precision = <span class="number">0</span>, flag = false</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (flag &amp;&amp; number &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> -round(<span class="built_in">Math</span>.abs(number), precision)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Math</span>.round(+number + <span class="string">'e'</span> + precision) / (<span class="number">10</span> ** precision)</span><br><span class="line">&#125;</span><br><span class="line">round(<span class="number">99.55</span>,<span class="number">1</span>) <span class="comment">// 99.6</span></span><br><span class="line">round(<span class="number">-99.55</span>,<span class="number">1</span>) <span class="comment">// -99.5</span></span><br><span class="line">round(<span class="number">-99.55</span>,<span class="number">1</span>,<span class="literal">true</span>) <span class="comment">// -99.6</span></span><br></pre></td></tr></table></figure>
+
+<p>之前想说还需要考虑溢出，因为发现我们自己实现的 round 和 toFixed 都不符合预期</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">round(<span class="number">999999999955.2376236232</span>, <span class="number">6</span>) <span class="comment">// 999999999955.2378</span></span><br><span class="line"><span class="number">999999999955.2376236232</span>.toFixed(<span class="number">6</span>) <span class="comment">// "999999999955.237671</span></span><br></pre></td></tr></table></figure>
+
+<p>后来发现 <code>999999999955.2376236232</code> 这个数字在 64 位中就无法表示了，只能表示为 <code>9.999999999552376708984375e11</code></p>
+<p>所以，溢出的例子我们就不考虑了。</p>
+<p>PS: 处理时发现的一个方法 <code>Math.trunc</code> 可以直接拿到整数部分，不管正负，不像 <code>Math.floor</code> 对于负数会向下取整</p>
+<p>PS: 感觉这个可以拿来当笔试题 ：）</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>从发现问题，到写下这篇文章拖了大概 2 周了，主要是之前对 JS 引擎调试完全不了解</p>
+<p>光搭建 v8 调试环境就花了好几个晚上，包括 macOS 上 gdb 的坑，V8 构建的坑，断点调试的坑，如何配合 vscode 等等… 后面会再出几篇文章讲这个，欢迎关注</p>
+<p>如果是 macOS 上，建议还是去看 JavaScriptCore 源码吧，这些基础方法实现，其实大部分和 V8 是一样的</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="https://liveoverflow.com/setup-and-debug-javascriptcore-webkit-browser-0x01/" target="_blank" rel="noopener">JavaScriptCore 编译调试</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/26144355" target="_blank" rel="noopener">调试 WebKit</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ECMAScript/" rel="tag"># ECMAScript</a>
+              <a href="/tags/JavaScriptCore/" rel="tag"># JavaScriptCore</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/11/2020/%E5%A4%9A%E5%B9%B3%E5%8F%B0%E5%AE%89%E8%A3%85%E7%A8%8B%E5%BA%8F%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/" rel="prev" title="多平台安装程序踩坑记录">
+      <i class="fa fa-chevron-left"></i> 多平台安装程序踩坑记录
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#故事是这样的"><span class="nav-number">1.</span> <span class="nav-text">故事是这样的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#toFixed-是什么"><span class="nav-number">2.</span> <span class="nav-text">toFixed 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JavaScriptCore-toFixed-源码"><span class="nav-number">3.</span> <span class="nav-text">JavaScriptCore toFixed 源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#调试环境"><span class="nav-number">3.1.</span> <span class="nav-text">调试环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源码分析"><span class="nav-number">3.2.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">3.3.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#V8-toFixed-源码"><span class="nav-number">4.</span> <span class="nav-text">V8 toFixed 源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#正确的-「四舍五入」"><span class="nav-number">5.</span> <span class="nav-text">正确的 「四舍五入」</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Math-round-x"><span class="nav-number">5.1.</span> <span class="nav-text">Math.round(x)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代码"><span class="nav-number">5.2.</span> <span class="nav-text">代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">6.</span> <span class="nav-text">最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">7.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
