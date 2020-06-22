@@ -1,6 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>macOS 上使用 lldb 和 gdb</title>
+    <url>/2020/06/22/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20lldb%20%E5%92%8C%20gdb/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在尝试调试 JS 引擎的时候，发现需要用到这些工具</p>
+<p>其中 v8 用 gdb, JavaScriptCore 用 lldb</p>
+<p>macOS 版本： 10.15 </p>
+<p>先来说说 gdb 的使用吧</p>
+<a id="more"></a>
+
+<h2 id="gdb-安装与签名"><a href="#gdb-安装与签名" class="headerlink" title="gdb 安装与签名"></a>gdb 安装与签名</h2><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">brew install gdb</span><br><span class="line">gdb -v</span><br><span class="line"><span class="comment"># 9.2</span></span><br></pre></td></tr></table></figure>
+
+<p>网上有说什么高版本有坑的需要下特定版本的，反正我暂时没遇到</p>
+<p>上面安装完后还会输出以下信息（很关键）</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">gdb requires special privileges to access Mach ports.</span><br><span class="line">You will need to codesign the binary. For instructions, see:</span><br><span class="line"></span><br><span class="line">  https:&#x2F;&#x2F;sourceware.org&#x2F;gdb&#x2F;wiki&#x2F;BuildingOnDarwin</span><br><span class="line"></span><br><span class="line">On 10.12 (Sierra) or later with SIP, you need to run this:</span><br><span class="line"></span><br><span class="line">  echo &quot;set startup-with-shell off&quot; &gt;&gt; ~&#x2F;.gdbinit</span><br></pre></td></tr></table></figure>
+
+<p>安装完需要进行签名，否则会报类似以下的错误</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Starting program: &#x2F;x&#x2F;y&#x2F;foo</span><br><span class="line">Unable to find Mach task port for process-id 28885: (os&#x2F;kern) failure (0x5).</span><br><span class="line"> (please check gdb is codesigned - see taskgated(8))</span><br></pre></td></tr></table></figure>
+<p>网上<a href="https://blog.csdn.net/weixin_30257433/article/details/94883470" target="_blank" rel="noopener">大部分文章</a>讲的都是 10.14 之前的做法，按之前的做法还是会签名失败。</p>
+<p>可以看上面输出的地址 – <a href="https://sourceware.org/gdb/wiki/BuildingOnDarwin" target="_blank" rel="noopener">https://sourceware.org/gdb/wiki/BuildingOnDarwin</a> ，里面讲了如何解决这个问题。</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">sudo killall taskgated</span><br><span class="line">codesign -fs gdb_codesign <span class="string">"<span class="variable">$(which gdb)</span>"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="gdb-调试命令"><a href="#gdb-调试命令" class="headerlink" title="gdb 调试命令"></a>gdb 调试命令</h2><p>权当记录</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">list(l) <span class="comment"># 查看程序代码</span></span><br><span class="line">回车 <span class="comment"># 表示执行上一条命令</span></span><br><span class="line">start(s) <span class="comment"># 开始执行程序</span></span><br><span class="line">run(r) <span class="comment">#从头开始调试</span></span><br><span class="line">quit(q) <span class="comment">#退出程序</span></span><br><span class="line">next(n) <span class="comment">#单步执行</span></span><br><span class="line">step(s) <span class="comment">#进入函数</span></span><br><span class="line">backtrace(bt) <span class="comment">#查看函数调用栈帧 结果显示: #0 xxx #1 xxx</span></span><br><span class="line">frame(f) x <span class="comment">#选择 x 号栈帧</span></span><br><span class="line"></span><br><span class="line">info(i) locals <span class="comment">#查看变量信息</span></span><br><span class="line">info(i) breakpoints <span class="comment">#查看断点信息</span></span><br><span class="line">info(i) watchpoints <span class="comment">#查询观察点</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(p) x <span class="comment">#输出变量 x 的值</span></span><br><span class="line">finish <span class="comment">#将程序运行到当前函数返回</span></span><br><span class="line"><span class="built_in">continue</span>(c) <span class="comment">#将程序运行到结束或者断点处</span></span><br><span class="line"><span class="built_in">set</span> var 变量=XX <span class="comment">#进行变量赋值</span></span><br><span class="line">display 变量 <span class="comment">#追踪变量值，每次执行(next)都会对追踪变量进行输出显示</span></span><br><span class="line">undisplay 编号 <span class="comment">#取消追踪</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">break</span>(b) 行号/函数名 &lt;条件语句&gt; <span class="comment">#设置断点</span></span><br><span class="line">delete breakpoints 断点编号  <span class="comment">#删除断点，没带断点编号则删除所有断点</span></span><br><span class="line"><span class="built_in">disable</span> breakpoints 断点编号 <span class="comment">#禁用断点</span></span><br><span class="line"><span class="built_in">enable</span> 断点编号 <span class="comment">#启用断点</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#观察点是当程序访问某个存储单元时中断</span></span><br><span class="line">watch arr[4] <span class="comment"># 访问arr[4] 时中断</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="gdb-调试-实例分析"><a href="#gdb-调试-实例分析" class="headerlink" title="gdb 调试-实例分析"></a>gdb 调试-实例分析</h2> <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">gcc test.c -g -o <span class="built_in">test</span></span><br><span class="line">gdb <span class="built_in">test</span></span><br></pre></td></tr></table></figure>
+
+<p><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a> 这篇文章举了几个例子，并一步步教命令怎么使用，建议阅读，这里就不重复了。</p>
+<h2 id="gdb-与-vscode"><a href="#gdb-与-vscode" class="headerlink" title="gdb 与 vscode"></a>gdb 与 vscode</h2><p>利用命令进行调试，对于新手来说有点麻烦，那么用 vscode 来进行调试就是一个不错的选择</p>
+<p>需要先安装 c/c++ 插件</p>
+<p>启动调试，此时需要一个启动的 json 文件</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Use IntelliSense to learn about possible attributes.</span></span><br><span class="line">    <span class="comment">// Hover to view descriptions of existing attributes.</span></span><br><span class="line">    <span class="comment">// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387</span></span><br><span class="line">    <span class="attr">"version"</span>: <span class="string">"0.2.0"</span>,</span><br><span class="line">    <span class="attr">"configurations"</span>: [</span><br><span class="line"></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"name"</span>: <span class="string">"gcc - 生成和调试活动文件"</span>,</span><br><span class="line">            <span class="attr">"type"</span>: <span class="string">"cppdbg"</span>,</span><br><span class="line">            <span class="attr">"request"</span>: <span class="string">"launch"</span>,</span><br><span class="line">            <span class="attr">"program"</span>: <span class="string">"$&#123;workspaceRoot&#125;/test"</span>,</span><br><span class="line">            <span class="attr">"args"</span>: [],</span><br><span class="line">            <span class="attr">"stopAtEntry"</span>: <span class="literal">true</span>,</span><br><span class="line">            <span class="attr">"cwd"</span>: <span class="string">"$&#123;workspaceFolder&#125;"</span>,</span><br><span class="line">            <span class="attr">"environment"</span>: [],</span><br><span class="line">            <span class="attr">"externalConsole"</span>: <span class="literal">false</span>,</span><br><span class="line">            <span class="attr">"MIMode"</span>: <span class="string">"lldb"</span>,</span><br><span class="line">            <span class="attr">"preLaunchTask"</span>: <span class="string">"build"</span></span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>等价于 <code>gdb test</code></p>
+<p>test 是我们要调试的程序，再执行之前我们需要先编译链接生成它，所以又创了一个任务 build</p>
+<p>版本不一样，配置也不一样，根据系统提示的进行创建</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="comment">// See https://go.microsoft.com/fwlink/?LinkId=733558</span></span><br><span class="line">    <span class="comment">// for the documentation about the tasks.json format</span></span><br><span class="line">    <span class="attr">"version"</span>: <span class="string">"2.0.0"</span>,</span><br><span class="line">    <span class="attr">"tasks"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"label"</span>: <span class="string">"build"</span>,</span><br><span class="line">            <span class="attr">"type"</span>: <span class="string">"shell"</span>,</span><br><span class="line">            <span class="attr">"command"</span>: <span class="string">"gcc test.c -g -o test.o"</span></span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="peda-插件：增强-gdb-的显示"><a href="#peda-插件：增强-gdb-的显示" class="headerlink" title="peda 插件：增强 gdb 的显示"></a>peda 插件：增强 gdb 的显示</h2><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/longld/peda.git ~/peda</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"source ~/peda/peda.py"</span> &gt;&gt; ~/.gdbinit</span><br></pre></td></tr></table></figure>
+
+<h2 id="lldb-使用"><a href="#lldb-使用" class="headerlink" title="lldb 使用"></a>lldb 使用</h2><p><a href="https://lldb.llvm.org/" target="_blank" rel="noopener">https://lldb.llvm.org/</a></p>
+<p><a href="https://lldb.llvm.org/use/map.html" target="_blank" rel="noopener">与 gdb 命令的映射</a></p>
+<h3 id="chisel-插件：增强-lldb-的显示"><a href="#chisel-插件：增强-lldb-的显示" class="headerlink" title="chisel 插件：增强 lldb 的显示"></a>chisel 插件：增强 lldb 的显示</h3><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">brew install chisel</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"command script import /usr/local/opt/chisel/libexec/fblldb.py"</span> &gt;&gt; ~/.lldbinit</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a></li>
+<li><a href="https://sourceware.org/gdb/wiki/PermissionsDarwin" target="_blank" rel="noopener">PermissionsDarwin</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>随笔</category>
+      </categories>
+      <tags>
+        <tag>V8</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>从「消失的 1 千粉丝」谈及 toFixed 的坑</title>
     <url>/2020/06/14/2020/%E4%BB%8E%E3%80%8C%E6%B6%88%E5%A4%B1%E7%9A%84%201%20%E5%8D%83%E7%B2%89%E4%B8%9D%E3%80%8D%E8%B0%88%E5%8F%8A%20toFixed%20%E7%9A%84%E5%9D%91/</url>
     <content><![CDATA[<h2 id="故事是这样的"><a href="#故事是这样的" class="headerlink" title="故事是这样的"></a>故事是这样的</h2><p>小郑是某平台一位 UP 🐷，经过两年努力现在平台粉丝也有 994500 个了，距离冲击百万 UP 仅剩一步之遥。</p>
@@ -211,38 +267,6 @@
       </categories>
       <tags>
         <tag>随笔</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>macOS 上使用 gdb</title>
-    <url>/2020/06/03/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在尝试调试 V8 的时候，发现需要用到这个工具</p>
-<p>macOS 版本： 10.15 </p>
-<a id="more"></a>
-
-<h2 id="安装与签名"><a href="#安装与签名" class="headerlink" title="安装与签名"></a>安装与签名</h2><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">brew install gdb</span><br><span class="line">gdb -v</span><br><span class="line"><span class="comment"># 9.2</span></span><br></pre></td></tr></table></figure>
-
-<p>网上有说什么高版本有坑的需要下特定版本的，反正我暂时没遇到</p>
-<p>上面安装完后还会输出以下信息（很关键）</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">gdb requires special privileges to access Mach ports.</span><br><span class="line">You will need to codesign the binary. For instructions, see:</span><br><span class="line"></span><br><span class="line">  https:&#x2F;&#x2F;sourceware.org&#x2F;gdb&#x2F;wiki&#x2F;BuildingOnDarwin</span><br><span class="line"></span><br><span class="line">On 10.12 (Sierra) or later with SIP, you need to run this:</span><br><span class="line"></span><br><span class="line">  echo &quot;set startup-with-shell off&quot; &gt;&gt; ~&#x2F;.gdbinit</span><br></pre></td></tr></table></figure>
-
-<p>安装完需要进行签名，否则会报类似以下的错误</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Starting program: &#x2F;x&#x2F;y&#x2F;foo</span><br><span class="line">Unable to find Mach task port for process-id 28885: (os&#x2F;kern) failure (0x5).</span><br><span class="line"> (please check gdb is codesigned - see taskgated(8))</span><br></pre></td></tr></table></figure>
-<p>网上<a href="https://blog.csdn.net/weixin_30257433/article/details/94883470" target="_blank" rel="noopener">大部分文章</a>讲的都是 10.14 之前的做法，按之前的做法还是会签名失败。</p>
-<p>可以看上面输出的地址 – <a href="https://sourceware.org/gdb/wiki/BuildingOnDarwin" target="_blank" rel="noopener">https://sourceware.org/gdb/wiki/BuildingOnDarwin</a> ，里面讲了如何解决这个问题。</p>
-<h2 id="调试命令"><a href="#调试命令" class="headerlink" title="调试命令"></a>调试命令</h2><p>权当记录</p>
-<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">list(l) <span class="comment"># 查看程序代码</span></span><br><span class="line">回车 <span class="comment"># 表示执行上一条命令</span></span><br><span class="line">start(s) <span class="comment"># 开始执行程序</span></span><br><span class="line">run(r) <span class="comment">#从头开始调试</span></span><br><span class="line">quit(q) <span class="comment">#退出程序</span></span><br><span class="line">next(n) <span class="comment">#单步执行</span></span><br><span class="line">step(s) <span class="comment">#进入函数</span></span><br><span class="line">backtrace(bt) <span class="comment">#查看函数调用栈帧 结果显示: #0 xxx #1 xxx</span></span><br><span class="line">frame(f) x <span class="comment">#选择 x 号栈帧</span></span><br><span class="line"></span><br><span class="line">info(i) locals <span class="comment">#查看变量信息</span></span><br><span class="line">info(i) breakpoints <span class="comment">#查看断点信息</span></span><br><span class="line">info(i) watchpoints <span class="comment">#查询观察点</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(p) x <span class="comment">#输出变量 x 的值</span></span><br><span class="line">finish <span class="comment">#将程序运行到当前函数返回</span></span><br><span class="line"><span class="built_in">continue</span>(c) <span class="comment">#将程序运行到结束或者断点处</span></span><br><span class="line"><span class="built_in">set</span> var 变量=XX <span class="comment">#进行变量赋值</span></span><br><span class="line">display 变量 <span class="comment">#追踪变量值，每次执行(next)都会对追踪变量进行输出显示</span></span><br><span class="line">undisplay 编号 <span class="comment">#取消追踪</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">break</span>(b) 行号/函数名 &lt;条件语句&gt; <span class="comment">#设置断点</span></span><br><span class="line">delete breakpoints 断点编号  <span class="comment">#删除断点，没带断点编号则删除所有断点</span></span><br><span class="line"><span class="built_in">disable</span> breakpoints 断点编号 <span class="comment">#禁用断点</span></span><br><span class="line"><span class="built_in">enable</span> 断点编号 <span class="comment">#启用断点</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#观察点是当程序访问某个存储单元时中断</span></span><br><span class="line">watch arr[4] <span class="comment"># 访问arr[4] 时中断</span></span><br></pre></td></tr></table></figure>
-<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><p><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a> 这篇文章举了几个例子，并一步步教命令怎么使用，建议阅读，这里就不重复了。</p>
-<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
-<li><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a></li>
-<li><a href="https://sourceware.org/gdb/wiki/PermissionsDarwin" target="_blank" rel="noopener">PermissionsDarwin</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>随笔</category>
-      </categories>
-      <tags>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -7360,8 +7384,8 @@ onMouseover和onMousemove有什么区别?
         <category>大前端</category>
       </categories>
       <tags>
-        <tag>HTML</tag>
         <tag>多点触控</tag>
+        <tag>HTML</tag>
       </tags>
   </entry>
   <entry>

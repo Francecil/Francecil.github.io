@@ -46,20 +46,20 @@
   };
 </script>
 
-  <meta name="description" content="背景在尝试调试 V8 的时候，发现需要用到这个工具 macOS 版本： 10.15">
+  <meta name="description" content="背景在尝试调试 JS 引擎的时候，发现需要用到这些工具 其中 v8 用 gdb, JavaScriptCore 用 lldb macOS 版本： 10.15  先来说说 gdb 的使用吧">
 <meta property="og:type" content="article">
-<meta property="og:title" content="macOS 上使用 gdb">
-<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;06&#x2F;03&#x2F;2020&#x2F;macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb&#x2F;index.html">
+<meta property="og:title" content="macOS 上使用 lldb 和 gdb">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;06&#x2F;22&#x2F;2020&#x2F;macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20lldb%20%E5%92%8C%20gdb&#x2F;index.html">
 <meta property="og:site_name" content="gahing 的博客">
-<meta property="og:description" content="背景在尝试调试 V8 的时候，发现需要用到这个工具 macOS 版本： 10.15">
+<meta property="og:description" content="背景在尝试调试 JS 引擎的时候，发现需要用到这些工具 其中 v8 用 gdb, JavaScriptCore 用 lldb macOS 版本： 10.15  先来说说 gdb 的使用吧">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-06-03T03:12:40.000Z">
-<meta property="article:modified_time" content="2020-06-03T16:57:58.912Z">
+<meta property="article:published_time" content="2020-06-22T03:12:40.000Z">
+<meta property="article:modified_time" content="2020-06-22T04:33:01.873Z">
 <meta property="article:author" content="gahing">
-<meta property="article:tag" content="gcc">
+<meta property="article:tag" content="V8">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://gahing.top/2020/06/03/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb/">
+<link rel="canonical" href="https://gahing.top/2020/06/22/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20lldb%20%E5%92%8C%20gdb/">
 
 
 <script id="page-configurations">
@@ -71,7 +71,7 @@
   };
 </script>
 
-  <title>macOS 上使用 gdb | gahing 的博客</title>
+  <title>macOS 上使用 lldb 和 gdb | gahing 的博客</title>
   
 
 
@@ -211,7 +211,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/06/03/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20gdb/">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/06/22/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20lldb%20%E5%92%8C%20gdb/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/uploads/avatar.jpg">
@@ -224,7 +224,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          macOS 上使用 gdb
+          macOS 上使用 lldb 和 gdb
         </h1>
 
         <div class="post-meta">
@@ -233,16 +233,10 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2020-06-03 11:12:40" itemprop="dateCreated datePublished" datetime="2020-06-03T11:12:40+08:00">2020-06-03</time>
+              <time title="创建时间：2020-06-22 11:12:40 / 修改时间：12:33:01" itemprop="dateCreated datePublished" datetime="2020-06-22T11:12:40+08:00">2020-06-22</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-06-04 00:57:58" itemprop="dateModified" datetime="2020-06-04T00:57:58+08:00">2020-06-04</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
@@ -266,11 +260,13 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在尝试调试 V8 的时候，发现需要用到这个工具</p>
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在尝试调试 JS 引擎的时候，发现需要用到这些工具</p>
+<p>其中 v8 用 gdb, JavaScriptCore 用 lldb</p>
 <p>macOS 版本： 10.15 </p>
+<p>先来说说 gdb 的使用吧</p>
 <a id="more"></a>
 
-<h2 id="安装与签名"><a href="#安装与签名" class="headerlink" title="安装与签名"></a>安装与签名</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">brew install gdb</span><br><span class="line">gdb -v</span><br><span class="line"><span class="comment"># 9.2</span></span><br></pre></td></tr></table></figure>
+<h2 id="gdb-安装与签名"><a href="#gdb-安装与签名" class="headerlink" title="gdb 安装与签名"></a>gdb 安装与签名</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">brew install gdb</span><br><span class="line">gdb -v</span><br><span class="line"><span class="comment"># 9.2</span></span><br></pre></td></tr></table></figure>
 
 <p>网上有说什么高版本有坑的需要下特定版本的，反正我暂时没遇到</p>
 <p>上面安装完后还会输出以下信息（很关键）</p>
@@ -280,9 +276,31 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Starting program: &#x2F;x&#x2F;y&#x2F;foo</span><br><span class="line">Unable to find Mach task port for process-id 28885: (os&#x2F;kern) failure (0x5).</span><br><span class="line"> (please check gdb is codesigned - see taskgated(8))</span><br></pre></td></tr></table></figure>
 <p>网上<a href="https://blog.csdn.net/weixin_30257433/article/details/94883470" target="_blank" rel="noopener">大部分文章</a>讲的都是 10.14 之前的做法，按之前的做法还是会签名失败。</p>
 <p>可以看上面输出的地址 – <a href="https://sourceware.org/gdb/wiki/BuildingOnDarwin" target="_blank" rel="noopener">https://sourceware.org/gdb/wiki/BuildingOnDarwin</a> ，里面讲了如何解决这个问题。</p>
-<h2 id="调试命令"><a href="#调试命令" class="headerlink" title="调试命令"></a>调试命令</h2><p>权当记录</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo killall taskgated</span><br><span class="line">codesign -fs gdb_codesign <span class="string">"<span class="variable">$(which gdb)</span>"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="gdb-调试命令"><a href="#gdb-调试命令" class="headerlink" title="gdb 调试命令"></a>gdb 调试命令</h2><p>权当记录</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">list(l) <span class="comment"># 查看程序代码</span></span><br><span class="line">回车 <span class="comment"># 表示执行上一条命令</span></span><br><span class="line">start(s) <span class="comment"># 开始执行程序</span></span><br><span class="line">run(r) <span class="comment">#从头开始调试</span></span><br><span class="line">quit(q) <span class="comment">#退出程序</span></span><br><span class="line">next(n) <span class="comment">#单步执行</span></span><br><span class="line">step(s) <span class="comment">#进入函数</span></span><br><span class="line">backtrace(bt) <span class="comment">#查看函数调用栈帧 结果显示: #0 xxx #1 xxx</span></span><br><span class="line">frame(f) x <span class="comment">#选择 x 号栈帧</span></span><br><span class="line"></span><br><span class="line">info(i) locals <span class="comment">#查看变量信息</span></span><br><span class="line">info(i) breakpoints <span class="comment">#查看断点信息</span></span><br><span class="line">info(i) watchpoints <span class="comment">#查询观察点</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(p) x <span class="comment">#输出变量 x 的值</span></span><br><span class="line">finish <span class="comment">#将程序运行到当前函数返回</span></span><br><span class="line"><span class="built_in">continue</span>(c) <span class="comment">#将程序运行到结束或者断点处</span></span><br><span class="line"><span class="built_in">set</span> var 变量=XX <span class="comment">#进行变量赋值</span></span><br><span class="line">display 变量 <span class="comment">#追踪变量值，每次执行(next)都会对追踪变量进行输出显示</span></span><br><span class="line">undisplay 编号 <span class="comment">#取消追踪</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">break</span>(b) 行号/函数名 &lt;条件语句&gt; <span class="comment">#设置断点</span></span><br><span class="line">delete breakpoints 断点编号  <span class="comment">#删除断点，没带断点编号则删除所有断点</span></span><br><span class="line"><span class="built_in">disable</span> breakpoints 断点编号 <span class="comment">#禁用断点</span></span><br><span class="line"><span class="built_in">enable</span> 断点编号 <span class="comment">#启用断点</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#观察点是当程序访问某个存储单元时中断</span></span><br><span class="line">watch arr[4] <span class="comment"># 访问arr[4] 时中断</span></span><br></pre></td></tr></table></figure>
-<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><p><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a> 这篇文章举了几个例子，并一步步教命令怎么使用，建议阅读，这里就不重复了。</p>
+
+<h2 id="gdb-调试-实例分析"><a href="#gdb-调试-实例分析" class="headerlink" title="gdb 调试-实例分析"></a>gdb 调试-实例分析</h2> <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc test.c -g -o <span class="built_in">test</span></span><br><span class="line">gdb <span class="built_in">test</span></span><br></pre></td></tr></table></figure>
+
+<p><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a> 这篇文章举了几个例子，并一步步教命令怎么使用，建议阅读，这里就不重复了。</p>
+<h2 id="gdb-与-vscode"><a href="#gdb-与-vscode" class="headerlink" title="gdb 与 vscode"></a>gdb 与 vscode</h2><p>利用命令进行调试，对于新手来说有点麻烦，那么用 vscode 来进行调试就是一个不错的选择</p>
+<p>需要先安装 c/c++ 插件</p>
+<p>启动调试，此时需要一个启动的 json 文件</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Use IntelliSense to learn about possible attributes.</span></span><br><span class="line">    <span class="comment">// Hover to view descriptions of existing attributes.</span></span><br><span class="line">    <span class="comment">// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387</span></span><br><span class="line">    <span class="attr">"version"</span>: <span class="string">"0.2.0"</span>,</span><br><span class="line">    <span class="attr">"configurations"</span>: [</span><br><span class="line"></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"name"</span>: <span class="string">"gcc - 生成和调试活动文件"</span>,</span><br><span class="line">            <span class="attr">"type"</span>: <span class="string">"cppdbg"</span>,</span><br><span class="line">            <span class="attr">"request"</span>: <span class="string">"launch"</span>,</span><br><span class="line">            <span class="attr">"program"</span>: <span class="string">"$&#123;workspaceRoot&#125;/test"</span>,</span><br><span class="line">            <span class="attr">"args"</span>: [],</span><br><span class="line">            <span class="attr">"stopAtEntry"</span>: <span class="literal">true</span>,</span><br><span class="line">            <span class="attr">"cwd"</span>: <span class="string">"$&#123;workspaceFolder&#125;"</span>,</span><br><span class="line">            <span class="attr">"environment"</span>: [],</span><br><span class="line">            <span class="attr">"externalConsole"</span>: <span class="literal">false</span>,</span><br><span class="line">            <span class="attr">"MIMode"</span>: <span class="string">"lldb"</span>,</span><br><span class="line">            <span class="attr">"preLaunchTask"</span>: <span class="string">"build"</span></span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>等价于 <code>gdb test</code></p>
+<p>test 是我们要调试的程序，再执行之前我们需要先编译链接生成它，所以又创了一个任务 build</p>
+<p>版本不一样，配置也不一样，根据系统提示的进行创建</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="comment">// See https://go.microsoft.com/fwlink/?LinkId=733558</span></span><br><span class="line">    <span class="comment">// for the documentation about the tasks.json format</span></span><br><span class="line">    <span class="attr">"version"</span>: <span class="string">"2.0.0"</span>,</span><br><span class="line">    <span class="attr">"tasks"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"label"</span>: <span class="string">"build"</span>,</span><br><span class="line">            <span class="attr">"type"</span>: <span class="string">"shell"</span>,</span><br><span class="line">            <span class="attr">"command"</span>: <span class="string">"gcc test.c -g -o test.o"</span></span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="peda-插件：增强-gdb-的显示"><a href="#peda-插件：增强-gdb-的显示" class="headerlink" title="peda 插件：增强 gdb 的显示"></a>peda 插件：增强 gdb 的显示</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/longld/peda.git ~/peda</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"source ~/peda/peda.py"</span> &gt;&gt; ~/.gdbinit</span><br></pre></td></tr></table></figure>
+
+<h2 id="lldb-使用"><a href="#lldb-使用" class="headerlink" title="lldb 使用"></a>lldb 使用</h2><p><a href="https://lldb.llvm.org/" target="_blank" rel="noopener">https://lldb.llvm.org/</a></p>
+<p><a href="https://lldb.llvm.org/use/map.html" target="_blank" rel="noopener">与 gdb 命令的映射</a></p>
+<h3 id="chisel-插件：增强-lldb-的显示"><a href="#chisel-插件：增强-lldb-的显示" class="headerlink" title="chisel 插件：增强 lldb 的显示"></a>chisel 插件：增强 lldb 的显示</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">brew install chisel</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"command script import /usr/local/opt/chisel/libexec/fblldb.py"</span> &gt;&gt; ~/.lldbinit</span><br></pre></td></tr></table></figure>
+
+
 <h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
 <li><a href="https://www.jianshu.com/p/30ffc01380a0" target="_blank" rel="noopener">GDB调试工具总结</a></li>
 <li><a href="https://sourceware.org/gdb/wiki/PermissionsDarwin" target="_blank" rel="noopener">PermissionsDarwin</a></li>
@@ -316,7 +334,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/gcc/" rel="tag"># gcc</a>
+              <a href="/tags/V8/" rel="tag"># V8</a>
           </div>
 
         
@@ -325,13 +343,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/05/21/2020/%E6%8A%8A%E7%BD%91%E7%AB%99%E6%B7%BB%E5%8A%A0%E5%88%B0%E6%A1%8C%E9%9D%A2%EF%BC%8C%E3%80%8C%E7%88%B1%E5%A5%87%E8%89%BA%E7%BD%91%E9%A1%B5%E5%BA%94%E7%94%A8%E3%80%8D%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" rel="prev" title="把网站添加到桌面，「爱奇艺网页应用」是如何实现的">
-      <i class="fa fa-chevron-left"></i> 把网站添加到桌面，「爱奇艺网页应用」是如何实现的
+    <a href="/2020/06/14/2020/%E4%BB%8E%E3%80%8C%E6%B6%88%E5%A4%B1%E7%9A%84%201%20%E5%8D%83%E7%B2%89%E4%B8%9D%E3%80%8D%E8%B0%88%E5%8F%8A%20toFixed%20%E7%9A%84%E5%9D%91/" rel="prev" title="从「消失的 1 千粉丝」谈及 toFixed 的坑">
+      <i class="fa fa-chevron-left"></i> 从「消失的 1 千粉丝」谈及 toFixed 的坑
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/06/11/2020/%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87%E7%B3%BB%E5%B0%8F%E7%BB%93/" rel="next" title="地理坐标系小结">
-      地理坐标系小结 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -391,7 +406,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装与签名"><span class="nav-number">2.</span> <span class="nav-text">安装与签名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调试命令"><span class="nav-number">3.</span> <span class="nav-text">调试命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例分析"><span class="nav-number">4.</span> <span class="nav-text">实例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">5.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gdb-安装与签名"><span class="nav-number">2.</span> <span class="nav-text">gdb 安装与签名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gdb-调试命令"><span class="nav-number">3.</span> <span class="nav-text">gdb 调试命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gdb-调试-实例分析"><span class="nav-number">4.</span> <span class="nav-text">gdb 调试-实例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gdb-与-vscode"><span class="nav-number">5.</span> <span class="nav-text">gdb 与 vscode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#peda-插件：增强-gdb-的显示"><span class="nav-number">6.</span> <span class="nav-text">peda 插件：增强 gdb 的显示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lldb-使用"><span class="nav-number">7.</span> <span class="nav-text">lldb 使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#chisel-插件：增强-lldb-的显示"><span class="nav-number">7.1.</span> <span class="nav-text">chisel 插件：增强 lldb 的显示</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">8.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -420,7 +435,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-count">44</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
