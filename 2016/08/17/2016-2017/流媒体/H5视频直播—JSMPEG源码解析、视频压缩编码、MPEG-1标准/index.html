@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="jsmpeg是什么？https:&#x2F;&#x2F;github.com&#x2F;phoboslab&#x2F;jsmpeg一个mpeg-1 video的js解码库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="H5视频直播—JSMPEG源码解析、视频压缩编码、MPEG-1标准">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2016&#x2F;08&#x2F;17&#x2F;2016-2017&#x2F;%E6%B5%81%E5%AA%92%E4%BD%93&#x2F;H5%E8%A7%86%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94JSMPEG%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E8%A7%86%E9%A2%91%E5%8E%8B%E7%BC%A9%E7%BC%96%E7%A0%81%E3%80%81MPEG-1%E6%A0%87%E5%87%86&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="jsmpeg是什么？https:&#x2F;&#x2F;github.com&#x2F;phoboslab&#x2F;jsmpeg一个mpeg-1 video的js解码库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http:&#x2F;&#x2F;img.blog.csdn.net&#x2F;20140602173641875?watermark&#x2F;2&#x2F;text&#x2F;aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA&#x3D;&#x2F;font&#x2F;5a6L5L2T&#x2F;fontsize&#x2F;400&#x2F;fill&#x2F;I0JBQkFCMA&#x3D;&#x3D;&#x2F;dissolve&#x2F;70&#x2F;gravity&#x2F;Center">
+<meta property="og:image" content="http:&#x2F;&#x2F;img.blog.csdn.net&#x2F;20140602173658734?watermark&#x2F;2&#x2F;text&#x2F;aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA&#x3D;&#x2F;font&#x2F;5a6L5L2T&#x2F;fontsize&#x2F;400&#x2F;fill&#x2F;I0JBQkFCMA&#x3D;&#x3D;&#x2F;dissolve&#x2F;70&#x2F;gravity&#x2F;Center">
+<meta property="og:image" content="http:&#x2F;&#x2F;img.blog.csdn.net&#x2F;20140602173713140?watermark&#x2F;2&#x2F;text&#x2F;aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA&#x3D;&#x2F;font&#x2F;5a6L5L2T&#x2F;fontsize&#x2F;400&#x2F;fill&#x2F;I0JBQkFCMA&#x3D;&#x3D;&#x2F;dissolve&#x2F;70&#x2F;gravity&#x2F;Center">
+<meta property="og:image" content="http:&#x2F;&#x2F;img.blog.csdn.net&#x2F;20140602173723046?watermark&#x2F;2&#x2F;text&#x2F;aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA&#x3D;&#x2F;font&#x2F;5a6L5L2T&#x2F;fontsize&#x2F;400&#x2F;fill&#x2F;I0JBQkFCMA&#x3D;&#x3D;&#x2F;dissolve&#x2F;70&#x2F;gravity&#x2F;Center">
+<meta property="og:image" content="http:&#x2F;&#x2F;img.blog.csdn.net&#x2F;20140602173439593?watermark&#x2F;2&#x2F;text&#x2F;aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA&#x3D;&#x2F;font&#x2F;5a6L5L2T&#x2F;fontsize&#x2F;400&#x2F;fill&#x2F;I0JBQkFCMA&#x3D;&#x3D;&#x2F;dissolve&#x2F;70&#x2F;gravity&#x2F;SouthEast">
+<meta property="article:published_time" content="2016-08-17T03:00:00.000Z">
+<meta property="article:modified_time" content="2020-06-29T14:15:37.117Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="HTML">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;img.blog.csdn.net&#x2F;20140602173641875?watermark&#x2F;2&#x2F;text&#x2F;aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA&#x3D;&#x2F;font&#x2F;5a6L5L2T&#x2F;fontsize&#x2F;400&#x2F;fill&#x2F;I0JBQkFCMA&#x3D;&#x3D;&#x2F;dissolve&#x2F;70&#x2F;gravity&#x2F;Center">
+
+<link rel="canonical" href="https://gahing.top/2016/08/17/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/H5%E8%A7%86%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94JSMPEG%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E8%A7%86%E9%A2%91%E5%8E%8B%E7%BC%A9%E7%BC%96%E7%A0%81%E3%80%81MPEG-1%E6%A0%87%E5%87%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>H5视频直播—JSMPEG源码解析、视频压缩编码、MPEG-1标准 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2016/08/17/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/H5%E8%A7%86%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94JSMPEG%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E8%A7%86%E9%A2%91%E5%8E%8B%E7%BC%A9%E7%BC%96%E7%A0%81%E3%80%81MPEG-1%E6%A0%87%E5%87%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          H5视频直播—JSMPEG源码解析、视频压缩编码、MPEG-1标准
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-08-17 11:00:00" itemprop="dateCreated datePublished" datetime="2016-08-17T11:00:00+08:00">2016-08-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-29 22:15:37" itemprop="dateModified" datetime="2020-06-29T22:15:37+08:00">2020-06-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B5%81%E5%AA%92%E4%BD%93/" itemprop="url" rel="index">
+                    <span itemprop="name">流媒体</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="jsmpeg是什么？"><a href="#jsmpeg是什么？" class="headerlink" title="jsmpeg是什么？"></a>jsmpeg是什么？</h1><pre><code>https://github.com/phoboslab/jsmpeg</code></pre><p>一个<a href="http://baike.baidu.com/link?url=IdDNfUYYiss4iUee-J5RKHujDyCinU3pO07wdRGuMfEHw9Ih3OaoOHbCRwTuMT_ktsTwTgvniHVHVrmBZu3G8K" target="_blank" rel="noopener">mpeg-1</a> video的js解码库</p>
+<a id="more"></a>
+
+<h1 id="jsmpeg可以用来干什么？"><a href="#jsmpeg可以用来干什么？" class="headerlink" title="jsmpeg可以用来干什么？"></a>jsmpeg可以用来干什么？</h1><p>利用ffmpeg采集视频源并推送到node.js服务器<br>nodejs利用ws模块*[基于tcp]*将数据包转发到网页，利用该js进行解码，提供canvas渲染<br>最后的效果就是浏览器能够实时看到视频源的数据</p>
+<blockquote>
+<p>使用方法请参考github<br>本电脑使用记录</p>
+</blockquote>
+<pre><code>1. cd到对应目录D:\nodejs\projects\live_audio 
+2. node stream-server.js ququ 9091 9092
+3. ffmpeg -f dshow -i video=&quot;Integrated Webcam&quot;  -f mpeg1video -b 500k -r 20 -vf scale=640:360  http://localhost:9091/ququ/640/360</code></pre><h1 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h1><p>基本直播场景都可以用到<strong>[注意是基于tcp的]</strong><br>但是注意！！这个是只有视频 没有音频<br>PS:关于音频以及利用流媒体协议或封装格式做同步的下篇文章会写到</p>
+<!--more-->
+
+<h1 id="mpeg-1-video-简介"><a href="#mpeg-1-video-简介" class="headerlink" title="mpeg-1 video 简介"></a>mpeg-1 video 简介</h1><blockquote>
+<p>随机访问<br>灵活的帧率<code>（最大25帧/s）</code><br>可变的图像尺寸<code>(最大720*576)</code><br>定义了<code>I-帧</code>、<code>P-帧（参考之前的I或P）</code>和<code>B-帧（参考前后的I或P 实时流不用这个）</code><br>运动补偿可跨越多个帧<br>半像素精度的运动向量 、量化矩阵、GOF结构 、slice结构<br>版权：free</p>
+</blockquote>
+<p><strong>满足多达16路以上25帧/秒的压缩速度，在500kbit/s的压缩码流和352像素×288行的清晰度下，每帧大小仅为2k</strong></p>
+<h1 id="mpeg-1-video-编码简介"><a href="#mpeg-1-video-编码简介" class="headerlink" title="mpeg-1 video 编码简介"></a>mpeg-1 video 编码简介</h1><p>这边只是说一下简单的做法，或者说是视频编码的基本做法 忽略了很多细节..<br>h164和mpeg1都是在此基础上进行改进的</p>
+<p>参考</p>
+<blockquote>
+<p><a href="http://blog.jobbole.com/95862/" target="_blank" rel="noopener">http://blog.jobbole.com/95862/</a><br><a href="http://blog.csdn.net/leixiaohua1020/article/details/28114081" target="_blank" rel="noopener">http://blog.csdn.net/leixiaohua1020/article/details/28114081</a></p>
+</blockquote>
+<h2 id="（1）I帧-I-frames"><a href="#（1）I帧-I-frames" class="headerlink" title="（1）I帧(I-frames)"></a>（1）I帧(I-frames)</h2><p>不依赖于其他视频帧<br>帧内压缩，jpeg编码技术,采用离散余弦变换DCT的压缩技术，GOP(帧组)的第一帧且一组只有一个I帧，不考虑运动矢量</p>
+<h3 id="变换编码-二维DCT"><a href="#变换编码-二维DCT" class="headerlink" title="变换编码-二维DCT"></a>变换编码-二维DCT</h3><ol>
+<li>假设一帧图像的大小为1280 * 720，首先将其以网格状的形式分成160 * 90个尺寸为8 * 8的彼此没有重叠的图像块</li>
+<li>每个8 * 8点的图像块被送入DCT编码器，将8 * 8的图像块从空间域变换为频率域</li>
+<li>一个实际8*8图像块[亮度值] 相邻像素亮度值差距不大<br><img src="http://img.blog.csdn.net/20140602173641875?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="请输入图片描述">  </li>
+<li>图像块经过DCT变换后的系数<br><img src="http://img.blog.csdn.net/20140602173658734?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="图像块经过DCT变换后的系数"></li>
+</ol>
+<p>从图中可以看出，左上角(低频系数)集中大量能量，右下角(高频系数)能量小</p>
+<ol start="5">
+<li>量化-有损压缩。人眼对低频敏感对高频不敏感，故对低频区的系数进行细量化，高频区的系数进行粗量化。<br><strong>量化公式</strong>：<img src="http://img.blog.csdn.net/20140602173713140?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="请输入图片描述"></li>
+</ol>
+<p>其中<code>FQ（u,v）</code>表示经过量化后的DCT系数；<br><code>F（u,v）</code>表示量化前的DCT系数；<br><code>Q（u,v）</code>表示量化加权矩阵；<br><code>q</code>表示量化步长；<br><code>round</code>表示归整，即将输出的值取为与之最接近的整数值。<br>合理选择量化系数，对变换后的图像块进行量化后的结果如图所示。<br><img src="http://img.blog.csdn.net/20140602173723046?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="请输入图片描述"></p>
+<p>DCT系数量化后大部分为变为0，将少部分非0值进行压缩编码即可。</p>
+<h3 id="熵编码"><a href="#熵编码" class="headerlink" title="熵编码"></a>熵编码</h3><p> 多用可变字长编码(VLC) 实现<br>基本原理是对信源中<strong>出现概率大的符号赋予短码</strong>，对于<strong>出现概率小的符号赋予长码</strong>，从而在统计上获得较短的平均码长。<br>游程编码<code>[常用，压缩效率不高，但编解码快]</code><br>参考：<a href="http://blog.jobbole.com/79758/" target="_blank" rel="noopener">计算机算法：数据压缩之游程编码</a><br>实现：</p>
+<ol>
+<li>在上图量化DCT时对结果进行<code>Z-型扫描</code>化为一维序列(按图箭头方向)</li>
+<li>将该一维序列进行游程编码</li>
+<li>对编码后的数据再次进行VLC ( 比如 <code>Huffman</code>编码<h2 id="（2）P帧"><a href="#（2）P帧" class="headerlink" title="（2）P帧"></a>（2）P帧</h2>播放解码时需要依赖于前面已解码的参考帧<br>需要帧存储器 <blockquote>
+<p>PS:解码时如果都依赖I帧就比较简单，保存一份I帧数据到帧存储器即可，否则由于不知道参考的哪一帧 需要保存GOP里的所有I P到帧存储器</p>
+</blockquote>
+</li>
+</ol>
+<p>编码时直接拿前面参考帧的未编码数据</p>
+<h3 id="运动预测"><a href="#运动预测" class="headerlink" title="运动预测"></a>运动预测</h3><p>将参考帧(P1,可以是I帧也可以是P帧)，预测帧(P2,待编码的P帧) 分块(例如将图像分割成n个16*16图像块)<br>定义两个颜色的误差为：</p>
+<pre><code>PixelDiff(c1, c2) = (c1- c2) ^ 2</code></pre><p>两个图像块之间的误差即16*16个PixelDiff的sum</p>
+<pre><code>int block_diff(const unsigned char b1[16][16], const unsigned char b2[16][16]) { 
+    int sum = 0; 
+    for (int i = 0; i &lt; 16; i++) { 
+         for (int j = 0; j &lt; 16; j++) { 
+              int c1 = b1[i][j]; 
+              int c2 = b2[i][j]; 
+              sum += (c1 – c2) * (c1 – c2); 
+         } 
+    } 
+    return sum; 
+}</code></pre><p>P2中每一个block找出上一帧中相似度最高的block坐标，并记录下来<br>做法可以直接2个for循环(暴力)<br>当然实际中不可能这么暴力搜索，而是围绕P2中该block对应坐标在P1中位置作为中心，慢慢四周扩散，搜索<strong><em>一定步长,在一定误差范围内的宏块坐标</em></strong>。<br>所以结果是，P2进行运动预测编码的结果就是一大堆(x,y)的坐标，代表P2上每个block在上一帧P1里面最相似的 block的位置</p>
+<h3 id="P帧编码"><a href="#P帧编码" class="headerlink" title="P帧编码"></a>P帧编码</h3><p>刚才的运动预测矢量（一堆block的坐标），我们先用P1按照这些数据拼凑出一张类似P2的新图片叫做P2’，然后同P2上<strong>每个像素</strong>做减法，得到一张保存differ的图片：</p>
+<pre><code>D = (P2 – P2′) / 2 </code></pre><p>用一个 <code>8位的整数(只够表示256个数字)</code> 可以表示 [-255, 255] 之间的误差范围，步长精度是2。</p>
+<blockquote>
+<p>即-2 -3映射到-1 (1000001) 解码时*2即可</p>
+</blockquote>
+<p>由于是 <strong>图片细节的修改</strong>，比起I帧这种一整张图的图片 <strong>熵要低很多</strong>，占的空间也比较小<br>然后将D用类似于jpeg的算法进行编码 <strong><code>[DCT+熵编码]</code></strong><br>故P帧的完整编码为：</p>
+<pre><code>Encode(P2)=记录P1 block位置(x,y)的矩阵+类jpeg有损图像编码(D)</code></pre><h2 id="（3）GOP"><a href="#（3）GOP" class="headerlink" title="（3）GOP"></a>（3）GOP</h2><p>实时传输收到B帧无法播放，这里就不介绍B帧了，一般 I P 就足够了<br>一个GOP是这样的 I P1 P2 P3 P4…<br>一般 P1 - Pn 都参考I 就好了， 虽然参考P可以得到更高的压缩空间</p>
+<h2 id="（4）视频容器"><a href="#（4）视频容器" class="headerlink" title="（4）视频容器"></a>（4）视频容器</h2><p>mpg 记录视频信息，比如分辨率，帧率，时间索引</p>
+<h2 id="（5）优化"><a href="#（5）优化" class="headerlink" title="（5）优化"></a>（5）优化</h2><p>编码效率优化：追求同质量（同信噪比）下更低的码率<br>编码性能优化：追求同样质量和码率的情况下，更快的编码速度。</p>
+<h1 id="混合编码模型"><a href="#混合编码模型" class="headerlink" title="混合编码模型"></a>混合编码模型</h1><p><img src="http://img.blog.csdn.net/20140602173439593?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGVpeGlhb2h1YTEwMjA=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="请输入图片描述"></p>
+<p>应用于MPEG1，MPEG2，H.264等标准中</p>
+<h1 id="MPEG1-标准"><a href="#MPEG1-标准" class="headerlink" title="MPEG1 标准"></a>MPEG1 标准</h1><p>与刚刚所说的简单编码所谓的优化。<br>MPEG1是保存的是YCbCr的4:2:2<br>关于YCbCr可以参考<a href="http://blog.sina.com.cn/s/blog_a85e142101010h8n.html" target="_blank" rel="noopener">RGB、YUV和YCbCr</a></p>
+<p>待更新。。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HTML/" rel="tag"># HTML</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/07/13/2016-2017/adb%E6%8E%A7%E5%88%B6avd/" rel="prev" title="adb控制avd">
+      <i class="fa fa-chevron-left"></i> adb控制avd
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/08/23/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/H5%E9%9F%B3%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94%E6%8E%A2%E7%B4%A2%E5%8E%86%E7%A8%8B%E3%80%81aurora.js%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E9%9F%B3%E9%A2%91%E7%BC%96%E7%A0%81%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%20/" rel="next" title="H5音频直播—探索历程、aurora.js源码解析、音频编码基本原理">
+      H5音频直播—探索历程、aurora.js源码解析、音频编码基本原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#jsmpeg是什么？"><span class="nav-number">1.</span> <span class="nav-text">jsmpeg是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#jsmpeg可以用来干什么？"><span class="nav-number">2.</span> <span class="nav-text">jsmpeg可以用来干什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#应用场景"><span class="nav-number">3.</span> <span class="nav-text">应用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mpeg-1-video-简介"><span class="nav-number">4.</span> <span class="nav-text">mpeg-1 video 简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mpeg-1-video-编码简介"><span class="nav-number">5.</span> <span class="nav-text">mpeg-1 video 编码简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#（1）I帧-I-frames"><span class="nav-number">5.1.</span> <span class="nav-text">（1）I帧(I-frames)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#变换编码-二维DCT"><span class="nav-number">5.1.1.</span> <span class="nav-text">变换编码-二维DCT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#熵编码"><span class="nav-number">5.1.2.</span> <span class="nav-text">熵编码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（2）P帧"><span class="nav-number">5.2.</span> <span class="nav-text">（2）P帧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#运动预测"><span class="nav-number">5.2.1.</span> <span class="nav-text">运动预测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P帧编码"><span class="nav-number">5.2.2.</span> <span class="nav-text">P帧编码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（3）GOP"><span class="nav-number">5.3.</span> <span class="nav-text">（3）GOP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（4）视频容器"><span class="nav-number">5.4.</span> <span class="nav-text">（4）视频容器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（5）优化"><span class="nav-number">5.5.</span> <span class="nav-text">（5）优化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#混合编码模型"><span class="nav-number">6.</span> <span class="nav-text">混合编码模型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MPEG1-标准"><span class="nav-number">7.</span> <span class="nav-text">MPEG1 标准</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">81</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

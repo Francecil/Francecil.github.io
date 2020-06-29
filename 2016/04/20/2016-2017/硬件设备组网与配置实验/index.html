@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言本文是大学时上的「硬件设备组网与配置实验」的一些笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="硬件设备组网与配置实验">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2016&#x2F;04&#x2F;20&#x2F;2016-2017&#x2F;%E7%A1%AC%E4%BB%B6%E8%AE%BE%E5%A4%87%E7%BB%84%E7%BD%91%E4%B8%8E%E9%85%8D%E7%BD%AE%E5%AE%9E%E9%AA%8C&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言本文是大学时上的「硬件设备组网与配置实验」的一些笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;usr&#x2F;uploads&#x2F;2016&#x2F;04&#x2F;3782366733.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;usr&#x2F;uploads&#x2F;2016&#x2F;04&#x2F;2623834922.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;usr&#x2F;uploads&#x2F;2016&#x2F;04&#x2F;2105159668.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;usr&#x2F;uploads&#x2F;2016&#x2F;04&#x2F;3521557871.png">
+<meta property="article:published_time" content="2016-04-20T03:00:00.000Z">
+<meta property="article:modified_time" content="2020-06-29T14:13:31.062Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="gahing">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;usr&#x2F;uploads&#x2F;2016&#x2F;04&#x2F;3782366733.png">
+
+<link rel="canonical" href="https://gahing.top/2016/04/20/2016-2017/%E7%A1%AC%E4%BB%B6%E8%AE%BE%E5%A4%87%E7%BB%84%E7%BD%91%E4%B8%8E%E9%85%8D%E7%BD%AE%E5%AE%9E%E9%AA%8C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>硬件设备组网与配置实验 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2016/04/20/2016-2017/%E7%A1%AC%E4%BB%B6%E8%AE%BE%E5%A4%87%E7%BB%84%E7%BD%91%E4%B8%8E%E9%85%8D%E7%BD%AE%E5%AE%9E%E9%AA%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          硬件设备组网与配置实验
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-04-20 11:00:00" itemprop="dateCreated datePublished" datetime="2016-04-20T11:00:00+08:00">2016-04-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-29 22:13:31" itemprop="dateModified" datetime="2020-06-29T22:13:31+08:00">2020-06-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%A1%AC%E4%BB%B6/" itemprop="url" rel="index">
+                    <span itemprop="name">硬件</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文是大学时上的「硬件设备组网与配置实验」的一些笔记</p>
+<a id="more"></a>
+
+<h1 id="交换机、路由器入门"><a href="#交换机、路由器入门" class="headerlink" title="交换机、路由器入门"></a>交换机、路由器入门</h1><h2 id="Tips"><a href="#Tips" class="headerlink" title="Tips:"></a>Tips:</h2><ul>
+<li>? 帮助<ul>
+<li>?     //显示当前模式下可用的命令</li>
+<li>sh?    //显示当前模式下sh打头的命令</li>
+<li>show  ?   //显示show命令后面可跟的参数</li>
+</ul>
+</li>
+<li>命令缩写<ul>
+<li>conf   t        //等价于configure terminal</li>
+</ul>
+</li>
+<li>命令补齐<ul>
+<li>conf    //按TAB键自动补齐configure</li>
+</ul>
+</li>
+<li>R:路由器 S:交换机</li>
+</ul>
+<h2 id="实验室机柜"><a href="#实验室机柜" class="headerlink" title="实验室机柜"></a>实验室机柜</h2><p><img src="https://www.hongweipeng.com/usr/uploads/2016/04/3782366733.png" alt="q2.png"></p>
+<h2 id="配置模式"><a href="#配置模式" class="headerlink" title="配置模式"></a>配置模式</h2><h3 id="用户模式：基本没用，最多query统计信息"><a href="#用户模式：基本没用，最多query统计信息" class="headerlink" title="用户模式：基本没用，最多query统计信息"></a>用户模式：基本没用，最多query统计信息</h3><pre><code>Switch&gt;</code></pre><h3 id="特权模式：可查看配置，修改部分配置，"><a href="#特权模式：可查看配置，修改部分配置，" class="headerlink" title="特权模式：可查看配置，修改部分配置，"></a>特权模式：可查看配置，修改部分配置，</h3><pre><code>ping ip
+//下面这个还未查证是在哪个模式 答：已查证
+sh ver 查看版本信息
+sh run 查看配置信息</code></pre><blockquote>
+<p>用户模式下通过<code>enable</code>命令进入 enable后带一个表示级别的数字<br>注：特权模式下输入en 0 会进入用户模式，0表示级别。思科一共分为0-15共16个级别，其中用户登陆0-1级别会登陆到用户模式，用户登录2-15级别的到特权模式<br>做实验时采用14级别   </p>
+</blockquote>
+<pre><code>Switch&gt;en 14
+//input password    
+　 Switch#</code></pre><h3 id="全局配置模式：特权模式下输入conf-t命令即可，用户在该模式下修改的配置是全局的。如修改主机名-hostname-xxx"><a href="#全局配置模式：特权模式下输入conf-t命令即可，用户在该模式下修改的配置是全局的。如修改主机名-hostname-xxx" class="headerlink" title="全局配置模式：特权模式下输入conf t命令即可，用户在该模式下修改的配置是全局的。如修改主机名 :hostname xxx"></a>全局配置模式：特权模式下输入conf t命令即可，用户在该模式下修改的配置是全局的。如修改主机名 :<code>hostname xxx</code></h3><pre><code>Switch#config
+Switch&lt;config&gt;#</code></pre><blockquote>
+</blockquote>
+<pre><code>//查看接口信息
+sh 接口标识</code></pre><h3 id="接口模式：修改某接口下的配置，是局部的。如进入-vlan-新增ip"><a href="#接口模式：修改某接口下的配置，是局部的。如进入-vlan-新增ip" class="headerlink" title="接口模式：修改某接口下的配置，是局部的。如进入 vlan 新增ip"></a>接口模式：修改某接口下的配置，是局部的。如<code>进入 vlan 新增ip</code></h3><pre><code>//配置接口带宽
+speed  {10 | 100 | auto}
+duplex {half | full | auto}</code></pre><p><img src="https://www.hongweipeng.com/usr/uploads/2016/04/2623834922.png" alt="q1.png"></p>
+<hr>
+<h1 id="交换机S1-S2、路由器R1模拟PC机-通过另一台路由器R2互连"><a href="#交换机S1-S2、路由器R1模拟PC机-通过另一台路由器R2互连" class="headerlink" title="交换机S1,S2、路由器R1模拟PC机 通过另一台路由器R2互连"></a>交换机S1,S2、路由器R1模拟PC机 通过另一台路由器R2互连</h1><h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><blockquote>
+<p><code>主路由</code>连接其他设备A(R/S,模拟PC)</p>
+</blockquote>
+<ul>
+<li>进入路由连接A的接口(机柜图R6232连接S3760-01 则进入f1/0的接口)模式</li>
+<li>在该接口模式设置自己的ip，实际意义是 A 通过该ip来连接该路由</li>
+<li>路由连接多个设备，所以对应的接口设置对应的ip（设为不同网域 xxx.xxx.1/2/3.1）</li>
+</ul>
+<blockquote>
+<p>交换机(模拟PC)连接路由</p>
+</blockquote>
+<ul>
+<li>进入虚拟局域网接口模式<code>int VLAN 1</code> （VLAN 1 无需ADD 默认有，路由默认也在该VLAN 1 下 所以接下来设置该对交换机和路由在同一个网域即可）</li>
+<li>(有个疑问:VLAN 1是怎么和交换机连接路由的接口绑定在一起的 答：所有接口默认都在VLAN 1</li>
+<li>由于交换机模拟PC 所以需要ip,在该接口模式下 <code>ip add &lt;ip地址&gt; &lt;子网掩码&gt;</code> </li>
+<li>(子网掩码与局域网的作用详见google,简说就是非0位算起对应ip位置后面都是该局域网编号)</li>
+<li>退到全局模式,设置默认网关(默认路由)，该默认网关地址即路由的ip地址<ul>
+<li>二层交换机 <code>ip default-gateway &lt;默认网关地址&gt;</code> </li>
+<li>三层交换机<ul>
+<li><code>ip route 0.0.0.0 0.0.0.0 &lt;默认网关地址&gt;</code></li>
+<li><code>ip routing</code> //开启路由,这个何时开启待实验，以及二层交换机和三层交换机设置区别是为什么?</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>此时交换机和路由在同一个VLAN 1下，同时又在同一个网域下，故交换机与路由成功连通</li>
+</ul>
+<blockquote>
+<p>路由(模拟PC)连接主路由</p>
+</blockquote>
+<ul>
+<li><p>对应接口配置IP地址 <code>ip add &lt;ip地址&gt; &lt;子网掩码&gt;</code></p>
+</li>
+<li><p>配置默认网关(即默认路由) <code>ip route 0.0.0.0 0.0.0.0 &lt;默认网关地址&gt;</code></p>
+</li>
+</ul>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><strong>PC间互ping ,即使是在不同网域，PC会先通过默认网关到达该路由，然后该路由转接到其他网关，再连接到对应网关网域的PC</strong></p>
+<hr>
+<h1 id="交换机划分VLAN-跨交换机实现VLAN"><a href="#交换机划分VLAN-跨交换机实现VLAN" class="headerlink" title="交换机划分VLAN,跨交换机实现VLAN"></a>交换机划分VLAN,跨交换机实现VLAN</h1><p>上节说到，同一网域 且VLAN一致 设备可以互连<br>本节做的是 多个路由通过交换机互连</p>
+<blockquote>
+<p>首先 我们配置两台路由ip在同一个网域 xxx.xxx.1.1/2 例<code>ip add 192.168.1.1 255.255.255.0</code><br>他们物理上都连接了在同一个交换机 由于接口默认都是<code>VLAN 1</code>所以这两台路由即处于<code>同一个网域、同一个VLAN</code><br>故他们是可以直接连通的</p>
+</blockquote>
+<ul>
+<li><p>接下来我们让这两台路由处于不同VLAN，配置如下</p>
+<ul>
+<li><p>全局模式下创建VLAN : <code>S3760_01(config)#vlan 10</code> </p>
+</li>
+<li><p>给VLAN命名，便于存档，在S上无实际用处 <code>S3760_01(config-vlan)#name 10</code> </p>
+</li>
+<li><p>将端口(交换机连接路由A的端口)分配给VLAN:</p>
+<ul>
+<li><code>S3760_01(config)#int f0/5</code>            </li>
+<li>将端口F0/5加入vlan 10:<code>S3760_01(config-if)#switchport access vlan 10</code></li>
+</ul>
+</li>
+<li><p>同样的，创建VLAN 20,把交换机连接路由B的端口 f0/15 分配给VLAN 20</p>
+</li>
+<li><p>测试：路由A ping 路由B发现ping 不通</p>
+</li>
+<li><p>结论：不同VLAN,即时在同一网域，如果交换机不作为默认网关(下文会做该实验)，两者是不能连通的。</p>
+</li>
+<li><p>其他：</p>
+<ul>
+<li>删除VLAN :<code>switch(config)#no vlan 10</code></li>
+<li>查看已配置的VLAN信息 :<code>S3760_01#sh vlan</code> </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>接下来我们实现下面这样的效果，PC3连接另一个交换机且处于VLAN 10, PC1和PC3在同一个网域，让它们能够连通<br>  <img src="https://www.hongweipeng.com/usr/uploads/2016/04/2105159668.png" alt="q3.png"></p>
+<ul>
+<li><p>与上面一个实验一样，交换机S2126_01端口f0/1分配给VLAN 10,PC3设置ip</p>
+</li>
+<li><p>交换机之间的连接</p>
+<ul>
+<li>交换机S3760_01、S2126_01相连的F0/24端口设定为Trunk模式</li>
+<li>这里发现两个交换机之间接口一致，所以从其中任意一个设置如下</li>
+<li><code>S3760_01(config)#Int f0/24</code> ，<code>S3760_01(config-if)#Switchport mode trunk</code></li>
+</ul>
+</li>
+<li><p>测试：PC3#ping pc1可以连通，pingPC2不能连通</p>
+</li>
+<li><p>结论：即使被多个连通的交换机隔开，只要在同一个VLAN和网域 是可以连通的</p>
+</li>
+<li><p>其他：交换机端口工作模式：</p>
+<ul>
+<li>Access：大多用于接入层，也叫接入模式，常用于交换机与PC的连接</li>
+<li>Trunk：中继模式，用于交换机与交换机，交换机与路由器，大多用于级联网络设备所以也叫干道模式。</li>
+<li>Multi：一个端口可划分到多个VLAN,（以弃用）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>接下来补上面的提到的了，不同VLAN,不同网域，如果交换机作为默认网关，两者是可以连通的</p>
+</li>
+</ul>
+<blockquote>
+<p>其实原理和实验2一样，不同网域的PC设置其默认网关为交换机在该连通接口的ip,实验效果图如下：</p>
+</blockquote>
+<p><img src="https://www.hongweipeng.com/usr/uploads/2016/04/3521557871.png" alt="q4.png"></p>
+<blockquote>
+<p>在上面实验基础上，我们做如下变动：</p>
+</blockquote>
+<ul>
+<li>修改PC1和PC2的ip网域不同</li>
+<li>设置三层交换机VLAN间通讯<ul>
+<li>设置vlan虚接口ip地址,效果是该VLAN(如vlan 10)上的PC可以通过设置默认网关访问到该交换机，再转接其他网域<ul>
+<li><code>int vlan 10</code> !创建虚拟接口vlan 10</li>
+<li><code>ip addr 192.168.10.254 255.255.255.0</code></li>
+<li><code>int vlan 20</code></li>
+<li><code>ip add 192.168.20.254 255.255.255.0</code><ul>
+<li>开启三层路由：<code>ip routing</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>设置PC1/2的默认网关，<code>ip rout 0.0.0.0 0.0.0.0 192.168.10.254/192.168.20.254;</code></li>
+<li>测试与结论：PC1与PC2处于不同VLAN,不同网域，但是可以通过交换机网关中转 ping通    </li>
+</ul>
+<hr>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/04/13/2016-2017/Android%E5%BC%80%E5%8F%91%E6%8A%80%E5%B7%A7/" rel="prev" title="Android开发技巧">
+      <i class="fa fa-chevron-left"></i> Android开发技巧
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/07/05/2016-2017/Windows%20%E4%B8%8B%E5%BF%AB%E6%8D%B7%E5%90%AF%E5%8A%A8%E5%BA%94%E7%94%A8%E7%9A%84%E5%B0%8F%E6%8A%80%E5%B7%A7/" rel="next" title="Windows 下快捷启动应用的小技巧">
+      Windows 下快捷启动应用的小技巧 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#交换机、路由器入门"><span class="nav-number">2.</span> <span class="nav-text">交换机、路由器入门</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Tips"><span class="nav-number">2.1.</span> <span class="nav-text">Tips:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验室机柜"><span class="nav-number">2.2.</span> <span class="nav-text">实验室机柜</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置模式"><span class="nav-number">2.3.</span> <span class="nav-text">配置模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#用户模式：基本没用，最多query统计信息"><span class="nav-number">2.3.1.</span> <span class="nav-text">用户模式：基本没用，最多query统计信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#特权模式：可查看配置，修改部分配置，"><span class="nav-number">2.3.2.</span> <span class="nav-text">特权模式：可查看配置，修改部分配置，</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全局配置模式：特权模式下输入conf-t命令即可，用户在该模式下修改的配置是全局的。如修改主机名-hostname-xxx"><span class="nav-number">2.3.3.</span> <span class="nav-text">全局配置模式：特权模式下输入conf t命令即可，用户在该模式下修改的配置是全局的。如修改主机名 :hostname xxx</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#接口模式：修改某接口下的配置，是局部的。如进入-vlan-新增ip"><span class="nav-number">2.3.4.</span> <span class="nav-text">接口模式：修改某接口下的配置，是局部的。如进入 vlan 新增ip</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#交换机S1-S2、路由器R1模拟PC机-通过另一台路由器R2互连"><span class="nav-number">3.</span> <span class="nav-text">交换机S1,S2、路由器R1模拟PC机 通过另一台路由器R2互连</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设置"><span class="nav-number">3.1.</span> <span class="nav-text">设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试"><span class="nav-number">3.2.</span> <span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#交换机划分VLAN-跨交换机实现VLAN"><span class="nav-number">4.</span> <span class="nav-text">交换机划分VLAN,跨交换机实现VLAN</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">81</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

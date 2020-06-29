@@ -431,14 +431,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2020/浅谈 React Fiber</title>
-    <url>/2020/05/01/2020/%E6%B5%85%E8%B0%88%20React%20Fiber/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>看了很多关于 React Fiber 的文章，大概就是这样一个意思</p>
-<p>React Fiber 避免了同步渲染所有组件导致主线程卡顿，现在会根据优先级去渲染</p>
-<p>可能还会放弃之前已经渲染到一半的虚拟 dom</p>
-]]></content>
-  </entry>
-  <entry>
     <title>面试官问：怎么避免函数调用栈溢出</title>
     <url>/2020/04/14/2020/%E9%9D%A2%E8%AF%95%E5%AE%98%E9%97%AE%EF%BC%9A%E6%80%8E%E4%B9%88%E9%81%BF%E5%85%8D%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%A0%88%E6%BA%A2%E5%87%BA/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>基友最近遇到的一道面试题</p>
@@ -2949,6 +2941,139 @@
       </tags>
   </entry>
   <entry>
+    <title>Promise then 原理分析</title>
+    <url>/2019/12/10/2019Q4/Promise%20then%20%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>先谈规范，再分析 polyfill 源码，最后实例解析。</p>
+<a id="more"></a>
+
+<h2 id="规范"><a href="#规范" class="headerlink" title="规范"></a>规范</h2><p>规范直接参考这边：<a href="http://www.ituring.com.cn/article/66566" target="_blank" rel="noopener">【翻译】Promises/A+规范</a></p>
+<p><strong>返回值这部分重要且易错，这里单独提出来分析下</strong></p>
+<p>首先，then 方法必须返回一个 promise 对象</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">promise2 = promise1.then(onFulfilled, onRejected);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>如果 onFulfilled 或者 onRejected 返回一个值 x ，则运行下面的 <a href="#promise-solution-process"><strong>Promise 解决过程：<code>[[Resolve]](promise2, x)</code></strong></a></li>
+<li>如果 onFulfilled 或者 onRejected 抛出一个异常 e ，则 promise2 必须拒绝执行，并返回拒因 e</li>
+<li>如果 onFulfilled 不是函数且 promise1 成功执行， promise2 必须成功执行并返回相同的值<blockquote>
+<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled = 2;</code> <br>则 <code>promise2 = Promise {&lt;resolved&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>如果 onRejected 不是函数且 promise1 拒绝执行， promise2 必须拒绝执行并返回相同的据因<blockquote>
+<p>e.g.: <code>promise1 = Promise.reject(1);onRejected = 2;</code> <br>则 <code>promise2 = Promise {&lt;rejected&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>不论 promise1 被 reject 还是被 resolve 时 promise2 都会被 resolve，只有出现异常时才会被 rejected。<blockquote>
+<p>e.g.: <code>promise1 = Promise.reject(1);onFulfilled =()=&gt;1; onRejected=()=&gt;2;</code><br>则 <code>promise2 = Promise {&lt;resolved&gt;: 2}</code>;</p>
+<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled =()=&gt;{throw new Error(&#39;test&#39;)}; onRejected=(e)=&gt;console.log(e);</code><br>则 <code>promise2 = Promise {&lt;rejected&gt;: Error: test</code></p>
+</blockquote>
+</li>
+</ul>
+<h3 id="Promise-解决过程-Resolve-promise-x"><a href="#Promise-解决过程-Resolve-promise-x" class="headerlink" title="Promise 解决过程 [[Resolve]](promise, x)"></a><span id="promise-solution-process"><strong>Promise 解决过程 <code>[[Resolve]](promise, x)</code></strong></span></h3><p>promise 为 then 回调的返回值，运行 <code>[[Resolve]](promise, x)</code> 需遵循以下步骤：</p>
+<ul>
+<li>x 与 promise 相等<blockquote>
+<p>如果 promise 和 x 指向同一对象，以 TypeError 为据因拒绝执行 promise <br>e.g.: <code>test = {};test = Promise.resolve().then(()=&gt;test)</code> <br><code>//Promise {&lt;rejected&gt;: TypeError: Chaining cycle detected for promise #&lt;Promise&gt;}</code></p>
+</blockquote>
+</li>
+<li>x 为 Promise<blockquote>
+<p>promise 接受x的状态 <br>e.g.: <code>promise2 = Promise.resolve().then(()=&gt;Promise.reject(1))</code> <br><code>//Promise {&lt;rejected&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li><strong>x 为对象或函数</strong><ul>
+<li>把 x.then 赋值给 then。用引用保持，防止其他地方又更改了then的值</li>
+<li>如果取 x.then 的值时抛出错误 e ，则以 e 为据因拒绝 promise</li>
+<li>如果 then 是函数，将 x 作为函数的作用域 this 调用之。传递两个回调函数作为参数，第一个参数叫做 resolvePromise ，第二个参数叫做 rejectPromise:<ul>
+<li>如果 resolvePromise 以值 y 为参数被调用，则运行 [[Resolve]](promise, y)<blockquote>
+<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){res(this.a)}}))</code></p>
+<p><code>//Promise {&lt;resolved&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>如果 rejectPromise 以据因 r 为参数被调用，则以据因 r 拒绝 promise<blockquote>
+<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){rej(this.a)}}))</code></p>
+<p><code>//Promise {&lt;rejected&gt;: 1}</code></p>
+</blockquote>
+</li>
+<li>如果 resolvePromise 和 rejectPromise 均被调用，或者被同一参数调用了多次，则优先采用首次调用并忽略剩下的调用</li>
+<li>如果调用 then 方法抛出了异常 e：<ul>
+<li>如果 resolvePromise 或 rejectPromise 已经被调用，则忽略之</li>
+<li>否则以 e 为据因拒绝 promise</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>x 不为对象或函数<blockquote>
+<p>以 x 为参数执行 promise </p>
+</blockquote>
+</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">如果一个 promise 被一个循环的 thenable 链中的对象解决，而 [[Resolve]](promise, thenable) 的递归性质又使得其被再次调用，根据上述的算法将会陷入无限递归之中。算法虽不强制要求，但也鼓励施者检测这样的递归是否存在，若检测到存在则以一个可识别的 <span class="built_in">TypeError</span> 为据因来拒绝 promise</span><br></pre></td></tr></table></figure>
+
+<p>这个目前还不知道怎么写才能产生循环的 thenable 链 - -</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><h3 id="then-操作解析"><a href="#then-操作解析" class="headerlink" title="then 操作解析"></a>then 操作解析</h3><p>全局维护一个 microTask Queue ，每个 promise 自身维护一个 queue</p>
+<p>当 promise 执行 then 方法时：</p>
+<ol>
+<li>令 then 方法中的回调为 resolver，令 promise 的内部值为 outcome</li>
+<li>创建一个 PENDING 状态的 Promise 对象 promise2</li>
+<li>如果 promise 处于 PENDING 状态，将 “执行 resolver ，改变 promise2 状态” 作为队列项放入该 promise 对象自身维护的 queue</li>
+<li>否则将 “执行 resolver ，改变 promise2 状态” 作为 microTask 放入 microTask Queue</li>
+<li>返回 promise2</li>
+</ol>
+<p>当同步代码执行完毕，开始执行 microTask Queue 中的任务</p>
+<p>执行 microTask ：</p>
+<ol>
+<li>以 promise 的内部值 outcome 作为参数执行 resolver 并得到返回值 returnValue</li>
+<li>若出现异常，将异常赋值给 returnValue </li>
+<li>若未出现异常，对 returnValue 做些处理，这里不细讲</li>
+<li>修改 promise2 的状态为 FULFILLED/REJECTED ，并修改 promise2 的内部值 outcome 为 returnValue</li>
+<li>该 promise2 维护的 queue 中的队列项放入 microTask Queue </li>
+</ol>
+<p>不断的执行 microTask 直到 microTask Queue 为空，一轮 event loop 结束</p>
+<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><p>对 <a href="https://github.com/calvinmetcalf/lie" target="_blank" rel="noopener">lie.js</a> (一个 Promise polyfill 库) 的代码做个精简，仅考虑普通的 then 回调和 resolve 方法</p>
+<p>然后 microTask 任务执行接口我们直接用的 setTimeout ，不搞 Mutation 那些幺蛾子，代码如下</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// immediate.js</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> scheduleDrain = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  setTimeout(nextTick, <span class="number">0</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> draining;</span><br><span class="line"><span class="keyword">var</span> queue = [];</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在同步代码 task 执行之后，模拟清空 microTask queue</span></span><br><span class="line"><span class="comment">// 由于执行过程中可能有新的 microTask 所以用了双层循环</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">nextTick</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  draining = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">var</span> i, oldQueue;</span><br><span class="line">  <span class="keyword">var</span> len = queue.length;</span><br><span class="line">  <span class="keyword">while</span> (len) &#123;</span><br><span class="line">    oldQueue = queue;</span><br><span class="line">    queue = [];</span><br><span class="line">    i = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">      oldQueue[i]();</span><br><span class="line">    &#125;</span><br><span class="line">    len = queue.length;</span><br><span class="line">  &#125;</span><br><span class="line">  draining = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">immediate</span>(<span class="params">task</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (queue.push(task) === <span class="number">1</span> &amp;&amp; !draining) &#123;</span><br><span class="line">    scheduleDrain();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Promise 代码如下</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// promise.js</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// then 方法执行时作为参数 resolver 实例化 Promise</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">INTERNAL</span> (<span class="params"></span>) </span>&#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> REJECTED = <span class="string">'REJECTED'</span>;</span><br><span class="line"><span class="keyword">const</span> FULFILLED = <span class="string">'FULFILLED'</span>;</span><br><span class="line"><span class="keyword">const</span> PENDING = <span class="string">'PENDING'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Promise</span> (<span class="params">resolver</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> resolver !== <span class="string">'function'</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">TypeError</span>(<span class="string">'resolver must be a function'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.state = PENDING;</span><br><span class="line">  <span class="keyword">this</span>.queue = [];</span><br><span class="line">  <span class="keyword">this</span>.outcome = <span class="keyword">void</span> <span class="number">0</span>;</span><br><span class="line">  <span class="comment">// 外部通过 new 实例化时执行</span></span><br><span class="line">  <span class="keyword">if</span> (resolver !== INTERNAL) &#123;</span><br><span class="line">    safelyResolveThenable(<span class="keyword">this</span>, resolver);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.prototype.then = <span class="function"><span class="keyword">function</span> (<span class="params">onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 特殊参数的处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> onFulfilled !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === FULFILLED ||</span><br><span class="line">    <span class="keyword">typeof</span> onRejected !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === REJECTED) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 创建一个 PENDING 状态的 promise</span></span><br><span class="line">  <span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="keyword">this</span>.constructor(INTERNAL);</span><br><span class="line">  <span class="comment">// 根据原 promise 状态进行不同处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.state !== PENDING) &#123;</span><br><span class="line">    <span class="keyword">var</span> resolver = <span class="keyword">this</span>.state === FULFILLED ? onFulfilled : onRejected;</span><br><span class="line">    makeMicroTask(promise, resolver, <span class="keyword">this</span>.outcome);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.queue.push(<span class="keyword">new</span> QueueItem(promise, onFulfilled, onRejected));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> promise;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.resolve = <span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> <span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> handleResolve(<span class="keyword">new</span> <span class="keyword">this</span>(INTERNAL), value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// promsie 内部队列项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">QueueItem</span> (<span class="params">promise, onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.promise = promise;</span><br><span class="line">  <span class="comment">// 仅考虑 function类型的 onFulfilled</span></span><br><span class="line">  <span class="keyword">this</span>.onFulfilled = onFulfilled;</span><br><span class="line">  <span class="keyword">this</span>.callFulfilled = <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">    makeMicroTask(<span class="keyword">this</span>.promise, <span class="keyword">this</span>.onFulfilled, value);</span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="comment">// 暂不处理 onRejected</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 handleResolve 操作放入 microtask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">makeMicroTask</span> (<span class="params">promise, func, value</span>) </span>&#123;</span><br><span class="line">  immediate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    handleResolve(promise, func(value));</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 改变 promise 状态，并通知 queue 中的 promise 执行 makeMicroTask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResolve</span> (<span class="params">self, value</span>) </span>&#123;</span><br><span class="line">  self.state = FULFILLED;</span><br><span class="line">  self.outcome = value;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">var</span> len = self.queue.length;</span><br><span class="line">  <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">    self.queue[i].callFulfilled(value);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对 resolver 方法的两个参数（resolve,reject）进行包装</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">safelyResolveThenable</span> (<span class="params">self, thenable</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> called = <span class="literal">false</span>;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onError</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    <span class="comment">// 暂不处理 reject</span></span><br><span class="line">    <span class="comment">// handlers.reject(self, value);</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onSuccess</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    handleResolve(self, value);</span><br><span class="line">  &#125;</span><br><span class="line">  thenable(onSuccess, onError);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="params">resolve</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">    resolve(<span class="number">3</span>);</span><br><span class="line">    <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">num</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(num)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<details>
+<summary>答案</summary>
+
+<p>1243 </p>
+</details>
+
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">3</span>)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<details>
+<summary>答案</summary>
+
+<p>2143 </p>
+</details>
+
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">11</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">12</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">13</span>)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">2</span>);</span><br><span class="line">  <span class="keyword">let</span> promise = <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">21</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">22</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">23</span>))</span><br><span class="line">  promise.then(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="number">29</span>))</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">24</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">25</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">26</span>))</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">27</span>)</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">28</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<details>
+<summary>答案</summary>
+
+<p>【1,2,11,21,24,27,28,12,22,25,13,23,26,29】</p>
+</details>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>当我们的 polyfill 写完后，需要测试下是否符合规范，我们自己写测试用例肯定是不可能的，这里有一个测试库<br><a href="https://github.com/promises-aplus/promises-tests" target="_blank" rel="noopener">promises-tests</a></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> tests = <span class="built_in">require</span>(<span class="string">"promises-aplus-tests"</span>);</span><br><span class="line"><span class="keyword">const</span> <span class="built_in">Promise</span> = <span class="built_in">require</span>(<span class="string">"./index"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> deferred = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> resolve, reject;</span><br><span class="line">    <span class="keyword">const</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span>(<span class="params">_resolve, _reject</span>) </span>&#123;</span><br><span class="line">        resolve = _resolve;</span><br><span class="line">        reject = _reject;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        promise: promise,</span><br><span class="line">        resolve: resolve,</span><br><span class="line">        reject: reject</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">const</span> adapter = &#123;</span><br><span class="line">    deferred</span><br><span class="line">&#125;;</span><br><span class="line">tests.mocha(adapter);</span><br></pre></td></tr></table></figure>
+
+<p>这样就可以做测试了</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://juejin.im/post/5aa3f7b9f265da23766ae5ae" target="_blank" rel="noopener">从一道Promise执行顺序的题目看Promise实现</a></li>
+<li><a href="https://segmentfault.com/a/1190000020037919" target="_blank" rel="noopener">手写一个符合A+规范的Promise</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>ECMAScript</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Code Server搭建指南</title>
     <url>/2019/12/10/2019Q4/Code%20Server%E6%90%AD%E5%BB%BA%E6%8C%87%E5%8D%97/</url>
     <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>有个个人项目，比如博客、开源项目，在学校宿舍电脑上写一半，回到家想继续写，怎么做到？</p>
@@ -3165,139 +3290,6 @@
       </categories>
       <tags>
         <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Promise then 原理分析</title>
-    <url>/2019/12/10/2019Q4/Promise%20then%20%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>先谈规范，再分析 polyfill 源码，最后实例解析。</p>
-<a id="more"></a>
-
-<h2 id="规范"><a href="#规范" class="headerlink" title="规范"></a>规范</h2><p>规范直接参考这边：<a href="http://www.ituring.com.cn/article/66566" target="_blank" rel="noopener">【翻译】Promises/A+规范</a></p>
-<p><strong>返回值这部分重要且易错，这里单独提出来分析下</strong></p>
-<p>首先，then 方法必须返回一个 promise 对象</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">promise2 = promise1.then(onFulfilled, onRejected);</span><br></pre></td></tr></table></figure>
-<ul>
-<li>如果 onFulfilled 或者 onRejected 返回一个值 x ，则运行下面的 <a href="#promise-solution-process"><strong>Promise 解决过程：<code>[[Resolve]](promise2, x)</code></strong></a></li>
-<li>如果 onFulfilled 或者 onRejected 抛出一个异常 e ，则 promise2 必须拒绝执行，并返回拒因 e</li>
-<li>如果 onFulfilled 不是函数且 promise1 成功执行， promise2 必须成功执行并返回相同的值<blockquote>
-<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled = 2;</code> <br>则 <code>promise2 = Promise {&lt;resolved&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>如果 onRejected 不是函数且 promise1 拒绝执行， promise2 必须拒绝执行并返回相同的据因<blockquote>
-<p>e.g.: <code>promise1 = Promise.reject(1);onRejected = 2;</code> <br>则 <code>promise2 = Promise {&lt;rejected&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>不论 promise1 被 reject 还是被 resolve 时 promise2 都会被 resolve，只有出现异常时才会被 rejected。<blockquote>
-<p>e.g.: <code>promise1 = Promise.reject(1);onFulfilled =()=&gt;1; onRejected=()=&gt;2;</code><br>则 <code>promise2 = Promise {&lt;resolved&gt;: 2}</code>;</p>
-<p>e.g.: <code>promise1 = Promise.resolve(1);onFulfilled =()=&gt;{throw new Error(&#39;test&#39;)}; onRejected=(e)=&gt;console.log(e);</code><br>则 <code>promise2 = Promise {&lt;rejected&gt;: Error: test</code></p>
-</blockquote>
-</li>
-</ul>
-<h3 id="Promise-解决过程-Resolve-promise-x"><a href="#Promise-解决过程-Resolve-promise-x" class="headerlink" title="Promise 解决过程 [[Resolve]](promise, x)"></a><span id="promise-solution-process"><strong>Promise 解决过程 <code>[[Resolve]](promise, x)</code></strong></span></h3><p>promise 为 then 回调的返回值，运行 <code>[[Resolve]](promise, x)</code> 需遵循以下步骤：</p>
-<ul>
-<li>x 与 promise 相等<blockquote>
-<p>如果 promise 和 x 指向同一对象，以 TypeError 为据因拒绝执行 promise <br>e.g.: <code>test = {};test = Promise.resolve().then(()=&gt;test)</code> <br><code>//Promise {&lt;rejected&gt;: TypeError: Chaining cycle detected for promise #&lt;Promise&gt;}</code></p>
-</blockquote>
-</li>
-<li>x 为 Promise<blockquote>
-<p>promise 接受x的状态 <br>e.g.: <code>promise2 = Promise.resolve().then(()=&gt;Promise.reject(1))</code> <br><code>//Promise {&lt;rejected&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li><strong>x 为对象或函数</strong><ul>
-<li>把 x.then 赋值给 then。用引用保持，防止其他地方又更改了then的值</li>
-<li>如果取 x.then 的值时抛出错误 e ，则以 e 为据因拒绝 promise</li>
-<li>如果 then 是函数，将 x 作为函数的作用域 this 调用之。传递两个回调函数作为参数，第一个参数叫做 resolvePromise ，第二个参数叫做 rejectPromise:<ul>
-<li>如果 resolvePromise 以值 y 为参数被调用，则运行 [[Resolve]](promise, y)<blockquote>
-<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){res(this.a)}}))</code></p>
-<p><code>//Promise {&lt;resolved&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>如果 rejectPromise 以据因 r 为参数被调用，则以据因 r 拒绝 promise<blockquote>
-<p><code>Promise.resolve().then(()=&gt;({a:1,then:function (res,rej){rej(this.a)}}))</code></p>
-<p><code>//Promise {&lt;rejected&gt;: 1}</code></p>
-</blockquote>
-</li>
-<li>如果 resolvePromise 和 rejectPromise 均被调用，或者被同一参数调用了多次，则优先采用首次调用并忽略剩下的调用</li>
-<li>如果调用 then 方法抛出了异常 e：<ul>
-<li>如果 resolvePromise 或 rejectPromise 已经被调用，则忽略之</li>
-<li>否则以 e 为据因拒绝 promise</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>x 不为对象或函数<blockquote>
-<p>以 x 为参数执行 promise </p>
-</blockquote>
-</li>
-</ul>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">如果一个 promise 被一个循环的 thenable 链中的对象解决，而 [[Resolve]](promise, thenable) 的递归性质又使得其被再次调用，根据上述的算法将会陷入无限递归之中。算法虽不强制要求，但也鼓励施者检测这样的递归是否存在，若检测到存在则以一个可识别的 <span class="built_in">TypeError</span> 为据因来拒绝 promise</span><br></pre></td></tr></table></figure>
-
-<p>这个目前还不知道怎么写才能产生循环的 thenable 链 - -</p>
-<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><h3 id="then-操作解析"><a href="#then-操作解析" class="headerlink" title="then 操作解析"></a>then 操作解析</h3><p>全局维护一个 microTask Queue ，每个 promise 自身维护一个 queue</p>
-<p>当 promise 执行 then 方法时：</p>
-<ol>
-<li>令 then 方法中的回调为 resolver，令 promise 的内部值为 outcome</li>
-<li>创建一个 PENDING 状态的 Promise 对象 promise2</li>
-<li>如果 promise 处于 PENDING 状态，将 “执行 resolver ，改变 promise2 状态” 作为队列项放入该 promise 对象自身维护的 queue</li>
-<li>否则将 “执行 resolver ，改变 promise2 状态” 作为 microTask 放入 microTask Queue</li>
-<li>返回 promise2</li>
-</ol>
-<p>当同步代码执行完毕，开始执行 microTask Queue 中的任务</p>
-<p>执行 microTask ：</p>
-<ol>
-<li>以 promise 的内部值 outcome 作为参数执行 resolver 并得到返回值 returnValue</li>
-<li>若出现异常，将异常赋值给 returnValue </li>
-<li>若未出现异常，对 returnValue 做些处理，这里不细讲</li>
-<li>修改 promise2 的状态为 FULFILLED/REJECTED ，并修改 promise2 的内部值 outcome 为 returnValue</li>
-<li>该 promise2 维护的 queue 中的队列项放入 microTask Queue </li>
-</ol>
-<p>不断的执行 microTask 直到 microTask Queue 为空，一轮 event loop 结束</p>
-<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><p>对 <a href="https://github.com/calvinmetcalf/lie" target="_blank" rel="noopener">lie.js</a> (一个 Promise polyfill 库) 的代码做个精简，仅考虑普通的 then 回调和 resolve 方法</p>
-<p>然后 microTask 任务执行接口我们直接用的 setTimeout ，不搞 Mutation 那些幺蛾子，代码如下</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// immediate.js</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> scheduleDrain = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  setTimeout(nextTick, <span class="number">0</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> draining;</span><br><span class="line"><span class="keyword">var</span> queue = [];</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在同步代码 task 执行之后，模拟清空 microTask queue</span></span><br><span class="line"><span class="comment">// 由于执行过程中可能有新的 microTask 所以用了双层循环</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">nextTick</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  draining = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">var</span> i, oldQueue;</span><br><span class="line">  <span class="keyword">var</span> len = queue.length;</span><br><span class="line">  <span class="keyword">while</span> (len) &#123;</span><br><span class="line">    oldQueue = queue;</span><br><span class="line">    queue = [];</span><br><span class="line">    i = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">      oldQueue[i]();</span><br><span class="line">    &#125;</span><br><span class="line">    len = queue.length;</span><br><span class="line">  &#125;</span><br><span class="line">  draining = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">immediate</span>(<span class="params">task</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (queue.push(task) === <span class="number">1</span> &amp;&amp; !draining) &#123;</span><br><span class="line">    scheduleDrain();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Promise 代码如下</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// promise.js</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// then 方法执行时作为参数 resolver 实例化 Promise</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">INTERNAL</span> (<span class="params"></span>) </span>&#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> REJECTED = <span class="string">'REJECTED'</span>;</span><br><span class="line"><span class="keyword">const</span> FULFILLED = <span class="string">'FULFILLED'</span>;</span><br><span class="line"><span class="keyword">const</span> PENDING = <span class="string">'PENDING'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Promise</span> (<span class="params">resolver</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> resolver !== <span class="string">'function'</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">TypeError</span>(<span class="string">'resolver must be a function'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.state = PENDING;</span><br><span class="line">  <span class="keyword">this</span>.queue = [];</span><br><span class="line">  <span class="keyword">this</span>.outcome = <span class="keyword">void</span> <span class="number">0</span>;</span><br><span class="line">  <span class="comment">// 外部通过 new 实例化时执行</span></span><br><span class="line">  <span class="keyword">if</span> (resolver !== INTERNAL) &#123;</span><br><span class="line">    safelyResolveThenable(<span class="keyword">this</span>, resolver);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.prototype.then = <span class="function"><span class="keyword">function</span> (<span class="params">onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 特殊参数的处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> onFulfilled !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === FULFILLED ||</span><br><span class="line">    <span class="keyword">typeof</span> onRejected !== <span class="string">'function'</span> &amp;&amp; <span class="keyword">this</span>.state === REJECTED) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 创建一个 PENDING 状态的 promise</span></span><br><span class="line">  <span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="keyword">this</span>.constructor(INTERNAL);</span><br><span class="line">  <span class="comment">// 根据原 promise 状态进行不同处理</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.state !== PENDING) &#123;</span><br><span class="line">    <span class="keyword">var</span> resolver = <span class="keyword">this</span>.state === FULFILLED ? onFulfilled : onRejected;</span><br><span class="line">    makeMicroTask(promise, resolver, <span class="keyword">this</span>.outcome);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.queue.push(<span class="keyword">new</span> QueueItem(promise, onFulfilled, onRejected));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> promise;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.resolve = <span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> <span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> handleResolve(<span class="keyword">new</span> <span class="keyword">this</span>(INTERNAL), value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// promsie 内部队列项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">QueueItem</span> (<span class="params">promise, onFulfilled, onRejected</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.promise = promise;</span><br><span class="line">  <span class="comment">// 仅考虑 function类型的 onFulfilled</span></span><br><span class="line">  <span class="keyword">this</span>.onFulfilled = onFulfilled;</span><br><span class="line">  <span class="keyword">this</span>.callFulfilled = <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">    makeMicroTask(<span class="keyword">this</span>.promise, <span class="keyword">this</span>.onFulfilled, value);</span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="comment">// 暂不处理 onRejected</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 handleResolve 操作放入 microtask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">makeMicroTask</span> (<span class="params">promise, func, value</span>) </span>&#123;</span><br><span class="line">  immediate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    handleResolve(promise, func(value));</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 改变 promise 状态，并通知 queue 中的 promise 执行 makeMicroTask</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResolve</span> (<span class="params">self, value</span>) </span>&#123;</span><br><span class="line">  self.state = FULFILLED;</span><br><span class="line">  self.outcome = value;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">var</span> len = self.queue.length;</span><br><span class="line">  <span class="keyword">while</span> (++i &lt; len) &#123;</span><br><span class="line">    self.queue[i].callFulfilled(value);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对 resolver 方法的两个参数（resolve,reject）进行包装</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">safelyResolveThenable</span> (<span class="params">self, thenable</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> called = <span class="literal">false</span>;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onError</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    <span class="comment">// 暂不处理 reject</span></span><br><span class="line">    <span class="comment">// handlers.reject(self, value);</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onSuccess</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (called) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    called = <span class="literal">true</span>;</span><br><span class="line">    handleResolve(self, value);</span><br><span class="line">  &#125;</span><br><span class="line">  thenable(onSuccess, onError);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="params">resolve</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">    resolve(<span class="number">3</span>);</span><br><span class="line">    <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">num</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(num)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
-
-<details>
-<summary>答案</summary>
-
-<p>1243 </p>
-</details>
-
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">4</span>))</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">3</span>)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
-
-<details>
-<summary>答案</summary>
-
-<p>2143 </p>
-</details>
-
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">1</span>);</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">11</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">12</span>)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">13</span>)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> &#123;</span><br><span class="line">  r()</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">2</span>);</span><br><span class="line">  <span class="keyword">let</span> promise = <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">21</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">22</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">23</span>))</span><br><span class="line">  promise.then(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="number">29</span>))</span><br><span class="line">  <span class="built_in">Promise</span>.resolve().then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">24</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">25</span>)).then(<span class="function"><span class="params">()</span>=&gt;</span> <span class="built_in">console</span>.log(<span class="number">26</span>))</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">27</span>)</span><br><span class="line">&#125;)</span><br><span class="line">promise.then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="number">28</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
-<details>
-<summary>答案</summary>
-
-<p>【1,2,11,21,24,27,28,12,22,25,13,23,26,29】</p>
-</details>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>当我们的 polyfill 写完后，需要测试下是否符合规范，我们自己写测试用例肯定是不可能的，这里有一个测试库<br><a href="https://github.com/promises-aplus/promises-tests" target="_blank" rel="noopener">promises-tests</a></p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> tests = <span class="built_in">require</span>(<span class="string">"promises-aplus-tests"</span>);</span><br><span class="line"><span class="keyword">const</span> <span class="built_in">Promise</span> = <span class="built_in">require</span>(<span class="string">"./index"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> deferred = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> resolve, reject;</span><br><span class="line">    <span class="keyword">const</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span>(<span class="params">_resolve, _reject</span>) </span>&#123;</span><br><span class="line">        resolve = _resolve;</span><br><span class="line">        reject = _reject;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        promise: promise,</span><br><span class="line">        resolve: resolve,</span><br><span class="line">        reject: reject</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">const</span> adapter = &#123;</span><br><span class="line">    deferred</span><br><span class="line">&#125;;</span><br><span class="line">tests.mocha(adapter);</span><br></pre></td></tr></table></figure>
-
-<p>这样就可以做测试了</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
-<li><a href="https://juejin.im/post/5aa3f7b9f265da23766ae5ae" target="_blank" rel="noopener">从一道Promise执行顺序的题目看Promise实现</a></li>
-<li><a href="https://segmentfault.com/a/1190000020037919" target="_blank" rel="noopener">手写一个符合A+规范的Promise</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>大前端</category>
-      </categories>
-      <tags>
-        <tag>ECMAScript</tag>
       </tags>
   </entry>
   <entry>
@@ -6449,7 +6441,7 @@
   </entry>
   <entry>
     <title>Android模拟触控解决方案</title>
-    <url>/2016/11/18/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E6%A8%A1%E6%8B%9F%E8%A7%A6%E6%8E%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/</url>
+    <url>/2016/11/18/2016-2017/Android%E6%A8%A1%E6%8B%9F%E8%A7%A6%E6%8E%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>如何捕获用户触控信息？如何模拟？</p>
 <a id="more"></a>
 
@@ -6778,8 +6770,91 @@ if (opt == 2) {
       </tags>
   </entry>
   <entry>
+    <title>Diigo技术调研</title>
+    <url>/2016/10/21/2016-2017/Diigo%E6%8A%80%E6%9C%AF%E8%B0%83%E7%A0%94/</url>
+    <content><![CDATA[<h1 id="简介："><a href="#简介：" class="headerlink" title="简介："></a>简介：</h1><p> Diigo：像在本子上一样为网页做笔记，后面再进入(本地)该页面会显示原来做的笔记</p>
+<a id="more"></a>
+
+<h1 id="功能调研"><a href="#功能调研" class="headerlink" title="功能调研"></a>功能调研</h1><h2 id="功能一：选择一段文字-可以设置背景颜色"><a href="#功能一：选择一段文字-可以设置背景颜色" class="headerlink" title="功能一：选择一段文字 可以设置背景颜色"></a>功能一：选择一段文字 可以设置背景颜色</h2><p>diigo不支持选择文字的再选择，我们调研时 做成可再选择的。</p>
+<p>比如一段</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"test"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>对于选中的一段文本 应该记录其在dom节点的所有段 给其加标签<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    </span><br><span class="line">    <span class="tag">&lt;<span class="name">ol</span>&gt;</span></span><br><span class="line">        什么鬼啊</span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>回复数阿飞<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">        666</span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>找商店帖<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>言论是对的，在100年<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ol</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>然后选中了</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">                                         有段 给其加标签&lt;&#x2F;p&gt;</span><br><span class="line"></span><br><span class="line">&lt;ol&gt;</span><br><span class="line">    什么鬼啊</span><br><span class="line">    &lt;li&gt;回复数阿飞&lt;&#x2F;li&gt;</span><br><span class="line">    666</span><br><span class="line">    &lt;li&gt;找商</span><br></pre></td></tr></table></figure>
+<p>如果是直接输出 <code>window.getSelection()</code> 的话是 <code>有段 给其加标签什么鬼啊回复数阿飞666找商</code><br>与标签无关，没有任何意义<br>这时候应该按如下步骤去操作：</p>
+<h3 id="获取Range"><a href="#获取Range" class="headerlink" title="获取Range"></a>获取Range</h3><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> range=<span class="built_in">window</span>.getSelection().getRangeAt(<span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+
+<p>什么是Range及用法请参考<a href="http://www.zhangxinxu.com/wordpress/2011/04/js-range-html%E6%96%87%E6%A1%A3%E6%96%87%E5%AD%97%E5%86%85%E5%AE%B9%E9%80%89%E4%B8%AD%E3%80%81%E5%BA%93%E5%8F%8A%E5%BA%94%E7%94%A8%E4%BB%8B%E7%BB%8D/" target="_blank" rel="noopener">这里</a></p>
+<h3 id="利用Range得到选中文字两端所在的dom节点"><a href="#利用Range得到选中文字两端所在的dom节点" class="headerlink" title="利用Range得到选中文字两端所在的dom节点"></a>利用Range得到选中文字两端所在的dom节点</h3><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> startNode = range.startContainer; <span class="comment">//得到‘选择文字’左部所在的容器节点(文本节点，nodeType=3)</span></span><br><span class="line"><span class="comment">//如这边startNode.nodeName是#text 而不是p</span></span><br><span class="line"><span class="keyword">var</span> endNode = range.endContainer; </span><br><span class="line"><span class="comment">//文本节点获取其父节点：Element节点 用parentElement 也可以</span></span><br><span class="line"><span class="comment">//不能只记录父节点，需要记录父节点的第几个#TEXT 因为文本节点的父节点不一样只有一个child文本节点 如本例中的&lt;ol&gt;</span></span><br><span class="line"><span class="comment">//不能记录文本节点，因为getElementsByTagName不支持search #TEXT</span></span><br><span class="line"><span class="keyword">var</span> startParentNode = startNode.parentNode;</span><br><span class="line"><span class="keyword">var</span> endParentNode = endNode.parentNode;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="获取两个dom节点之间的有效节点"><a href="#获取两个dom节点之间的有效节点" class="headerlink" title="获取两个dom节点之间的有效节点"></a>获取两个dom节点之间的有效节点</h3><p><code>选择文字</code> 会经过多个节点，我们需要把每个节点都记录下来,给其中的<code>text节点加style</code><br><strong><em>所谓的有效节点就是指 dom树的<code>前序遍历叶子节点序列</code>中，所得两个节点之间的所有非空text节点</em></strong><br>text节点【<strong>nodeType=3</strong>】是普遍存在于dom中的</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"> <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"test"</span>&gt;</span></span><br><span class="line"> 			<span class="tag">&lt;<span class="name">p</span>&gt;</span>对于选中的一段文本 应该记录其在dom节点的所有段 给其加标签<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"> 			<span class="tag">&lt;<span class="name">ol</span>&gt;</span></span><br><span class="line">	什么鬼啊</span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>回复数阿飞<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	666</span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>找商店帖<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>言论是对的，在100年<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ol</span>&gt;</span></span><br><span class="line"> 		<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>通过输出 <code>console.log($(&quot;.test&quot;)[0].childNodes);</code> 我们发现结果为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[text, p, text, ol, text]0: text1: p2: text3: ol4: textlength: 5__proto__: NodeList</span><br></pre></td></tr></table></figure>
+<p>即 <strong>Element节点之间存在的空白也是会成为text节点</strong> 的，因为显然 我们有时候写文字没加标签</p>
+<p>所以我们递归遍历的时候需要判断下是否为有效的text节点</p>
+<p><strong>要点：</strong></p>
+<ol>
+<li>startNode和endNode 需要切分文本</li>
+<li>通过两个flag:startSearched,endSearchde设置是否当前节点为有效节点，并可以及时退出搜索</li>
+<li>通过搜索函数的返回值来判断是否需要跳跃节点：见注释</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">               <span class="keyword">var</span> startSearched = <span class="literal">false</span>,endSearched = <span class="literal">true</span>;</span><br><span class="line"><span class="keyword">var</span> startOffset = range.startOffset;</span><br><span class="line"><span class="keyword">var</span> endOffset = range.endOffset;</span><br><span class="line"><span class="comment">//要特判下start和end在同一节点的情况</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">traversal</span>(<span class="params">node</span>) </span>&#123;</span><br><span class="line">	<span class="comment">//对textNode的处理</span></span><br><span class="line">	<span class="keyword">if</span>(!endSearched) <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">if</span>(startSearched &amp;&amp; endSearched &amp;&amp; node &amp;&amp; node.nodeType === <span class="number">3</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span>($.trim(node.nodeValue).length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">			<span class="comment">//如果text节点为start or end 可能需要切分为2个text节点 只需设置我们满足的节点</span></span><br><span class="line">			<span class="keyword">if</span>(node == startNode) &#123;</span><br><span class="line">				node.splitText(startOffset); <span class="comment">//分割成两个文本节点，取第二个</span></span><br><span class="line">				<span class="keyword">var</span> nextNode = node.nextSibling;</span><br><span class="line">				changeBgColor(nextNode);</span><br><span class="line">				<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(node == endNode) &#123;</span><br><span class="line">				node.splitText(endOffset); <span class="comment">//分割成两个文本节点，取第1个 当前这个</span></span><br><span class="line">				changeBgColor(node);</span><br><span class="line">				<span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="built_in">console</span>.log(<span class="string">"正常节点："</span> + node.nodeValue);</span><br><span class="line">			changeBgColor(node);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">var</span> i = <span class="number">0</span>,</span><br><span class="line">		childNodes = node.childNodes,</span><br><span class="line">		item;</span><br><span class="line">	<span class="comment">//x注：start or end 节点做了分割后，这边会实时改动</span></span><br><span class="line">	<span class="comment">//所以要根据traversal的返回值判断是否做分割</span></span><br><span class="line">	<span class="comment">//#TEXT &lt;span&gt;#TEXT&lt;/span&gt; #TEXT 的情况下 访问第二个TEXT的再次做了分割取右部，length不会改 因为span是作为一个节点;</span></span><br><span class="line">	<span class="comment">//当取了第三个#TEXT的时候 不用管length了 看返回值直接break</span></span><br><span class="line">	<span class="comment">//现在考虑左部的情况，如果是从第一个#TEXT 右边开始取，分割后length会+1,设置个flag 让程序自动跳过一次</span></span><br><span class="line">	<span class="keyword">var</span> flag = <span class="literal">false</span>;</span><br><span class="line">	<span class="keyword">for</span>(; i &lt; childNodes.length; i++) &#123;</span><br><span class="line">		item = childNodes[i];</span><br><span class="line">		<span class="comment">//递归先序遍历子节点</span></span><br><span class="line">		<span class="keyword">if</span>(flag) &#123;</span><br><span class="line">			flag = <span class="literal">false</span>;</span><br><span class="line">			<span class="keyword">continue</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span>(item == startNode) startSearched = <span class="literal">true</span>;</span><br><span class="line">		<span class="keyword">var</span> result = traversal(item);</span><br><span class="line">		<span class="keyword">if</span>(item == endNode) endSearched = <span class="literal">false</span>;</span><br><span class="line">		<span class="keyword">if</span>(result === <span class="number">2</span>) <span class="keyword">break</span>;</span><br><span class="line">		<span class="keyword">if</span>(result === <span class="number">1</span>) flag = <span class="literal">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line">traversal(<span class="built_in">document</span>);</span><br></pre></td></tr></table></figure>
+<h3 id="记录节点信息，再次加载页面时可快速访问并修改其-style"><a href="#记录节点信息，再次加载页面时可快速访问并修改其-style" class="headerlink" title="记录节点信息，再次加载页面时可快速访问并修改其 style"></a>记录节点信息，再次加载页面时可快速访问并修改其 <code>style</code></h3><p> 上一步得到了满足要求的节点。<br>  首先是保存父节点的<code>tagName</code>和<code>index</code>以及子文本节点的childIndex。<br>  选择通过记录tagName及document.getElementsByTagName列表的index值，下次可以同理快速得到。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">    <span class="keyword">var</span> list = <span class="built_in">document</span>.getElementsByTagName(currentNode.tagName);</span><br><span class="line">    <span class="built_in">console</span>.log(list.length);</span><br><span class="line">    <span class="keyword">for</span>(i=<span class="number">0</span>;i&lt;list.length;i++)</span><br><span class="line">    	<span class="keyword">if</span>(list[i]==currentNode)&#123;<span class="built_in">console</span>.log(i);<span class="keyword">break</span>;&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//获取子节点的Index位置</span></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">getNodeInChildIndex</span>(<span class="params">par,child</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">var</span> list = par.childNodes;</span><br><span class="line">        <span class="keyword">for</span>(i=<span class="number">0</span>;i&lt;list.length;i++)&#123;</span><br><span class="line">            <span class="keyword">if</span>(list[i]==child)<span class="keyword">return</span> i;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="string">``</span><span class="string">` </span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"> 然后是起始和终止节点中文本选择的起点startOffset和终点endOffset</span></span><br><span class="line"><span class="string">`</span><span class="string">``</span>js</span><br><span class="line">    <span class="comment">//range.startOffset:startNode中选择文字左部的偏移值</span></span><br><span class="line">    <span class="comment">//range.endOffset:endNode中选择文字右边的偏移值</span></span><br><span class="line">    <span class="built_in">console</span>.log(range.startOffset+<span class="string">" "</span>+range.endOffset);</span><br></pre></td></tr></table></figure>
+
+<p>所以只要首尾两个节点做下处理，其他节点默认全部文字</p>
+<h3 id="样式加载"><a href="#样式加载" class="headerlink" title="样式加载"></a>样式加载</h3><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">//传入的节点必须为文本节点，如果是start or endNode 需要传入切割后的节点</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">changeBgColor</span>(<span class="params">node</span>) </span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">"changeBgColor:"</span> + node.nodeValue);</span><br><span class="line">	<span class="keyword">var</span> par = node.parentNode;</span><br><span class="line">	<span class="keyword">var</span> spanEle = <span class="built_in">document</span>.createElement(<span class="string">"span"</span>);</span><br><span class="line">	spanEle.style.backgroundColor = <span class="string">'red'</span>;</span><br><span class="line">	spanEle.appendChild(node.cloneNode(<span class="literal">false</span>));</span><br><span class="line">	<span class="comment">//使用替换节点的方法</span></span><br><span class="line">	par.replaceChild(spanEle, node);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="边界处理"><a href="#边界处理" class="headerlink" title="边界处理"></a>边界处理</h3><p>情况1：startNode 和 endNode 为同一节点</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">               <span class="comment">//要特判下start和end在同一节点的情况</span></span><br><span class="line"><span class="keyword">if</span>(startNode==endNode)&#123;</span><br><span class="line">	<span class="comment">//点击的话，两个offset值一样，为了不切分文本节点，这边应该返回</span></span><br><span class="line">	<span class="keyword">if</span>(startOffset==endOffset)<span class="keyword">return</span>;</span><br><span class="line">	endNode.splitText(endOffset);</span><br><span class="line">	<span class="keyword">var</span> resultNode=endNode.splitText(startOffset);</span><br><span class="line">	changeBgColor(resultNode);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="功能备注"><a href="#功能备注" class="headerlink" title="功能备注"></a>功能备注</h3><p>这边实现的只是diigo功能的一小部分，给文字换背景颜色之外，还可以基于该<code>‘选择文字’</code>贴笔记，位置是基于‘选择文字的’。<br>不过这边不再研究，直接转向更有难度的功能二。</p>
+<h2 id="功能二：网页即时贴组件-页面上的任意一个位置都可以贴上自己的笔记贴"><a href="#功能二：网页即时贴组件-页面上的任意一个位置都可以贴上自己的笔记贴" class="headerlink" title="功能二：网页即时贴组件,页面上的任意一个位置都可以贴上自己的笔记贴"></a>功能二：网页即时贴组件,页面上的任意一个位置都可以贴上自己的笔记贴</h2><blockquote>
+<p>大致搜了一下，网上有开源实现<code>react-stickynode</code> 不过自己先试着实现下吧，后面再去看别人的实现。</p>
+</blockquote>
+<p>测了一下，diigo采用绝对定位。<br>不用考虑兼容分辨率的原因：自适应是由访问的网站去做的，兼容方案无从而知，所以我们的即时贴位置也不知道应该改到什么位置，一样GG。<br>如果是没有做自适应的，只给页面加</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">"viewport"</span> <span class="attr">content</span>=<span class="string">"width=device-width, initial-scale=1.0 user-scalable=no"</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>那也是GG<br>不用px用百分比的，更是GG..</p>
+<p><strong>一个好消息是</strong>：一般我们这个应用是在同一个设备上使用。。或者，真要做笔记的话，可以基于功能1的endOffset位置去做</p>
+<p><strong><code>diigo的大致实现如下：</code></strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="css">			<span class="selector-tag">div</span><span class="selector-class">.floatNote</span> &#123;</span></span><br><span class="line">				position: absolute!important;</span><br><span class="line">				width: 34px;</span><br><span class="line">				height: 34px;</span><br><span class="line">				text-align: center;</span><br><span class="line">				background-image: url('chrome-extension://pnhplgjpclknigjpccbcnmicgcieojbh/diigolet/images/float_icon.png')!important;</span><br><span class="line">				background-repeat: no-repeat;</span><br><span class="line">				z-index: 2147483643;</span><br><span class="line">			&#125;</span><br><span class="line">		<span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"floatNote"</span> <span class="attr">style</span>=<span class="string">"left: 239px; top: 316px; cursor: default;"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="功能三：离线存储，页面load完去访问缓存数据，还原样式操作"><a href="#功能三：离线存储，页面load完去访问缓存数据，还原样式操作" class="headerlink" title="功能三：离线存储，页面load完去访问缓存数据，还原样式操作"></a>功能三：离线存储，页面load完去访问缓存数据，还原样式操作</h2><p>先谈谈保存形式。</p>
+<h3 id="1-cookie的方式"><a href="#1-cookie的方式" class="headerlink" title="1.cookie的方式"></a>1.cookie的方式</h3><p>每个域限制cookie的数量，cookie的大小限制为4kB；<br>一个域有多个URL,利用子cookie的方法一个URL仅使用一个cookie<br>不过这样域还是会受到cookie数量的限制，大概是数十个。<br><strong>容量太小，且有可能cookie被禁用</strong></p>
+<h3 id="2-IE用户数据"><a href="#2-IE用户数据" class="headerlink" title="2.IE用户数据"></a>2.IE用户数据</h3><p><strong>每个域名最多1MB数据,一个文档最多128KB数据。</strong><br>以文档进行区分，不限制文档的数量，满足我们的需求。<br><strong>但是</strong>只支持<code>Windows+IE</code></p>
+<p>以下权当学习。</p>
+<p>在CSS中指定userData</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">"behavior:url(#default#userData)"</span> <span class="attr">id</span>=<span class="string">"datastore"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>设置数据</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> dataStore = <span class="built_in">document</span>.getElementById(<span class="string">"datastore"</span>);</span><br><span class="line">dataStore.setAttribute(<span class="string">"name"</span>,<span class="string">"Nicholas"</span>);</span><br><span class="line">dataStore.setAttribute(<span class="string">"book"</span>,<span class="string">"JS Pro"</span>);</span><br><span class="line"><span class="comment">//保存的数据空间名，仅用于区分不同的数据集</span></span><br><span class="line">dataStore.save(<span class="string">"BookInfo"</span>);</span><br><span class="line"><span class="comment">//覆盖元素可以进行更新</span></span><br><span class="line"></span><br><span class="line">获取数据</span><br><span class="line">dataStore.load(<span class="string">"BookInfo"</span>);</span><br><span class="line"><span class="comment">//load的调用获取了BookInfo数据空间的所有值，可以通过元素访问</span></span><br><span class="line"><span class="built_in">console</span>.log(dataStore.getAttritube(<span class="string">"name"</span>));<span class="comment">//"Nicholas"</span></span><br><span class="line"></span><br><span class="line">删除数据</span><br><span class="line">dataStore.load(<span class="string">"BookInfo"</span>);</span><br><span class="line">dataStore.removeAttribute(<span class="string">"name"</span>);</span><br><span class="line">dataStore.save(<span class="string">"BookInfo"</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Web-Storage"><a href="#3-Web-Storage" class="headerlink" title="3.Web Storage"></a>3.Web Storage</h3><p>以来源(协议、域、端口)为单位。<br>大多数限制为 5 MB 和 2.5 MB<br><strong><code>满足要求。</code></strong><br><strong>注</strong>：<strong><code>https</code>://<a href="http://www.abc.com/index.html" target="_blank" rel="noopener">www.abc.com/index.html</a></strong> 与 <strong><code>http</code>://<a href="http://www.abc.com/index.html" target="_blank" rel="noopener">www.abc.com/index.html</a></strong> 我们视为不同页面、不同来源<br>采用 <strong>globalStorage和localStorage</strong> 的组合(<em>localStorage是标准，但没有所有浏览器都兼容</em></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">      <span class="function"><span class="keyword">function</span> <span class="title">getLocalStorage</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">if</span>(<span class="keyword">typeof</span> localStorage == <span class="string">"object"</span>)&#123;</span><br><span class="line">		<span class="keyword">return</span> localStorage;</span><br><span class="line">	&#125;<span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">typeof</span> globalStorage == <span class="string">"object"</span>)&#123;</span><br><span class="line">		<span class="keyword">return</span> globalStoragep[location.host];</span><br><span class="line">	&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">"Local storage not available."</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> storage = getLocalStorage();</span><br></pre></td></tr></table></figure>
+
+<p>测试：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> storage = getLocalStorage();</span><br><span class="line"><span class="keyword">var</span> book = storage.getItem(<span class="string">"book"</span>);</span><br><span class="line"><span class="keyword">if</span>(book==<span class="literal">null</span>)&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">"book is null,please set value!"</span>);</span><br><span class="line">	storage.setItem(<span class="string">"book"</span>,<span class="string">"人人都是PM"</span>);</span><br><span class="line">&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">"book存在值，"</span>+book)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>访问页面，再刷新。结果：</p>
+<pre><code>[Web浏览器] &quot;book is null,please set value!&quot;    /Diigo/index.html (127)
+[Web浏览器] &quot;book存在值，人人都是PM&quot;    /Diigo/index.html (130)</code></pre><h3 id="4-Web-SQL-amp-IndexedDB"><a href="#4-Web-SQL-amp-IndexedDB" class="headerlink" title="4.Web SQL &amp; IndexedDB"></a>4.Web SQL &amp; IndexedDB</h3><p>可以实现，不过对于我们的应用来说该方法比较复杂，故不采用<br>具体用法参考<a href="http://www.ibm.com/developerworks/cn/web/1107_zhaifeng_indexeddb/" target="_blank" rel="noopener">这里</a></p>
+<hr>
+<p>再谈谈数据类型 每个来源的<strong>增删改查</strong></p>
+<h2 id="功能四：导出笔记数据，更新其他机器的本地笔记"><a href="#功能四：导出笔记数据，更新其他机器的本地笔记" class="headerlink" title="功能四：导出笔记数据，更新其他机器的本地笔记"></a>功能四：导出笔记数据，更新其他机器的本地笔记</h2><h2 id="功能五：云端存储"><a href="#功能五：云端存储" class="headerlink" title="功能五：云端存储"></a>功能五：云端存储</h2><h2 id="功能六：社交、群组、笔记畅享"><a href="#功能六：社交、群组、笔记畅享" class="headerlink" title="功能六：社交、群组、笔记畅享"></a>功能六：社交、群组、笔记畅享</h2><p><del>有空再更新…</del><br><strong>【20171222更新】</strong><br>后面这些属于产品级功能，与前端技术关联不大，故不再更新。</p>
+]]></content>
+      <categories>
+        <category>大前端</category>
+      </categories>
+      <tags>
+        <tag>HTML</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Android监听屏幕旋转</title>
-    <url>/2016/10/18/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E7%9B%91%E5%90%AC%E5%B1%8F%E5%B9%95%E6%97%8B%E8%BD%AC/</url>
+    <url>/2016/10/18/2016-2017/Android%E7%9B%91%E5%90%AC%E5%B1%8F%E5%B9%95%E6%97%8B%E8%BD%AC/</url>
     <content><![CDATA[<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>监听屏幕旋转，不重建Activity</p>
 <p>大前提：Activity 已经限定屏幕竖屏</p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><span class="line">android:screenOrientation="portrait"</span><br></pre></td></tr></table></figure>
@@ -6819,7 +6894,7 @@ public void onConfigurationChanged(Configuration newConfig) {
   </entry>
   <entry>
     <title>流媒体直播—WebRTC native 2 browser</title>
-    <url>/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94WebRTC%20native%202%20browser%20/</url>
+    <url>/2016/08/24/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94WebRTC%20native%202%20browser%20/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>关于browser 2 browser的网上文章很多，我就不介绍了。</p>
 <p>可以参考我的这篇文章<a href="https://www.hongweipeng.com/index.php/archives/835/" target="_blank" rel="noopener">流媒体直播——资料整理、你想要了解的都在这</a></p>
 <p>里面给的链接可以去看看</p>
@@ -7266,50 +7341,13 @@ VM122 phone_frame.html:450 handlePeerMessage:{
         <category>流媒体</category>
       </categories>
       <tags>
-        <tag>WebRTC</tag>
         <tag>ffmpeg</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>WebSocket 与 WebRTC 直播方案对比分析</title>
-    <url>/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/WebSocket%E4%B8%8EWebRTC%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="WebSocket"><a href="#WebSocket" class="headerlink" title="WebSocket"></a>WebSocket</h1><h2 id="同步"><a href="#同步" class="headerlink" title="同步"></a>同步</h2><p>首先说同步策略</p>
-<a id="more"></a>
-
-<h3 id="采用RTMP协议"><a href="#采用RTMP协议" class="headerlink" title="采用RTMP协议"></a>采用RTMP协议</h3><p>需要了解RTMP的协议，将音视频流(H264/SPEEX)构造成RTMP包，通过WebSocket发送到客户端<br>这样的话，开发成本大，需要搭建一台用于发送RTMP包的WebSocket服务器而不是普通的RTMP服务器<br>这东西网上基本没人做，搜到了一个别人做的demo，但是没有文档，实在难以研究,且不知性能如何</p>
-<p>参考：<a href="http://my.oschina.net/langhuihui/blog" target="_blank" rel="noopener">http://my.oschina.net/langhuihui/blog</a></p>
-<h3 id="开两个WebSocket"><a href="#开两个WebSocket" class="headerlink" title="开两个WebSocket"></a>开两个WebSocket</h3><p>我自己写的，从服务器端同时发送音视频流，由于音频方面我没做编解码直接推的PCM可能数据量较大，<br>视频的话采用jsmpeg解码然后通过canvas绘制</p>
-<p>这样的话没有做同步。</p>
-<p>可以参考我上次发的fiiser技术研究：</p>
-<p>同步：每5s发送一个同步指令给客户端进行同步(具体细节我就不懂了)</p>
-<p>编解码:BroadwayJS+SpeexJS 大概做法和我差不多 就是编解码的效率问题了</p>
-<h2 id="解码-软解码"><a href="#解码-软解码" class="headerlink" title="解码-软解码"></a>解码-软解码</h2><p>如果是采用RTMP同步，客户端还要去写JS解协议包(这方面不懂，资料也比较少)</p>
-<p>然后一般都是利用BroadwayJS+SpeexJS来解码，这两个是利用Emscripten把原生代码编译成JS，比普通JS效率高</p>
-<h2 id="渲染"><a href="#渲染" class="headerlink" title="渲染"></a>渲染</h2><p>Canvas+AudioContext </p>
-<h2 id="支持情况"><a href="#支持情况" class="headerlink" title="支持情况"></a>支持情况</h2><p>除IE外，其他大部分PC/Mobile浏览器(有的可能需要较新版本)都支持上述技术</p>
-<h2 id="延迟及卡顿情况"><a href="#延迟及卡顿情况" class="headerlink" title="延迟及卡顿情况"></a>延迟及卡顿情况</h2><p>局域网内，我的方案基本没有延迟(200ms以内)和卡顿</p>
-<h2 id="开发成本"><a href="#开发成本" class="headerlink" title="开发成本"></a>开发成本</h2><p>首先同步本身不好做，还有编解码这块，需要编译上述两个解码库然后找下文档看怎么用，然后服务端还得构造相应编码的流来测试。</p>
-<p>想做好一套解决方案一个人基本搞不定</p>
-<h1 id="WebRTC"><a href="#WebRTC" class="headerlink" title="WebRTC"></a>WebRTC</h1><h2 id="同步及渲染"><a href="#同步及渲染" class="headerlink" title="同步及渲染"></a>同步及渲染</h2><p>浏览器端已经做好同步策略，绑定<code>&lt;video&gt;</code>标签进行渲染</p>
-<h2 id="解码-硬解码"><a href="#解码-硬解码" class="headerlink" title="解码-硬解码"></a>解码-硬解码</h2><h2 id="支持情况-1"><a href="#支持情况-1" class="headerlink" title="支持情况"></a>支持情况</h2><ul>
-<li>PC:Chrome29和火狐47以上支持，Opera 39以上支持，IE内核的浏览器、Edge、Safari不支持</li>
-<li>Mobile：Chrome for Android ，firefox for Android支持<br>Android WebView(5.0以上支持，4.4部分手机(samsung htc等)支持)，手机自带浏览器(4.4以上部分厂商支持)<br>QQ/UC/百度浏览器 正在测试，<br>WP手机不支持(可以考虑后面兼容ORTC)</li>
-</ul>
-<p>参考 <a href="http://www.tutorialspoint.com/webrtc/webrtc_mobile_support.htm" target="_blank" rel="noopener">http://www.tutorialspoint.com/webrtc/webrtc_mobile_support.htm</a> 并做了下验证</p>
-<h3 id="Question-苹果用户怎么使用"><a href="#Question-苹果用户怎么使用" class="headerlink" title="Question:苹果用户怎么使用"></a>Question:苹果用户怎么使用</h3><p>苹果官方15年底声称Safari接下来会支持，有望在近两年得到使用</p>
-<p>如果苹果用户想使用，可以下载 Bowser(<a href="http://www.openwebrtc.org/bowser/" target="_blank" rel="noopener">http://www.openwebrtc.org/bowser/</a>) 或者Chrome</p>
-]]></content>
-      <categories>
-        <category>流媒体</category>
-      </categories>
-      <tags>
         <tag>WebRTC</tag>
-        <tag>ffmpeg</tag>
       </tags>
   </entry>
   <entry>
     <title>video标签下触摸坐标归一化</title>
-    <url>/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Web_video%E6%A0%87%E7%AD%BE%E4%B8%8B%E8%A7%A6%E6%91%B8%E5%9D%90%E6%A0%87%E5%BD%92%E4%B8%80%E5%8C%96/</url>
+    <url>/2016/08/24/2016-2017/Web_video%E6%A0%87%E7%AD%BE%E4%B8%8B%E8%A7%A6%E6%91%B8%E5%9D%90%E6%A0%87%E5%BD%92%E4%B8%80%E5%8C%96/</url>
     <content><![CDATA[<h1 id="基本知识"><a href="#基本知识" class="headerlink" title="基本知识"></a>基本知识</h1><h2 id="触摸点位置"><a href="#触摸点位置" class="headerlink" title="触摸点位置"></a>触摸点位置</h2><ul>
 <li>clientX / clientY：// 触摸点相对于浏览器窗口viewport的位置  参照点会随着浏览器的滚动而变化</li>
 <li>pageX / pageY：// 触摸点相对于页面的位置  参照点不会随着浏览器的滚动而变化</li>
@@ -7384,13 +7422,50 @@ onMouseover和onMousemove有什么区别?
         <category>大前端</category>
       </categories>
       <tags>
-        <tag>多点触控</tag>
         <tag>HTML</tag>
+        <tag>多点触控</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WebSocket 与 WebRTC 直播方案对比分析</title>
+    <url>/2016/08/24/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/WebSocket%E4%B8%8EWebRTC%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="WebSocket"><a href="#WebSocket" class="headerlink" title="WebSocket"></a>WebSocket</h1><h2 id="同步"><a href="#同步" class="headerlink" title="同步"></a>同步</h2><p>首先说同步策略</p>
+<a id="more"></a>
+
+<h3 id="采用RTMP协议"><a href="#采用RTMP协议" class="headerlink" title="采用RTMP协议"></a>采用RTMP协议</h3><p>需要了解RTMP的协议，将音视频流(H264/SPEEX)构造成RTMP包，通过WebSocket发送到客户端<br>这样的话，开发成本大，需要搭建一台用于发送RTMP包的WebSocket服务器而不是普通的RTMP服务器<br>这东西网上基本没人做，搜到了一个别人做的demo，但是没有文档，实在难以研究,且不知性能如何</p>
+<p>参考：<a href="http://my.oschina.net/langhuihui/blog" target="_blank" rel="noopener">http://my.oschina.net/langhuihui/blog</a></p>
+<h3 id="开两个WebSocket"><a href="#开两个WebSocket" class="headerlink" title="开两个WebSocket"></a>开两个WebSocket</h3><p>我自己写的，从服务器端同时发送音视频流，由于音频方面我没做编解码直接推的PCM可能数据量较大，<br>视频的话采用jsmpeg解码然后通过canvas绘制</p>
+<p>这样的话没有做同步。</p>
+<p>可以参考我上次发的fiiser技术研究：</p>
+<p>同步：每5s发送一个同步指令给客户端进行同步(具体细节我就不懂了)</p>
+<p>编解码:BroadwayJS+SpeexJS 大概做法和我差不多 就是编解码的效率问题了</p>
+<h2 id="解码-软解码"><a href="#解码-软解码" class="headerlink" title="解码-软解码"></a>解码-软解码</h2><p>如果是采用RTMP同步，客户端还要去写JS解协议包(这方面不懂，资料也比较少)</p>
+<p>然后一般都是利用BroadwayJS+SpeexJS来解码，这两个是利用Emscripten把原生代码编译成JS，比普通JS效率高</p>
+<h2 id="渲染"><a href="#渲染" class="headerlink" title="渲染"></a>渲染</h2><p>Canvas+AudioContext </p>
+<h2 id="支持情况"><a href="#支持情况" class="headerlink" title="支持情况"></a>支持情况</h2><p>除IE外，其他大部分PC/Mobile浏览器(有的可能需要较新版本)都支持上述技术</p>
+<h2 id="延迟及卡顿情况"><a href="#延迟及卡顿情况" class="headerlink" title="延迟及卡顿情况"></a>延迟及卡顿情况</h2><p>局域网内，我的方案基本没有延迟(200ms以内)和卡顿</p>
+<h2 id="开发成本"><a href="#开发成本" class="headerlink" title="开发成本"></a>开发成本</h2><p>首先同步本身不好做，还有编解码这块，需要编译上述两个解码库然后找下文档看怎么用，然后服务端还得构造相应编码的流来测试。</p>
+<p>想做好一套解决方案一个人基本搞不定</p>
+<h1 id="WebRTC"><a href="#WebRTC" class="headerlink" title="WebRTC"></a>WebRTC</h1><h2 id="同步及渲染"><a href="#同步及渲染" class="headerlink" title="同步及渲染"></a>同步及渲染</h2><p>浏览器端已经做好同步策略，绑定<code>&lt;video&gt;</code>标签进行渲染</p>
+<h2 id="解码-硬解码"><a href="#解码-硬解码" class="headerlink" title="解码-硬解码"></a>解码-硬解码</h2><h2 id="支持情况-1"><a href="#支持情况-1" class="headerlink" title="支持情况"></a>支持情况</h2><ul>
+<li>PC:Chrome29和火狐47以上支持，Opera 39以上支持，IE内核的浏览器、Edge、Safari不支持</li>
+<li>Mobile：Chrome for Android ，firefox for Android支持<br>Android WebView(5.0以上支持，4.4部分手机(samsung htc等)支持)，手机自带浏览器(4.4以上部分厂商支持)<br>QQ/UC/百度浏览器 正在测试，<br>WP手机不支持(可以考虑后面兼容ORTC)</li>
+</ul>
+<p>参考 <a href="http://www.tutorialspoint.com/webrtc/webrtc_mobile_support.htm" target="_blank" rel="noopener">http://www.tutorialspoint.com/webrtc/webrtc_mobile_support.htm</a> 并做了下验证</p>
+<h3 id="Question-苹果用户怎么使用"><a href="#Question-苹果用户怎么使用" class="headerlink" title="Question:苹果用户怎么使用"></a>Question:苹果用户怎么使用</h3><p>苹果官方15年底声称Safari接下来会支持，有望在近两年得到使用</p>
+<p>如果苹果用户想使用，可以下载 Bowser(<a href="http://www.openwebrtc.org/bowser/" target="_blank" rel="noopener">http://www.openwebrtc.org/bowser/</a>) 或者Chrome</p>
+]]></content>
+      <categories>
+        <category>流媒体</category>
+      </categories>
+      <tags>
+        <tag>ffmpeg</tag>
+        <tag>WebRTC</tag>
       </tags>
   </entry>
   <entry>
     <title>流媒体直播——资料整理、你想要了解的都在这</title>
-    <url>/2016/08/24/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94%E2%80%94%E8%B5%84%E6%96%99%E6%95%B4%E7%90%86/</url>
+    <url>/2016/08/24/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/%E6%B5%81%E5%AA%92%E4%BD%93%E7%9B%B4%E6%92%AD%E2%80%94%E2%80%94%E8%B5%84%E6%96%99%E6%95%B4%E7%90%86/</url>
     <content><![CDATA[<p>并没有按照某种标准进行分类。</p>
 <p>感兴趣的可以将其作为chrome书签=。=</p>
 <p>【文末附上Bookmarks Json】</p>
@@ -8232,13 +8307,13 @@ setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, &quot;analyzeduration&quot;, &quot
         <category>流媒体</category>
       </categories>
       <tags>
-        <tag>WebRTC</tag>
         <tag>ffmpeg</tag>
+        <tag>WebRTC</tag>
       </tags>
   </entry>
   <entry>
     <title>H5音频直播—探索历程、aurora.js源码解析、音频编码基本原理</title>
-    <url>/2016/08/23/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/H5%E9%9F%B3%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94%E6%8E%A2%E7%B4%A2%E5%8E%86%E7%A8%8B%E3%80%81aurora.js%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E9%9F%B3%E9%A2%91%E7%BC%96%E7%A0%81%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%20/</url>
+    <url>/2016/08/23/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/H5%E9%9F%B3%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94%E6%8E%A2%E7%B4%A2%E5%8E%86%E7%A8%8B%E3%80%81aurora.js%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E9%9F%B3%E9%A2%91%E7%BC%96%E7%A0%81%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%20/</url>
     <content><![CDATA[<p>上次讲解了H5的视频直播，这次我们要讲的就是H5的音频直播啦.有没有很期待= =</p>
 <p>下面是我的探索历程，不感兴趣的可以直接看最后一个方案。</p>
 <h1 id="探索历程"><a href="#探索历程" class="headerlink" title="探索历程"></a>探索历程</h1><p>注：本文使用的Server都是nodejs,如果不了解的请先看下基础教程</p>
@@ -8636,7 +8711,7 @@ console.log(&apos;Awaiting ws Audio Connections on http://127.0.0.1:8071/&apos;)
   </entry>
   <entry>
     <title>H5视频直播—JSMPEG源码解析、视频压缩编码、MPEG-1标准</title>
-    <url>/2016/08/17/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/H5%E8%A7%86%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94JSMPEG%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E8%A7%86%E9%A2%91%E5%8E%8B%E7%BC%A9%E7%BC%96%E7%A0%81%E3%80%81MPEG-1%E6%A0%87%E5%87%86/</url>
+    <url>/2016/08/17/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/H5%E8%A7%86%E9%A2%91%E7%9B%B4%E6%92%AD%E2%80%94JSMPEG%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E3%80%81%E8%A7%86%E9%A2%91%E5%8E%8B%E7%BC%A9%E7%BC%96%E7%A0%81%E3%80%81MPEG-1%E6%A0%87%E5%87%86/</url>
     <content><![CDATA[<h1 id="jsmpeg是什么？"><a href="#jsmpeg是什么？" class="headerlink" title="jsmpeg是什么？"></a>jsmpeg是什么？</h1><pre><code>https://github.com/phoboslab/jsmpeg</code></pre><p>一个<a href="http://baike.baidu.com/link?url=IdDNfUYYiss4iUee-J5RKHujDyCinU3pO07wdRGuMfEHw9Ih3OaoOHbCRwTuMT_ktsTwTgvniHVHVrmBZu3G8K" target="_blank" rel="noopener">mpeg-1</a> video的js解码库</p>
 <a id="more"></a>
 
@@ -8717,7 +8792,7 @@ console.log(&apos;Awaiting ws Audio Connections on http://127.0.0.1:8071/&apos;)
   </entry>
   <entry>
     <title>adb控制avd</title>
-    <url>/2016/07/13/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/adb%E6%8E%A7%E5%88%B6avd/</url>
+    <url>/2016/07/13/2016-2017/adb%E6%8E%A7%E5%88%B6avd/</url>
     <content><![CDATA[<h2 id="1-显示所有avd"><a href="#1-显示所有avd" class="headerlink" title="1.显示所有avd"></a>1.显示所有avd</h2><a id="more"></a>
 
 <pre><code>android list avd
@@ -8768,7 +8843,7 @@ adb -s emulator-5554 shell input swipe 250 250 400 400 500//模拟滑动&lt;p1,p
   </entry>
   <entry>
     <title>Ubuntu 14下ffmpeg2.6编译和剪裁(librtmp,h264,aac) 及Android开发</title>
-    <url>/2016/07/10/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Ubuntu%2014%E4%B8%8Bffmpeg2.6%E7%BC%96%E8%AF%91%E5%92%8C%E5%89%AA%E8%A3%81(librtmp,h264,aac)%20%E5%8F%8AAndroid%E5%BC%80%E5%8F%91/</url>
+    <url>/2016/07/10/2016-2017/%E6%B5%81%E5%AA%92%E4%BD%93/Ubuntu%2014%E4%B8%8Bffmpeg2.6%E7%BC%96%E8%AF%91%E5%92%8C%E5%89%AA%E8%A3%81(librtmp,h264,aac)%20%E5%8F%8AAndroid%E5%BC%80%E5%8F%91/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本来写的是最新版3.0的 但是遇到太多坑，编译老错 换老版本的2.6</p>
 <h2 id="配置Java环境"><a href="#配置Java环境" class="headerlink" title="配置Java环境"></a>配置Java环境</h2><p><strong>如果只是编译ffmpeg 该步骤非必要，仅是做个记录</strong><br>从<a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html" target="_blank" rel="noopener">http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html</a>下载jdk8</p>
 <p>下载完文件默认在 <code>~/Downloads</code></p>
@@ -8861,8 +8936,196 @@ SLIB_INSTALL_LINKS=&apos;$(SLIBNAME)&apos;</code></pre><p>这样编译出来的s
       </tags>
   </entry>
   <entry>
+    <title>Windows 下快捷启动应用的小技巧</title>
+    <url>/2016/07/05/2016-2017/Windows%20%E4%B8%8B%E5%BF%AB%E6%8D%B7%E5%90%AF%E5%8A%A8%E5%BA%94%E7%94%A8%E7%9A%84%E5%B0%8F%E6%8A%80%E5%B7%A7/</url>
+    <content><![CDATA[<p>测试： Win 7</p>
+<p>其实 Win 10 就有这个功能</p>
+<p>桌面应用太多，找半天？</p>
+<ol>
+<li>D 盘下创建 path 目录</li>
+<li>然后将 <code>D:/path</code> 加入 path 环境变量 </li>
+<li>把要用的快捷启动拉进该目录，要用的时候就 <code>win+r</code> 运行输入快捷启动名</li>
+</ol>
+<p>一般快捷启动名就弄短的好记的就ok了</p>
+]]></content>
+      <categories>
+        <category>随笔</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>硬件设备组网与配置实验</title>
+    <url>/2016/04/20/2016-2017/%E7%A1%AC%E4%BB%B6%E8%AE%BE%E5%A4%87%E7%BB%84%E7%BD%91%E4%B8%8E%E9%85%8D%E7%BD%AE%E5%AE%9E%E9%AA%8C/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文是大学时上的「硬件设备组网与配置实验」的一些笔记</p>
+<a id="more"></a>
+
+<h1 id="交换机、路由器入门"><a href="#交换机、路由器入门" class="headerlink" title="交换机、路由器入门"></a>交换机、路由器入门</h1><h2 id="Tips"><a href="#Tips" class="headerlink" title="Tips:"></a>Tips:</h2><ul>
+<li>? 帮助<ul>
+<li>?     //显示当前模式下可用的命令</li>
+<li>sh?    //显示当前模式下sh打头的命令</li>
+<li>show  ?   //显示show命令后面可跟的参数</li>
+</ul>
+</li>
+<li>命令缩写<ul>
+<li>conf   t        //等价于configure terminal</li>
+</ul>
+</li>
+<li>命令补齐<ul>
+<li>conf    //按TAB键自动补齐configure</li>
+</ul>
+</li>
+<li>R:路由器 S:交换机</li>
+</ul>
+<h2 id="实验室机柜"><a href="#实验室机柜" class="headerlink" title="实验室机柜"></a>实验室机柜</h2><p><img src="https://www.hongweipeng.com/usr/uploads/2016/04/3782366733.png" alt="q2.png"></p>
+<h2 id="配置模式"><a href="#配置模式" class="headerlink" title="配置模式"></a>配置模式</h2><h3 id="用户模式：基本没用，最多query统计信息"><a href="#用户模式：基本没用，最多query统计信息" class="headerlink" title="用户模式：基本没用，最多query统计信息"></a>用户模式：基本没用，最多query统计信息</h3><pre><code>Switch&gt;</code></pre><h3 id="特权模式：可查看配置，修改部分配置，"><a href="#特权模式：可查看配置，修改部分配置，" class="headerlink" title="特权模式：可查看配置，修改部分配置，"></a>特权模式：可查看配置，修改部分配置，</h3><pre><code>ping ip
+//下面这个还未查证是在哪个模式 答：已查证
+sh ver 查看版本信息
+sh run 查看配置信息</code></pre><blockquote>
+<p>用户模式下通过<code>enable</code>命令进入 enable后带一个表示级别的数字<br>注：特权模式下输入en 0 会进入用户模式，0表示级别。思科一共分为0-15共16个级别，其中用户登陆0-1级别会登陆到用户模式，用户登录2-15级别的到特权模式<br>做实验时采用14级别   </p>
+</blockquote>
+<pre><code>Switch&gt;en 14
+//input password    
+　 Switch#</code></pre><h3 id="全局配置模式：特权模式下输入conf-t命令即可，用户在该模式下修改的配置是全局的。如修改主机名-hostname-xxx"><a href="#全局配置模式：特权模式下输入conf-t命令即可，用户在该模式下修改的配置是全局的。如修改主机名-hostname-xxx" class="headerlink" title="全局配置模式：特权模式下输入conf t命令即可，用户在该模式下修改的配置是全局的。如修改主机名 :hostname xxx"></a>全局配置模式：特权模式下输入conf t命令即可，用户在该模式下修改的配置是全局的。如修改主机名 :<code>hostname xxx</code></h3><pre><code>Switch#config
+Switch&lt;config&gt;#</code></pre><blockquote>
+</blockquote>
+<pre><code>//查看接口信息
+sh 接口标识</code></pre><h3 id="接口模式：修改某接口下的配置，是局部的。如进入-vlan-新增ip"><a href="#接口模式：修改某接口下的配置，是局部的。如进入-vlan-新增ip" class="headerlink" title="接口模式：修改某接口下的配置，是局部的。如进入 vlan 新增ip"></a>接口模式：修改某接口下的配置，是局部的。如<code>进入 vlan 新增ip</code></h3><pre><code>//配置接口带宽
+speed  {10 | 100 | auto}
+duplex {half | full | auto}</code></pre><p><img src="https://www.hongweipeng.com/usr/uploads/2016/04/2623834922.png" alt="q1.png"></p>
+<hr>
+<h1 id="交换机S1-S2、路由器R1模拟PC机-通过另一台路由器R2互连"><a href="#交换机S1-S2、路由器R1模拟PC机-通过另一台路由器R2互连" class="headerlink" title="交换机S1,S2、路由器R1模拟PC机 通过另一台路由器R2互连"></a>交换机S1,S2、路由器R1模拟PC机 通过另一台路由器R2互连</h1><h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><blockquote>
+<p><code>主路由</code>连接其他设备A(R/S,模拟PC)</p>
+</blockquote>
+<ul>
+<li>进入路由连接A的接口(机柜图R6232连接S3760-01 则进入f1/0的接口)模式</li>
+<li>在该接口模式设置自己的ip，实际意义是 A 通过该ip来连接该路由</li>
+<li>路由连接多个设备，所以对应的接口设置对应的ip（设为不同网域 xxx.xxx.1/2/3.1）</li>
+</ul>
+<blockquote>
+<p>交换机(模拟PC)连接路由</p>
+</blockquote>
+<ul>
+<li>进入虚拟局域网接口模式<code>int VLAN 1</code> （VLAN 1 无需ADD 默认有，路由默认也在该VLAN 1 下 所以接下来设置该对交换机和路由在同一个网域即可）</li>
+<li>(有个疑问:VLAN 1是怎么和交换机连接路由的接口绑定在一起的 答：所有接口默认都在VLAN 1</li>
+<li>由于交换机模拟PC 所以需要ip,在该接口模式下 <code>ip add &lt;ip地址&gt; &lt;子网掩码&gt;</code> </li>
+<li>(子网掩码与局域网的作用详见google,简说就是非0位算起对应ip位置后面都是该局域网编号)</li>
+<li>退到全局模式,设置默认网关(默认路由)，该默认网关地址即路由的ip地址<ul>
+<li>二层交换机 <code>ip default-gateway &lt;默认网关地址&gt;</code> </li>
+<li>三层交换机<ul>
+<li><code>ip route 0.0.0.0 0.0.0.0 &lt;默认网关地址&gt;</code></li>
+<li><code>ip routing</code> //开启路由,这个何时开启待实验，以及二层交换机和三层交换机设置区别是为什么?</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>此时交换机和路由在同一个VLAN 1下，同时又在同一个网域下，故交换机与路由成功连通</li>
+</ul>
+<blockquote>
+<p>路由(模拟PC)连接主路由</p>
+</blockquote>
+<ul>
+<li><p>对应接口配置IP地址 <code>ip add &lt;ip地址&gt; &lt;子网掩码&gt;</code></p>
+</li>
+<li><p>配置默认网关(即默认路由) <code>ip route 0.0.0.0 0.0.0.0 &lt;默认网关地址&gt;</code></p>
+</li>
+</ul>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><strong>PC间互ping ,即使是在不同网域，PC会先通过默认网关到达该路由，然后该路由转接到其他网关，再连接到对应网关网域的PC</strong></p>
+<hr>
+<h1 id="交换机划分VLAN-跨交换机实现VLAN"><a href="#交换机划分VLAN-跨交换机实现VLAN" class="headerlink" title="交换机划分VLAN,跨交换机实现VLAN"></a>交换机划分VLAN,跨交换机实现VLAN</h1><p>上节说到，同一网域 且VLAN一致 设备可以互连<br>本节做的是 多个路由通过交换机互连</p>
+<blockquote>
+<p>首先 我们配置两台路由ip在同一个网域 xxx.xxx.1.1/2 例<code>ip add 192.168.1.1 255.255.255.0</code><br>他们物理上都连接了在同一个交换机 由于接口默认都是<code>VLAN 1</code>所以这两台路由即处于<code>同一个网域、同一个VLAN</code><br>故他们是可以直接连通的</p>
+</blockquote>
+<ul>
+<li><p>接下来我们让这两台路由处于不同VLAN，配置如下</p>
+<ul>
+<li><p>全局模式下创建VLAN : <code>S3760_01(config)#vlan 10</code> </p>
+</li>
+<li><p>给VLAN命名，便于存档，在S上无实际用处 <code>S3760_01(config-vlan)#name 10</code> </p>
+</li>
+<li><p>将端口(交换机连接路由A的端口)分配给VLAN:</p>
+<ul>
+<li><code>S3760_01(config)#int f0/5</code>            </li>
+<li>将端口F0/5加入vlan 10:<code>S3760_01(config-if)#switchport access vlan 10</code></li>
+</ul>
+</li>
+<li><p>同样的，创建VLAN 20,把交换机连接路由B的端口 f0/15 分配给VLAN 20</p>
+</li>
+<li><p>测试：路由A ping 路由B发现ping 不通</p>
+</li>
+<li><p>结论：不同VLAN,即时在同一网域，如果交换机不作为默认网关(下文会做该实验)，两者是不能连通的。</p>
+</li>
+<li><p>其他：</p>
+<ul>
+<li>删除VLAN :<code>switch(config)#no vlan 10</code></li>
+<li>查看已配置的VLAN信息 :<code>S3760_01#sh vlan</code> </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>接下来我们实现下面这样的效果，PC3连接另一个交换机且处于VLAN 10, PC1和PC3在同一个网域，让它们能够连通<br>  <img src="https://www.hongweipeng.com/usr/uploads/2016/04/2105159668.png" alt="q3.png"></p>
+<ul>
+<li><p>与上面一个实验一样，交换机S2126_01端口f0/1分配给VLAN 10,PC3设置ip</p>
+</li>
+<li><p>交换机之间的连接</p>
+<ul>
+<li>交换机S3760_01、S2126_01相连的F0/24端口设定为Trunk模式</li>
+<li>这里发现两个交换机之间接口一致，所以从其中任意一个设置如下</li>
+<li><code>S3760_01(config)#Int f0/24</code> ，<code>S3760_01(config-if)#Switchport mode trunk</code></li>
+</ul>
+</li>
+<li><p>测试：PC3#ping pc1可以连通，pingPC2不能连通</p>
+</li>
+<li><p>结论：即使被多个连通的交换机隔开，只要在同一个VLAN和网域 是可以连通的</p>
+</li>
+<li><p>其他：交换机端口工作模式：</p>
+<ul>
+<li>Access：大多用于接入层，也叫接入模式，常用于交换机与PC的连接</li>
+<li>Trunk：中继模式，用于交换机与交换机，交换机与路由器，大多用于级联网络设备所以也叫干道模式。</li>
+<li>Multi：一个端口可划分到多个VLAN,（以弃用）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>接下来补上面的提到的了，不同VLAN,不同网域，如果交换机作为默认网关，两者是可以连通的</p>
+</li>
+</ul>
+<blockquote>
+<p>其实原理和实验2一样，不同网域的PC设置其默认网关为交换机在该连通接口的ip,实验效果图如下：</p>
+</blockquote>
+<p><img src="https://www.hongweipeng.com/usr/uploads/2016/04/3521557871.png" alt="q4.png"></p>
+<blockquote>
+<p>在上面实验基础上，我们做如下变动：</p>
+</blockquote>
+<ul>
+<li>修改PC1和PC2的ip网域不同</li>
+<li>设置三层交换机VLAN间通讯<ul>
+<li>设置vlan虚接口ip地址,效果是该VLAN(如vlan 10)上的PC可以通过设置默认网关访问到该交换机，再转接其他网域<ul>
+<li><code>int vlan 10</code> !创建虚拟接口vlan 10</li>
+<li><code>ip addr 192.168.10.254 255.255.255.0</code></li>
+<li><code>int vlan 20</code></li>
+<li><code>ip add 192.168.20.254 255.255.255.0</code><ul>
+<li>开启三层路由：<code>ip routing</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>设置PC1/2的默认网关，<code>ip rout 0.0.0.0 0.0.0.0 192.168.10.254/192.168.20.254;</code></li>
+<li>测试与结论：PC1与PC2处于不同VLAN,不同网域，但是可以通过交换机网关中转 ping通    </li>
+</ul>
+<hr>
+]]></content>
+      <categories>
+        <category>硬件</category>
+      </categories>
+  </entry>
+  <entry>
     <title>Android开发技巧</title>
-    <url>/2016/04/13/2016-2017%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3/Android%E5%BC%80%E5%8F%91%E6%8A%80%E5%B7%A7/</url>
+    <url>/2016/04/13/2016-2017/Android%E5%BC%80%E5%8F%91%E6%8A%80%E5%B7%A7/</url>
     <content><![CDATA[<h2 id="单步调试"><a href="#单步调试" class="headerlink" title="单步调试"></a>单步调试</h2><p><code>F6</code> <code>Step Over</code> 程序向下执行一行（如果当前行有方法调用，不进入方法体，直接到下一行）</p>
 <p><code>F5</code> <code>Step Into</code> 程序向下执行一行（如果该行有自定义方法，则运行进入自定义方法（不会进入官方类库的方法）会进入Log方法，算是bug吗？</p>
 <p><code>Alt+Shift+F7</code>  <code>Force Step Into</code> 任何方法都会进入</p>
