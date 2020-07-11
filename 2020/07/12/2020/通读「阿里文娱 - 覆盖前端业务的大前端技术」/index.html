@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://gahing.top').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="前言看到同事在群里分享的一个技术小册 – 阿里文娱 - 覆盖前端业务的大前端技术，抽空读了下，有些收获（个人向），算是读书笔记吧，做个分享。 因为有多个章节，下面就以技术章节作为本文行文的顺序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通读「阿里文娱 - 覆盖前端业务的大前端技术」">
+<meta property="og:url" content="https:&#x2F;&#x2F;gahing.top&#x2F;2020&#x2F;07&#x2F;12&#x2F;2020&#x2F;%E9%80%9A%E8%AF%BB%E3%80%8C%E9%98%BF%E9%87%8C%E6%96%87%E5%A8%B1%20-%20%E8%A6%86%E7%9B%96%E5%89%8D%E7%AB%AF%E4%B8%9A%E5%8A%A1%E7%9A%84%E5%A4%A7%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF%E3%80%8D&#x2F;index.html">
+<meta property="og:site_name" content="gahing 的博客">
+<meta property="og:description" content="前言看到同事在群里分享的一个技术小册 – 阿里文娱 - 覆盖前端业务的大前端技术，抽空读了下，有些收获（个人向），算是读书笔记吧，做个分享。 因为有多个章节，下面就以技术章节作为本文行文的顺序">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;sf1-dycdn-tos.pstatp.com&#x2F;obj&#x2F;eden-cn&#x2F;nupohneh7nupehpqnulog&#x2F;img&#x2F;ott.png">
+<meta property="article:published_time" content="2020-07-11T20:12:40.000Z">
+<meta property="article:modified_time" content="2020-07-11T20:44:57.792Z">
+<meta property="article:author" content="gahing">
+<meta property="article:tag" content="随笔">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;sf1-dycdn-tos.pstatp.com&#x2F;obj&#x2F;eden-cn&#x2F;nupohneh7nupehpqnulog&#x2F;img&#x2F;ott.png">
+
+<link rel="canonical" href="https://gahing.top/2020/07/12/2020/%E9%80%9A%E8%AF%BB%E3%80%8C%E9%98%BF%E9%87%8C%E6%96%87%E5%A8%B1%20-%20%E8%A6%86%E7%9B%96%E5%89%8D%E7%AB%AF%E4%B8%9A%E5%8A%A1%E7%9A%84%E5%A4%A7%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF%E3%80%8D/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>通读「阿里文娱 - 覆盖前端业务的大前端技术」 | gahing 的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">gahing 的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">gahing.top</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gahing.top/2020/07/12/2020/%E9%80%9A%E8%AF%BB%E3%80%8C%E9%98%BF%E9%87%8C%E6%96%87%E5%A8%B1%20-%20%E8%A6%86%E7%9B%96%E5%89%8D%E7%AB%AF%E4%B8%9A%E5%8A%A1%E7%9A%84%E5%A4%A7%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF%E3%80%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="gahing">
+      <meta itemprop="description" content="微信公众号：切图仔的前端之路">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="gahing 的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          通读「阿里文娱 - 覆盖前端业务的大前端技术」
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-07-12 04:12:40 / 修改时间：04:44:57" itemprop="dateCreated datePublished" datetime="2020-07-12T04:12:40+08:00">2020-07-12</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%A7%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index">
+                    <span itemprop="name">大前端</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>看到同事在群里分享的一个技术小册 – <a href="https://zhuanlan.zhihu.com/p/129673500" target="_blank" rel="noopener">阿里文娱 - 覆盖前端业务的大前端技术</a>，抽空读了下，有些收获（个人向），算是读书笔记吧，做个分享。</p>
+<p>因为有多个章节，下面就以技术章节作为本文行文的顺序</p>
+<a id="more"></a>
+
+<h2 id="如何支撑营销活动？"><a href="#如何支撑营销活动？" class="headerlink" title="如何支撑营销活动？"></a>如何支撑营销活动？</h2><p>为了解决活动页中重复劳动力开发的问题，大公司们都会有自己的一套「搭建」系统，让开发者更专注于组件的可复用、可配置。</p>
+<p>具体「搭建」系统的架构设计，文章没有展开讲，更多的是讲要处理哪些细节：</p>
+<ol>
+<li>埋点规范化：做过「搭建」系统的太清楚了，埋点不规范，DA两行泪</li>
+<li>scheme跳转及唤端统一化：活动页的展现方式可能在多个自家 app,微信，甚至是移动端浏览器，所以有必要做跳转的区分</li>
+<li>cms数据分发：这个说得有点高大上，不知道与普通的数据展示组件有何区别</li>
+<li>组件原生渲染：为了媲美原生组件的性能，采用集团的 weex 框架，相比纯 h5 页面有更好的体验</li>
+<li>多端搭建：利用 weex 的跨平台能力，加之样式响应式处理，实现组件多端复用</li>
+</ol>
+<h2 id="前端工程管理实践"><a href="#前端工程管理实践" class="headerlink" title="前端工程管理实践"></a>前端工程管理实践</h2><p>项目之间技术方案各异，复用难，如何解决？</p>
+<p>文中提到两点：</p>
+<ul>
+<li>纵向：提供开发-&gt;发布一整套解决方案，包括：脚手架、物料平台、构建服务等，进行工程入口收敛和管控</li>
+<li>横向：领域专项，比如：鉴权、埋点、监控、日志等</li>
+</ul>
+<p>感觉和各大公司的工程管理实践差不多。不过文中有个感兴趣的点是「经验复用」这个，提到：<br>「将日常开发中错误进行收集，统一解答归类存档，构建错误知识库，下次从知识库中查找对应结果处理」</p>
+<p>不清楚这个收集和归档是怎么处理的，感觉可能就是纯人力维护+wiki的形式？要是加入自动收集&amp;ai问答，那就完美了。</p>
+<h2 id="优酷-Node-js-重构之路"><a href="#优酷-Node-js-重构之路" class="headerlink" title="优酷 Node.js 重构之路"></a>优酷 Node.js 重构之路</h2><h3 id="最早：bigpipe-jq-的方案。"><a href="#最早：bigpipe-jq-的方案。" class="headerlink" title="最早：bigpipe+jq 的方案。"></a>最早：bigpipe+jq 的方案。</h3><p>bigpipe 可能你没听过，其实就是将页面分为若干模块（需要进行标识），在服务端渲染之时异步填充到各个模块，能够让浏览器和服务器一起并发执行，快速展现核心模块。缺点可能就是模板编译带来的性能损耗较高？（我没用过）</p>
+<h3 id="当前：采用的是-React-SSR-方案，并支持-CSR-SSR-一键切换。"><a href="#当前：采用的是-React-SSR-方案，并支持-CSR-SSR-一键切换。" class="headerlink" title="当前：采用的是 React SSR 方案，并支持 CSR/SSR 一键切换。"></a>当前：采用的是 React SSR 方案，并支持 CSR/SSR 一键切换。</h3><p>有两个处理方式值得借鉴：</p>
+<ol>
+<li>当服务端出现渲染压力时，进行 CSR 服务降级。此时服务端仅负责页面 SEO 数据获取<blockquote>
+<p>我理解应该是在输出 CSR 模板的基础上，把数据也插入 html 页面，这样相比原来的 CSR 方案，有更快的展现。</p>
+</blockquote>
+</li>
+<li>当数据源服务出现问题时，使用 CDN 数据兜底进行页面容灾，避免用户看到空白页面这样。</li>
+</ol>
+<p>当然，还有一些细节有待研究，比如如何判断自动判断服务端出现渲染压力，如何自动切换等</p>
+<h3 id="未来：Serverless-SSR"><a href="#未来：Serverless-SSR" class="headerlink" title="未来：Serverless SSR"></a>未来：Serverless SSR</h3><p>React SSR 方案是依赖于 Node.js Web 应用的，那必然需要关心服务和运维。</p>
+<p>而在 Serverless 时代，基于 FaaS （函数即服务）进行 API 开发是很简单的，那如何加入 SSR 能力呢？</p>
+<p>正如 Umi SSR 等框架让开发者不再需要关心 webpack 一样，当我们继续对 node 框架进行定制后，就不再需要关注 node 服务的细节，仅需要编写 React 代码了。</p>
+<h3 id="OTT-端登录态设备穿透：扫码登录与反登录"><a href="#OTT-端登录态设备穿透：扫码登录与反登录" class="headerlink" title="OTT 端登录态设备穿透：扫码登录与反登录"></a>OTT 端登录态设备穿透：扫码登录与反登录</h3><p>这部份内容比较有收获的是第一次听说「扫码反登录」这个应用场景。（可能是因为我没用过电视盒子吧。。</p>
+<p>什么是「扫码反登录」？就是在 ott 端登录的情况下，出现一个二维码，此时手机扫码，手机将同步 ott 账号登录态，接下来就可以在手机上进行该账户的一些操作了，比如开通会员（因为 ott 端一般不会有支付软件只能在手机上进行支付）等。</p>
+<p>具体的技术方案，和扫码正登录有点类似。过程如下</p>
+<p><img src="https://sf1-dycdn-tos.pstatp.com/obj/eden-cn/nupohneh7nupehpqnulog/img/ott.png" alt="引自原文"></p>
+<ol>
+<li>在 ott 端，携带 token 发起请求获取唯一标识值 authCode （随机生成，由 Redis 维护，关联 token），并返回「登录验证二维码」url<blockquote>
+<p>这个感觉也可以写死，由服务端返回可能是更加可控，防止服务挂了可以动态更换，而写死的话还得用户更新 ott 版本</p>
+</blockquote>
+</li>
+<li>将 authCode 拼接在 url （得到 newUrl）后并生成二维码</li>
+<li>手机端进行扫码，即请求 newUrl ，此时将去服务端进行验证 authCode ，验证通过将返回 token</li>
+<li>还可以再加入重定向的页面（比如会员购买页）放入 url 后，手机扫码登录成功后重定向到相应页面</li>
+<li>还可以让 authCode 加入「消费」字段，ott 端进行轮询，在手机登录成功后自动关闭二维码页面</li>
+</ol>
+<h2 id="小而美的-egg-react-ssr-开源实现方案"><a href="#小而美的-egg-react-ssr-开源实现方案" class="headerlink" title="小而美的 egg-react-ssr 开源实现方案"></a>小而美的 egg-react-ssr 开源实现方案</h2><p><a href="https://github.com/ykfe/egg-react-ssr" target="_blank" rel="noopener">项目地址</a></p>
+<p>文章的内容差不多就是该项目的 README ，可以直接点击查看。</p>
+<p>印象比较深的是里面提到该方案相比 Next.js 的代码非黑盒，有空的话可以看下实现。</p>
+<h2 id="双-11-猫晚互动前端容器化之路"><a href="#双-11-猫晚互动前端容器化之路" class="headerlink" title="双 11 猫晚互动前端容器化之路"></a>双 11 猫晚互动前端容器化之路</h2><h3 id="组件化平台差异的处理"><a href="#组件化平台差异的处理" class="headerlink" title="组件化平台差异的处理"></a>组件化平台差异的处理</h3><p>组件适配平台还是平台适配组件？可以这样处理：</p>
+<ol>
+<li>组件较多而平台较少时可以由平台进行适配</li>
+<li>平台适配较难或者差异难以抹平则由组件适配</li>
+<li>尽量让平台进行适配，减少新组件适配劳动力</li>
+</ol>
+<h3 id="容器化"><a href="#容器化" class="headerlink" title="容器化"></a>容器化</h3><p>基于 Weex 的原生渲染和拓展能力实现热更和高性能。具体我没用过这个框架，就不展开讲了。</p>
+<h3 id="互动游戏秒开优化"><a href="#互动游戏秒开优化" class="headerlink" title="互动游戏秒开优化"></a>互动游戏秒开优化</h3><p>秒开优化对于 h5 开发的同学来说应该是老生常谈了。</p>
+<p>因为没有玩过双 11 的互动游戏，不太理解文章里面讲的「选队结束」-&gt;「游戏开始」阶段，看上去的优化策略应该就是预加载</p>
+<h3 id="互动与视频对齐"><a href="#互动与视频对齐" class="headerlink" title="互动与视频对齐"></a>互动与视频对齐</h3><p>首先有个共识，网络状况不同，同一时刻每个用户看到的画面是不同的。</p>
+<p>而互动信号是，主持人说出「开始」时，界面产生互动。</p>
+<p>通常的实现方案是两者分离，直播是直播，互动是互动，互动由另外的接口下发通知。</p>
+<p>但是这样可能会造成，用户网络较慢，还没听到直播中主持人喊出「开始」口号，界面互动就开始了，这样会缺少一点现场感。</p>
+<p>解决方案可以从视频编解码入手。</p>
+<p>我们知道，视频编码中 SEI (附加增加信息) 可以带上自定义数据，那么只需要再主持人喊开始时，将互动信号通过 SEI 编入视频流中，这样用户看到相应画面时，正好解到相应的 SEI ，触发互动展示。</p>
+<h3 id="高并发下的服务端稳定性优化"><a href="#高并发下的服务端稳定性优化" class="headerlink" title="高并发下的服务端稳定性优化"></a>高并发下的服务端稳定性优化</h3><p>感觉文章没发全？？没提优化策略就直接讲好处了。。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>文中提到的几个方向，无论是工程化、活动页搭建平台、近原生开发，都是时下前端的热点，要学的东西还好多呀。。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作！</div>
+  <button disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/wechatpay.png" alt="gahing 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/uploads/alipay.png" alt="gahing 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9A%8F%E7%AC%94/" rel="tag"># 随笔</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/22/2020/macOS%20%E4%B8%8A%E4%BD%BF%E7%94%A8%20lldb%20%E5%92%8C%20gdb/" rel="prev" title="macOS 上使用 lldb 和 gdb">
+      <i class="fa fa-chevron-left"></i> macOS 上使用 lldb 和 gdb
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何支撑营销活动？"><span class="nav-number">2.</span> <span class="nav-text">如何支撑营销活动？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#前端工程管理实践"><span class="nav-number">3.</span> <span class="nav-text">前端工程管理实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优酷-Node-js-重构之路"><span class="nav-number">4.</span> <span class="nav-text">优酷 Node.js 重构之路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#最早：bigpipe-jq-的方案。"><span class="nav-number">4.1.</span> <span class="nav-text">最早：bigpipe+jq 的方案。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#当前：采用的是-React-SSR-方案，并支持-CSR-SSR-一键切换。"><span class="nav-number">4.2.</span> <span class="nav-text">当前：采用的是 React SSR 方案，并支持 CSR&#x2F;SSR 一键切换。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#未来：Serverless-SSR"><span class="nav-number">4.3.</span> <span class="nav-text">未来：Serverless SSR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OTT-端登录态设备穿透：扫码登录与反登录"><span class="nav-number">4.4.</span> <span class="nav-text">OTT 端登录态设备穿透：扫码登录与反登录</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小而美的-egg-react-ssr-开源实现方案"><span class="nav-number">5.</span> <span class="nav-text">小而美的 egg-react-ssr 开源实现方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#双-11-猫晚互动前端容器化之路"><span class="nav-number">6.</span> <span class="nav-text">双 11 猫晚互动前端容器化之路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#组件化平台差异的处理"><span class="nav-number">6.1.</span> <span class="nav-text">组件化平台差异的处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#容器化"><span class="nav-number">6.2.</span> <span class="nav-text">容器化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#互动游戏秒开优化"><span class="nav-number">6.3.</span> <span class="nav-text">互动游戏秒开优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#互动与视频对齐"><span class="nav-number">6.4.</span> <span class="nav-text">互动与视频对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#高并发下的服务端稳定性优化"><span class="nav-number">6.5.</span> <span class="nav-text">高并发下的服务端稳定性优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="gahing"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">gahing</p>
+  <div class="site-description" itemprop="description">微信公众号：切图仔的前端之路</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">82</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/francecil" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;francecil" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:france.zjx@gmail.com" title="E-Mail → mailto:france.zjx@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      其他平台
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/59818c62f265da3e3a0bdbf0" title="https:&#x2F;&#x2F;juejin.im&#x2F;user&#x2F;59818c62f265da3e3a0bdbf0" rel="noopener" target="_blank">掘金</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.hongweipeng.com/index.php/author/8/" title="https:&#x2F;&#x2F;www.hongweipeng.com&#x2F;index.php&#x2F;author&#x2F;8&#x2F;" rel="noopener" target="_blank">西二在线</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/france/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;france&#x2F;" rel="noopener" target="_blank">博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/u011644423/" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;u011644423&#x2F;" rel="noopener" target="_blank">CSDN</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">闽ICP备19024221号-1 </a>
+      <img src="http://www.beian.gov.cn/img/ghs.png" style="display: inline-block;">
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">gahing</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.1.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
